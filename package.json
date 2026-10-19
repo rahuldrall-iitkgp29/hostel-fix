@@ -1,0 +1,26 @@
+{
+  "name": "hostelfix--baloon-hackaton",
+  "version": "1.0.0",
+  "description": "HostelFix application workspace",
+  "private": true,
+  "workspaces": [
+    "backend"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace backend",
+    "start": "npm run start --workspace backend",
+    "test": "npm run test --workspace backend --",
+    "test:coverage": "npm run test:coverage --workspace backend --",
+    "db:ensure-indexes": "npm run db:ensure-indexes --workspace backend"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "devDependencies": {
+    "mongodb": "^7.2.0"
+  }
+}
