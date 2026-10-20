@@ -13,6 +13,10 @@ const { createModels } = require('./models');
 const { createSessionService } = require('./services/session.service');
 const { createAuthService } = require('./services/auth.service');
 const { createUserService } = require('./services/user.service');
+const { createCatalogService } = require('./services/catalog.service');
+const { createUploadService } = require('./services/upload.service');
+const { createComplaintService } = require('./services/complaint.service');
+const { createDashboardService } = require('./services/dashboard.service');
 const { unavailable } = require('./utils/AppError');
 
 // Importing or creating the app does not read .env, connect to MongoDB or listen.
@@ -38,8 +42,14 @@ function createApp({ config = {}, database, storage, logger, isShuttingDown } = 
     if (!services) {
       const context = { connection: database.connection, models: createModels(database.connection), config };
       const sessions = createSessionService(context);
-      services = { config, sessions, auth: createAuthService({ ...context, sessions }),
-        users: createUserService({ ...context, sessions }) };
+      services = {
+        config, sessions, auth: createAuthService({ ...context, sessions }),
+        users: createUserService({ ...context, sessions }),
+        catalog: createCatalogService(context),
+        uploads: createUploadService(context),
+        complaints: createComplaintService(context),
+        dashboard: createDashboardService(context),
+      };
     }
     return services;
   };

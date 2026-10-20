@@ -175,3 +175,48 @@ Actual install/check command record (from frontend unless noted):
 - No runtime code changed after final successful checks; subsequent edits updated comments
   and documentation only. Sessions 0–1 complete; **Session 2 is still next pending**.
 
+### 2026-10-20 — Sessions 2, 3, 4: Design system, Authentication UI, and Session Lifecycle
+
+- **Scope:** Completed Session 2 (Design system & shared UI), Session 3 (Public landing page & authentication UI),
+  and Session 4 (API client & session lifecycle) per user request and master task instructions.
+- **Session 2 Delivered:**
+  - `SelectField` (`components/ui/select-field.tsx`): Accessible select primitive with custom chevron, label, error, and hint.
+  - `TextareaField` (`components/ui/textarea-field.tsx`): Accessible textarea primitive matching campus identity.
+  - `Dialog` (`components/ui/dialog.tsx`): Accessible modal dialog with focus trapping, focus restoration, backdrop, and Escape handling.
+  - `Breadcrumbs` (`components/layout/breadcrumbs.tsx`): Accessible breadcrumb navigation with `aria-label="Breadcrumb"` and `<ol>`.
+  - `PageHeader` (`components/layout/page-header.tsx`): Shared header with eyebrow, title, badge, breadcrumbs, and actions slot.
+  - `AppShell` (`components/layout/app-shell.tsx`): Application layout frame with responsive desktop sidebar, accessible mobile drawer,
+    typed role navigation (`STUDENT`, `STAFF`, `ADMIN`), user metadata summary, and logout trigger.
+- **Session 3 Delivered:**
+  - Catalog client (`lib/api/catalog.ts`): Typed API wrappers for `getHostels`, `getHostelBlocks`, `getRooms`.
+  - Validation schemas (`features/auth/schemas.ts`): Zod schemas for login, student registration, profile, and password change
+    adhering strictly to PRD constraints (email normalization, untrimmed 12-128 char password with UTF-8 byte <= 256 limit,
+    optional E.164 phone, 8-64 char enrollment code).
+  - `LoginForm` (`features/auth/components/login-form.tsx`): React Hook Form + Zod login, field-level error mapping, and returnTo redirection.
+  - `RegisterForm` (`features/auth/components/register-form.tsx`): Student-only registration form with cascading active catalogs
+    (Hostel -> Block -> Room), loading skeletons, graceful server-offline retry alerts, and post-registration sign-in redirection.
+  - Updated `/login` and `/register` pages with Suspense boundaries and interactive forms.
+- **Session 4 Delivered:**
+  - In-memory token store: Access JWT is held strictly in-memory (never in localStorage, sessionStorage, or client cookies).
+  - Coordinated refresh: Single in-flight refresh promise across concurrent requests to protect against token family revocation.
+  - One safe read retry: GET requests retried once on 401 when refresh succeeds; mutations are never retried.
+  - `AuthProvider` & `useAuth` (`features/auth/context/auth-context.tsx`): Context managing session, user state, silent refresh timers, and memoized API client.
+  - Safe `returnTo` utility (`features/auth/utils/return-to.ts`): Rejects open redirects, backslashes, and protocol schemes.
+  - `AuthGuard` (`features/auth/components/auth-guard.tsx`): Protects routes, shows loading skeletons, redirects unauthenticated users,
+    enforces forced password changes, and provides 403 Forbidden state panels for role mismatches.
+  - Forced Password Change (`app/(public)/change-password/page.tsx` & `features/auth/components/change-password-form.tsx`):
+    Enforces password update when `mustChangePassword === true` before workspace access.
+  - Profile view & edit (`app/(dashboard)/profile/page.tsx` & `features/profile/components/profile-view.tsx`):
+    P0 name and phone update with `expectedVersion` versioning; handles 409 VERSION_CONFLICT by refetching and alerting user.
+  - Updated role dashboards (`(dashboard)/student/dashboard`, `staff/dashboard`, `admin/dashboard`) with `AuthGuard` and `AppShell`.
+- **Verification Results:**
+  - `npm.cmd test`: PASS — 59 tests passed across 4 test suites (`api-client.test.ts`, `auth-lifecycle.test.ts`, `catalog-api.test.ts`, `ui-components.test.ts`).
+  - `npm.cmd run typecheck`: PASS — 0 errors, route types generated.
+  - `npm.cmd run lint`: PASS — 0 errors, 0 warnings (with `--max-warnings=0`).
+  - `npm.cmd run build`: PASS — Next 16.4.2 generated all 10 static routes.
+  - Browser subagent visual audit: PASS — verified visual polish, responsive behavior across mobile/desktop, 44px targets,
+    client-side validation errors, cascading catalogs, and unauthenticated redirects.
+  - Server process stopped cleanly at handoff; no stray background listeners.
+- **Next pending session:** Session 5 — Student dashboard and complaint list.
+
+

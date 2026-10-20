@@ -2,6 +2,7 @@ module.exports = {
   test: {
     environment: 'node',
     globals: true,
+    fileParallelism: false,
     include: ['tests/**/*.test.js'],
     clearMocks: true,
     restoreMocks: true,

@@ -13,7 +13,9 @@
     "start": "node src/server.js",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "db:ensure-indexes": "node scripts/ensure-indexes.js"
+    "db:ensure-indexes": "node scripts/ensure-indexes.js",
+    "seed": "node seeds/index.js",
+    "seed:reset": "node seeds/reset.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

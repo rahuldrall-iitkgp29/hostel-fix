@@ -15,13 +15,14 @@ type ClientOptions = {
   fetcher?: typeof fetch;
   // Session 4 supplies a callback to in-memory state; this client stores no token.
   getAccessToken?: () => string | null;
+  onUnauthorized?: () => Promise<string | null>;
   timeoutMs?: number;
 };
 
-export function createApiClient({ baseUrl, fetcher = fetch, getAccessToken, timeoutMs = 15_000 }: ClientOptions) {
+export function createApiClient({ baseUrl, fetcher = fetch, getAccessToken, onUnauthorized, timeoutMs = 15_000 }: ClientOptions) {
   const base = validateApiBaseUrl(baseUrl);
 
-  async function execute(path: string, options: RequestOptions = {}): Promise<Response> {
+  async function execute(path: string, options: RequestOptions = {}, isRetry = false): Promise<Response> {
     const url = buildApiUrl(base, path, options.query);
     const method = options.method ?? "GET";
     const headers = new Headers({ Accept: "application/json" });
@@ -42,6 +43,14 @@ export function createApiClient({ baseUrl, fetcher = fetch, getAccessToken, time
       if (deadline.aborted) throw new ApiError("The request took too long. Please try again.", "REQUEST_TIMEOUT");
       throw new ApiError("Unable to reach HostelFix. Check your connection and try again.", "NETWORK_ERROR");
     }
+
+    if (response.status === 401 && !isRetry && method === "GET" && onUnauthorized) {
+      const newToken = await onUnauthorized().catch(() => null);
+      if (newToken) {
+        return execute(path, options, true);
+      }
+    }
+
     if (!response.ok) {
       const body: unknown = await response.json().catch(() => null);
       throw normalizeApiError(body, response);

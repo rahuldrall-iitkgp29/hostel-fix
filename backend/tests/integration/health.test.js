@@ -45,7 +45,7 @@ describe('GET /api/v1/health', () => {
     expect(response.body.error.code).toBe('PAYLOAD_TOO_LARGE');
   });
 
-  test.each(['/health', '/api/v1/health/', '/api/v1/complaints', '/api/v1/HEALTH'])(
+  test.each(['/health', '/api/v1/health/', '/api/v1/unimplemented', '/api/v1/HEALTH'])(
     'does not expose an unimplemented path or alias: %s', async (url) => {
       const response = await request(createApp()).get(url).expect(404);
       expect(response.body).toEqual({ error: { code: 'NOT_FOUND', message: 'Resource not found.', requestId: expect.stringMatching(uuid) } });

@@ -2,7 +2,13 @@
 
 import { Toaster } from "sonner";
 import type { ReactNode } from "react";
+import { AuthProvider } from "@/features/auth/context/auth-context";
 
 export function Providers({ children }: { children: ReactNode }) {
-  return <>{children}<Toaster position="bottom-right" closeButton richColors toastOptions={{ className: "font-sans" }} /></>;
+  return (
+    <AuthProvider>
+      {children}
+      <Toaster position="bottom-right" closeButton richColors toastOptions={{ className: "font-sans" }} />
+    </AuthProvider>
+  );
 }

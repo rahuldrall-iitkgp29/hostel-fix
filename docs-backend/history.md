@@ -672,3 +672,148 @@ rediscovery found the new paths and work continued there. An initial multi-file
 README patch did not apply because one context line omitted a parenthesis; the
 corrected patch applied after rereading the file. No verification failure was
 silently skipped or converted into a passing assertion.
+
+### 2026-10-20 --- Session 5: scoped catalog, reference data, and seed runner
+
+- **Goal / PRD references:** PRD §§8, 9.1, 9.3, 9.6, 18. Catalog and directory reads for hostels, blocks, rooms, and categories; role scoping without data leakage; P0 admin staff picker; idempotent additive seed script and guarded test reset command; completing the pending Session 1 seed-script wiring.
+- **Changes made:**
+  - Implemented `backend/src/validators/catalog.validators.js` with strict pagination, `hostelBlocksParams`, `roomsQuery`, `categoriesQuery` (scoped to caller's hostel; admin-only `includeInactive` boolean coercion), and `adminStaffQuery` (scoped to `adminHostelIds`).
+  - Implemented middlewares `validateQuery.js`, `validateParams.js`, and `authorize.js` (`requireRole`).
+  - Implemented `backend/src/services/catalog.service.js` with `listHostels`, `getHostelBlocks`, `listRooms`, `listCategories`, and `listAdminStaff` (calculating open assigned complaints per technician).
+  - Implemented controllers and routes in `catalog.controller.js`, `catalog.routes.js`, `category.routes.js`, and `admin.routes.js`. Mounted under `/catalog`, `/categories`, and `/admin`.
+  - Implemented `backend/seeds/index.js` (additive idempotent seed provisioning Hostel A, blocks, rooms, categories, policy, accounts, and 3 sample complaints) and `backend/seeds/reset.js` guarded by `guardResetTarget` preventing any execution on non-test/remote targets.
+  - Wired `npm run seed` and `npm run seed:reset` in `backend/package.json` and root `package.json`.
+- **Files changed:** `backend/src/validators/catalog.validators.js`, `backend/src/middleware/validateQuery.js`, `backend/src/middleware/validateParams.js`, `backend/src/middleware/authorize.js`, `backend/src/services/catalog.service.js`, `backend/src/controllers/catalog.controller.js`, `backend/src/routes/catalog.routes.js`, `backend/src/routes/category.routes.js`, `backend/src/routes/admin.routes.js`, `backend/src/routes/index.js`, `backend/src/app.js`, `backend/seeds/index.js`, `backend/seeds/reset.js`, `backend/package.json`, `package.json`, `backend/tests/unit/catalog.test.js`, `backend/tests/integration/catalog.test.js`, `backend/tests/integration/seed.test.js`.
+- **Commands run:** `npm.cmd test -- tests/unit/catalog.test.js tests/integration/catalog.test.js tests/integration/seed.test.js`, `npm.cmd run seed`, `npm.cmd run seed:reset`.
+- **Results:** 20 tests passed across 3 test files; direct seed and reset commands exited with code 0.
+- **Security / regression review:** Reference queries reject unknown query parameters and prohibit cross-hostel data leakage. Room occupants/counts are omitted. Reset script strictly halts on remote, production, or unverified hosts.
+- **Known gaps / blockers:** None for Session 5.
+- **Next session:** Session 6 — Private uploads and attachment authorization.
+
+### 2026-10-20 --- Session 6: private uploads and attachment authorization
+
+- **Goal / PRD references:** PRD §§8, 9.1, 9.3, 10.10, 13.10. Single image upload (PNG, JPEG, WebP), ≤5 MiB, decoded image dimension limits (≤6000 px per dimension, ≤12 MP decoded resolution), private content streaming authorized by complaint/owner, unattached upload quota of 10 items per user, local persistent private storage adapter.
+- **Changes made:**
+  - Implemented `backend/src/utils/imageValidation.js` with pure JS zero-dependency header validation checking magic bytes, formats, dimensions, and pixel ceilings.
+  - Implemented `backend/src/middleware/uploadMultipart.js` parsing multipart with Formidable, enforcing single file, exact field name `file`, and 5 MiB ceiling.
+  - Implemented `backend/src/validators/upload.validators.js` (`attachmentParam`).
+  - Implemented `backend/src/services/upload.service.js` with `createUpload`, `getContent` (re-authorizing via owner if unattached or complaint access if bound), `deleteUpload`, and quota enforcement (max 10 unattached uploads).
+  - Implemented `upload.controller.js` and `upload.routes.js` mounted at `/api/v1/uploads`.
+- **Files changed:** `backend/src/utils/imageValidation.js`, `backend/src/middleware/uploadMultipart.js`, `backend/src/validators/upload.validators.js`, `backend/src/services/upload.service.js`, `backend/src/controllers/upload.controller.js`, `backend/src/routes/upload.routes.js`, `backend/src/routes/index.js`, `backend/src/app.js`, `backend/tests/unit/uploads.test.js`, `backend/tests/integration/uploads.test.js`.
+- **Commands run:** `npm.cmd test -- tests/unit/uploads.test.js tests/integration/uploads.test.js`.
+- **Results:** 11 passed (5 unit, 6 integration) / 0 failed / 0 skipped.
+- **Security / regression review:** Files are stored with UUID keys outside public document roots, never served as static assets. Content streaming verifies private authorization on every request and sets strict headers (`Cache-Control: private, no-store`, `X-Content-Type-Options: nosniff`, `Content-Disposition: inline`).
+- **Known gaps / blockers:** Local disk storage requires persistent volume on containerized deployments (PRD §13.10 note).
+- **Next session:** Session 7 — Complaint creation, idempotency, list/detail/edit, comments, activity.
+
+### 2026-10-20 --- Session 7: complaint creation, idempotency, list/detail/edit, comments, activity
+
+- **Goal / PRD references:** CMP-01, CMP-02, AUTH-04, SLA-01; PRD §§7.1–7.4, 8, 9.1, 9.4, 10.7–10.10, 14.1–14.2, 17.2, 17.3. Complaint creation with deterministic priority scoring and snapshotted SLA deadlines; idempotency via client UUID and canonical SHA-256 payload hash; scoped list queries for student, staff, and admin; detail projection with timeline and allowed actions; student edits only while SUBMITTED; comments on nonterminal complaints; chronological activity reads.
+- **Changes made:**
+  - Implemented `backend/src/utils/referenceGenerator.js` producing uppercase `HFX-YYYY-XXXXXXXXXX` references.
+  - Implemented `backend/src/services/priority.service.js` with deterministic weighted sum scoring and indicator explanation generation.
+  - Implemented `backend/src/services/sla.service.js` computing UTC response/resolution deadlines and deadline tightening.
+  - Implemented `backend/src/validators/complaint.validators.js` with strict Zod schemas for creation, location rules (`ROOM`, `BLOCK_COMMON`, `HOSTEL_COMMON`), indicator booleans, scoped filters, expected versions, and comments.
+  - Implemented `backend/src/services/complaint.service.js` with `createComplaint` (idempotency replay/conflict check, reference checks, atomic MongoDB transaction creating complaint, binding attachments with `updateWithVersion`, and logging `CREATED` activity), `listComplaints` (strict role-based server predicates), `getComplaintDetail`, `editComplaint` (SUBMITTED only, deadline tightening, `updateWithVersion`, `CONTENT_UPDATED` activity), `listComments`, `createComment` (nonterminal check, version check, `COMMENT_ADDED` activity), and `listActivities`.
+  - Implemented `backend/src/controllers/complaint.controller.js` and `backend/src/routes/complaint.routes.js`. Mounted at `/api/v1/complaints`.
+  - Implemented unit tests (`tests/unit/complaints.test.js`) and integration tests (`tests/integration/complaints.test.js`).
+- **Files changed:** `backend/src/utils/referenceGenerator.js`, `backend/src/services/priority.service.js`, `backend/src/services/sla.service.js`, `backend/src/validators/complaint.validators.js`, `backend/src/services/complaint.service.js`, `backend/src/controllers/complaint.controller.js`, `backend/src/routes/complaint.routes.js`, `backend/src/routes/index.js`, `backend/src/app.js`, `backend/tests/unit/complaints.test.js`, `backend/tests/integration/complaints.test.js`, `backend/tests/integration/health.test.js`.
+- **Commands run:** `npm.cmd test -- tests/unit/complaints.test.js tests/integration/complaints.test.js`, `npm.cmd test -- tests/integration/health.test.js`.
+- **Results:** 40 passed across complaints tests (18 unit, 22 integration); 13 health tests passed; 0 failed / 0 skipped.
+- **Security / regression review:** Scoped queries guarantee students only see own complaints, staff see assigned complaints in own hostel, and admins see scoped hostels only (out-of-scope access returns 404). Document mutations use `updateWithVersion` within transactions. Client-supplied scope/ownership is rejected.
+- **Known gaps / blockers:** None for Session 7.
+- **Next session:** Session 8 — Complaint workflow commands and concurrency.
+
+### 2026-10-20 --- Session 8: Complaint workflow commands and concurrency
+
+- **Goal / PRD references:** PRD §§6.1, 6.2, 7.1–7.4, 8, 9.1, 9.4, 10.7–10.10, 14.1–14.2, 17.2, 17.4; WF-T01 through WF-T11, CC-T01. Dedicated command endpoints for triage, reject, assign/reassign, begin work, resolve, student close, reopen, feedback, and priority override; strict state machine transitions; mandatory `expectedVersion` concurrency check on all mutations; atomic MongoDB transaction execution with immutable activity event generation.
+- **Changes made:**
+  - Implemented `backend/src/validators/workflow.validators.js` with discriminated union `transitionInput` (`TRIAGED`, `REJECTED`, `IN_PROGRESS`, `RESOLVED`, `CLOSED`), `assignmentInput`, `priorityOverrideInput`, `reopenInput`, and `feedbackInput` with strict length limits, reasons, and note requirements.
+  - Implemented workflow methods in `backend/src/services/complaint.service.js`:
+    - `transitionComplaint`: validates actor permissions and state transitions, updates status, sets lifecycle timestamps (`resolvedAt`, `reopenUntil = resolvedAt + 7 days`, `closedAt`), captures cycle metrics, applies `updateWithVersion`, and logs corresponding activity event (`TRIAGED`, `REJECTED`, `WORK_BEGUN`, `RESOLVED`, `CLOSED`).
+    - `assignComplaint`: validates staff eligibility (same hostel, category match, active status) with staff document version check against concurrent deactivation; sets assignee, transitions `TRIAGED`/`REOPENED` to `ASSIGNED`, sets `firstRespondedAt`, and writes `ASSIGNED`/`REASSIGNED` activity. Rejects assignment from `SUBMITTED` with 409 `INVALID_TRANSITION`.
+    - `overridePriority`: admin-only priority override, calculates new SLA deadlines from complaint cycle policy, enforces deadline tightening (never relaxes existing earlier deadlines), and logs `PRIORITY_OVERRIDDEN` activity.
+    - `reopenComplaint`: student-only reopen on `RESOLVED` complaints within 7-day window (`reopenUntil`), capped at maximum 2 reopens (third attempt returns 409 `REOPEN_LIMIT_REACHED`), pushes current cycle snapshot into `priorCycles`, recalculates fresh SLA cycle, clears assignee, marks prior feedback `isCurrent = false`, and logs `REOPENED` activity.
+    - `submitFeedback`: student-only 1-5 rating on `RESOLVED`/`CLOSED` complaints, upserts unique Feedback document per complaint with `cycleNumber` and `isCurrent = true`.
+  - Implemented controller handlers in `backend/src/controllers/complaint.controller.js` and mounted routes in `backend/src/routes/complaint.routes.js`:
+    - `POST /api/v1/complaints/:complaintId/transitions`
+    - `POST /api/v1/complaints/:complaintId/assignment`
+    - `POST /api/v1/complaints/:complaintId/priority`
+    - `POST /api/v1/complaints/:complaintId/reopen`
+    - `POST /api/v1/complaints/:complaintId/feedback`
+  - Implemented `backend/tests/integration/workflow.test.js` covering WF-T01 through WF-T11, concurrent version conflict (CC-T01), and permission boundaries.
+- **Files changed:** `backend/src/validators/workflow.validators.js`, `backend/src/services/complaint.service.js`, `backend/src/controllers/complaint.controller.js`, `backend/src/routes/complaint.routes.js`, `backend/tests/integration/workflow.test.js`.
+- **Commands run:** `npx vitest run tests/integration/workflow.test.js`.
+- **Results:** 12 passed / 0 failed / 0 skipped.
+- **Security / regression review:** Every mutation enforces optimistic concurrency via `expectedVersion` inside transactions; concurrent modifications fail with 409 `VERSION_CONFLICT`. Staff assignment checks staff status and version concurrently to avoid assigning deactivated workers. Client scope/ownership cannot be forged.
+- **Known gaps / blockers:** None for Session 8.
+- **Next session:** Session 9 — SLA deadlines, priority, overdue queries, and dashboards.
+
+### 2026-10-20 --- Session 9: SLA deadlines, priority, overdue queries, and dashboards
+
+- **Goal / PRD references:** PRD §§6.3, 7.3, 9.1, 9.7, 10.7–10.8, 14.1–14.2, 15.1–15.5, 17.8; DB-T01 through DB-T04. Role dashboards (student, staff, admin), status counts, staff workload, unassigned summaries, query-time SLA overdue calculation, exclusive date boundary filtering, staff work queue ordering (§15.4), and aggregation scope isolation.
+- **Changes made:**
+  - Implemented `backend/src/validators/dashboard.validators.js` with `studentDashboardQuery`, `staffDashboardQuery`, and `adminDashboardQuery` validating optional `hostelId`, `categoryId`, `priority`, ISO `createdFrom`, ISO `createdTo`, and custom refinement enforcing max 366-day range and `createdTo >= createdFrom`.
+  - Implemented `backend/src/services/dashboard.service.js`:
+    - `getStudentDashboard`: scoped to caller's `ownerId` and `hostelId`; aggregates `statusCounts`, `total`, `open`, `resolved`, `closed`, `rejected` (verifying `total = open + resolved + closed + rejected`); returns `recentComplaints` (<=5) and `latestActivity` (<=10).
+    - `getStaffDashboard`: scoped to `assigneeId` and staff's `hostelId`; computes status counts (`ASSIGNED`, `IN_PROGRESS`, `RESOLVED`, `CLOSED`), `assignedPending`, `inProgress`; calculates query-time `overdueResponse`, `overdueResolution`, and `overdueAny` against current UTC time; implements §15.4 4-part work queue ordering (1. overdue first, 2. priority rank descending, 3. createdAt ascending, 4. _id ascending) returning `queue` (<=10).
+    - `getAdminDashboard`: scoped to `adminHostelIds` with optional permitted `hostelId` query parameter (unpermitted hostel returns 404); aggregates status counts, `open`, `resolved`, `closed`, `rejected`, `unassigned` (`status in ['SUBMITTED', 'TRIAGED', 'REOPENED']` and `assigneeId = null`), overdue metrics; aggregates active `staffWorkload` (`staffId`, `name`, `assignedPending`, `inProgress`, `openAssigned`); returns `recentComplaints` (<=5).
+    - Date filtering across all dashboards uses `$gte` for `createdFrom` and `$lt` for `createdTo` per §15.2.
+  - Implemented `backend/src/controllers/dashboard.controller.js` and `backend/src/routes/dashboard.routes.js`.
+  - Mounted `/dashboard` in `backend/src/routes/index.js` and registered `dashboard` service in `backend/src/app.js`.
+  - Implemented `backend/tests/integration/dashboard.test.js` covering DB-T01 through DB-T04, role gating (403 for cross-role dashboard access), unauthenticated access (401), overdue prioritization, date filtering, and 366-day validation.
+- **Files changed:** `backend/src/validators/dashboard.validators.js`, `backend/src/services/dashboard.service.js`, `backend/src/controllers/dashboard.controller.js`, `backend/src/routes/dashboard.routes.js`, `backend/src/routes/index.js`, `backend/src/app.js`, `backend/tests/integration/dashboard.test.js`.
+- **Commands run:** `npx vitest run tests/integration/dashboard.test.js`, `npm.cmd test`.
+- **Results:** Full test suite: **22 test files passed, 523 tests passed, 0 failed, 0 skipped**.
+- **Security / regression review:** Dashboards derive actor scopes server-side and enforce strict role gates (`STUDENT`, `STAFF`, `ADMIN`). Admin multi-hostel aggregations isolate strictly within assigned hostels. Date range queries are bounded (<=366 days). Query-time overdue metrics eliminate background scheduler complexity and clock-skew risks.
+- **Known gaps / blockers:** None for Session 9.
+- **Next session:** Session 10 — Remaining P0 routes, security audit, and API contract sweep.
+
+### 2026-10-20 --- Session 10: Remaining P0 routes, security audit, and API contract sweep
+
+- **Goal / PRD references:** PRD §§6, 7, 8, 9, 10, 13, 14, 15, 17, 19. Complete contract audit for all 33 P0 routes across Auth, Users, Catalog, Categories, Uploads, Complaints, Workflow Transitions, Assignment, Priority, Reopen, Feedback, Admin Staff, Dashboards, and Health. Verification of security boundaries, input validation, role gating, projections, error envelopes, and rate limits.
+- **Changes made:**
+  - Audited all 33 P0 routes against PRD Section 9 tables: verified exact paths, HTTP methods, authentication levels, role gates, request schemas, status codes, response envelopes (`data` + `meta`), and error schemas (`error: { code, message, fields, requestId }`).
+  - Audited security posture:
+    - Zero sensitive fields exposed in projections (`User.passwordHash`, `Session.sessionHash`, `Attachment.storageKey` omitted from public/client responses).
+    - Structured logger (`config/logger.js`) logs only bounded metadata (`requestId`, `method`, `statusCode`, `durationMs`), never bodies, headers, query parameters, credentials, or driver stack traces.
+    - Global error handler converts unhandled driver or internal exceptions to safe 503 `SERVICE_UNAVAILABLE` without topology leakage.
+    - CSRF protection enforces `Origin === config.CORS_ORIGIN` and `X-CSRF-Protection: 1` on all state-altering methods (`POST`, `PUT`, `PATCH`, `DELETE`).
+    - Multi-tier rate limiting enforced: IP limits for health (60/min), public auth (30/15min), and refresh (20/15min); user limits for reads (120/min), writes (30/min), and uploads (10/min).
+    - Upload limits verified: strict magic byte checks (JPEG/PNG/WebP), dimension ceilings (≤6,000 px, ≤12 MP), size limit (≤5 MiB), and quota (≤10 unattached per student).
+  - Verified bounded pagination (`page` 1–1000, `limit` 1–100) across all catalog, complaint, comment, and activity list endpoints.
+- **Files reviewed/verified:** `backend/src/routes/*.routes.js`, `backend/src/controllers/*.controller.js`, `backend/src/services/*.service.js`, `backend/src/validators/*.validators.js`, `backend/src/models/projections.js`, `backend/src/middleware/*.js`.
+- **Commands run:** `npm.cmd test`, `node scripts/mongodb/test-safety.js`.
+- **Results:** 22 test files passed, 523 tests passed, 0 failed, 0 skipped. All 21 database safety checks passed.
+- **Security / regression review:** All P0 API contracts adhere strictly to the PRD specification without shortcutting security rules or leaking cross-hostel data.
+- **Known gaps / blockers:** None for Session 10.
+- **Next session:** Session 11 — P0 reliability, integration, and backend release gate.
+
+### 2026-10-20 --- Session 11: P0 reliability, integration, and backend release gate
+
+- **Goal / PRD references:** PRD §§1, 2, 9, 11, 13, 14, 17, 18, 19. Final verification of P0 reliability, end-to-end multi-persona journey, local database safety, seed reproducibility, documentation update, and backend release gate passage.
+- **Changes made:**
+  - Implemented comprehensive End-to-End P0 Lifecycle Integration Test in `backend/tests/integration/lifecycle.test.js`:
+    - Student creates complaint with indicators and priority scoring.
+    - Student and Admin observe real-time updates in their respective dashboards (`SUBMITTED`, `unassigned`).
+    - Admin queries eligible technicians via `GET /api/v1/admin/staff?eligibleForComplaintId=...`.
+    - Admin triages (`TRIAGED`) and assigns complaint (`ASSIGNED`) to eligible staff.
+    - Staff observes complaint in staff work queue (`assignedPending`, sorted per §15.4).
+    - Staff adds work note comment (`COMMENT_ADDED`), begins work (`WORK_STARTED` -> `IN_PROGRESS`), and completes repair (`RESOLVED` with resolution note).
+    - Student inspects detail with allowed actions (`CLOSE`, `REOPEN`, `FEEDBACK`), submits feedback rating (3 stars).
+    - Student reopens complaint within 7-day window (`REOPENED`); previous cycle moves to `priorCycles` with floating-point minute duration, assignee is cleared, and SLA resets.
+    - Admin reassigns staff member; staff begins and resolves cycle 2 (`IN_PROGRESS` -> `RESOLVED`).
+    - Student confirms resolution and closes complaint (`CLOSED`), updates feedback to 5 stars (`isCurrent = true`).
+    - Validates complete chronological activity audit stream (`CREATED` through `CLOSED`).
+  - Verified replica-set test safety via `node scripts/mongodb/test-safety.js` (21 safety checks pass; rejects Atlas, remote hosts, extra query parameters, and non-test databases).
+  - Verified deterministic seed runner (`npm run seed`) and guarded reset runner (`npm run seed:reset`).
+  - Updated root `README.md` with full 33 P0 route inventory, demo account credentials, seed instructions, and release gate status.
+- **Files changed:** `backend/tests/integration/lifecycle.test.js`, `README.md`, `docs-backend/task.md`, `docs-backend/history.md`.
+- **Commands run:** `npx vitest run tests/integration/lifecycle.test.js`, `npm.cmd test`, `node scripts/mongodb/test-safety.js`.
+- **Results:** Full backend test suite: **23 test files passed, 524 tests passed, 0 failed, 0 skipped**.
+- **Security / regression review:** Full P0 release gate passed. No high or critical vulnerabilities remain. Database safety guards prevent accidental operations on non-test databases. Demo credentials are strictly confined to seeded demo accounts.
+- **Known gaps / blockers:** P0 release gate is complete. P1 features (duplicate suggestions/linking, in-app notifications, escalations, detailed analytics, admin management) remain in Session 12.
+- **Next session:** Session 12 — P1 backend features (duplicate suggestions, duplicate linking, in-app notifications, escalations, management APIs).
+
+
+

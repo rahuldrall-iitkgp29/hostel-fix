@@ -11,7 +11,9 @@
     "start": "npm run start --workspace backend",
     "test": "npm run test --workspace backend --",
     "test:coverage": "npm run test:coverage --workspace backend --",
-    "db:ensure-indexes": "npm run db:ensure-indexes --workspace backend"
+    "db:ensure-indexes": "npm run db:ensure-indexes --workspace backend",
+    "seed": "npm run seed --workspace backend",
+    "seed:reset": "npm run seed:reset --workspace backend"
   },
   "keywords": [],
   "author": "",

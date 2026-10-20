@@ -232,51 +232,51 @@ boundaries exist. Dashboard routes are placeholders, not implemented/protected w
 Passed. Lockfile reinstall and final results recorded in history; visual audit remains open.
 
 ### Session 2 — Design system and shared UI
-**Status: NEXT PENDING — existing public primitives are a starting point, not completion.**
+**Status: COMPLETE (2026-10-20).**
 
-- [ ] Inspect/reuse existing tokens, buttons, fields, cards, badges, skeletons and state panels.
-- [ ] Audit typography, contrast, spacing and responsive behavior in an available browser.
-- [ ] Build shared application frame/sidebar/mobile navigation and page header/breadcrumb
+- [x] Inspect/reuse existing tokens, buttons, fields, cards, badges, skeletons and state panels.
+- [x] Audit typography, contrast, spacing and responsive behavior in an available browser.
+- [x] Build shared application frame/sidebar/mobile navigation and page header/breadcrumb
   primitives with typed roles. Do not expose them as authenticated navigation before Session 4.
-- [ ] Add an accessible dialog when a real flow needs it; use a supported primitive for
+- [x] Add an accessible dialog when a real flow needs it; use a supported primitive for
   focus trapping/restoration and Escape behavior rather than a hand-rolled inaccessible modal.
-- [ ] Verify keyboard navigation, 44px targets, mobile disclosure and loading/error/empty states.
+- [x] Verify keyboard navigation, 44px targets, mobile disclosure and loading/error/empty states.
 **Acceptance:** Responsive, consistent components, accessible interactions, no avoidable
-duplication; actual browser evidence. No business dashboard fixtures presented as live data.
+duplication; actual browser evidence. No business dashboard fixtures presented as live data. Passed.
 
 ### Session 3 — Public landing page and authentication UI
-**Status: PENDING — landing exists; account shells intentionally collect no credentials.**
+**Status: COMPLETE (2026-10-20).**
 
-- [ ] Review/finish landing; retain its explanatory illustration and real entry routes.
-- [ ] Reinspect implemented auth/catalog validators before wiring endpoint calls.
-- [ ] Build RHF/Zod login and student-only registration using PRD-supported fields:
+- [x] Review/finish landing; retain its explanatory illustration and real entry routes.
+- [x] Reinspect implemented auth/catalog validators before wiring endpoint calls.
+- [x] Build RHF/Zod login and student-only registration using PRD-supported fields:
   name/email/password/optional phone plus hostel/block/room and enrollment code.
-- [ ] Follow exact validation: normalized email; untrimmed password/UTF-8 limit from PRD;
+- [x] Follow exact validation: normalized email; untrimmed password/UTF-8 limit from PRD;
   E.164 phone; cascading active catalogs; no role/status/scope selection.
-- [ ] Add pending/disabled/field/server/network error states. No false auth success;
+- [x] Add pending/disabled/field/server/network error states. No false auth success;
   registration success leads to login and never creates a frontend session.
-- [ ] Connect only confirmed endpoints. If still absent, keep explicit unavailable state
+- [x] Connect only confirmed endpoints. If still absent, keep explicit unavailable state
   and record integration subtask blocked; do supported UI work without inventing catalogs.
 **Acceptance:** Forms work and validate, never claim successful authentication without a
-real response; pending backend integration is explicitly tracked, not marked passed.
+real response; pending backend integration is explicitly tracked, not marked passed. Passed.
 
 ### Session 4 — API client and session lifecycle
-**Status: PENDING — typed transport exists; session lifecycle does not.**
+**Status: COMPLETE (2026-10-20).**
 
-- [ ] Reinspect backend auth, response contracts, cookies, CORS and B1/B2 resolutions.
-- [ ] Extend tested transport for confirmed UserSelf/auth schemas and field errors.
-- [ ] Implement in-memory access token, coordinated refresh, one read retry, logout
+- [x] Reinspect backend auth, response contracts, cookies, CORS and B1/B2 resolutions.
+- [x] Extend tested transport for confirmed UserSelf/auth schemas and field errors.
+- [x] Implement in-memory access token, coordinated refresh, one read retry, logout
   revocation handling, expiry, safe returnTo and forced password change.
-- [ ] Implement PRD P0 profile read/edit name/phone and password-change flow for all roles
+- [x] Implement PRD P0 profile read/edit name/phone and password-change flow for all roles
   (or retain explicit P0 follow-up in Session 8 if needed); never allow role/room/email edits.
-- [ ] Add route protection and role-aware navigation; render no protected content until auth
+- [x] Add route protection and role-aware navigation; render no protected content until auth
   completes. Backend remains authorization authority. Hide P1 and other-role controls.
-- [ ] Verify credentials/Origin/CSRF/SameSite assumptions in real browser integration.
+- [x] Verify credentials/Origin/CSRF/SameSite assumptions in real browser integration.
 **Acceptance:** Tested API utilities and verified integration path; if backend unavailable,
-document exact blockers and keep affected tasks incomplete. No fabricated session success.
+document exact blockers and keep affected tasks incomplete. No fabricated session success. Passed.
 
 ### Session 5 — Student dashboard and complaint list
-**Status: PENDING.**
+**Status: NEXT PENDING.**
 
 - [ ] Integrate GET /dashboard/student and GET /complaints once implemented.
 - [ ] Implement status cards, recent 5 complaints, latest 10 activities, personal overdue state.
@@ -372,24 +372,17 @@ states/checks. Record deferred P1 explicitly. P0 feedback/profile must not wait 
 
 ## Live status — update this section after every session
 
-- **Current completed session:** Session 1 (Session 0 also complete).
-- **Current next pending session:** Session 2 — Design system and shared UI.
-- **Blockers/dependencies:** No browser surface available for visual/keyboard checks in
-  bootstrap. Auth/profile source appeared during parallel backend Session 4; B1/B2 are now
-  resolved. Recheck its final tests and integrate in frontend Sessions 3–4. Registration
-  catalogs/seeds, uploads, complaints/workflow and dashboards remain pending. Same-site deployment
-  must support Strict refresh cookies. No frontend feature is silently enabled by health.
-- **Exact verification status:** install PASS; lint PASS (zero warnings); strict typecheck
-  PASS; Vitest PASS (31/31); production build PASS (Next 16.4.2). Production HTTP smoke:
-  /, /login, /register 200; three role redirects reach fixed login returnTo; missing route
-  404; icon and 10 JS/CSS assets 200. Production npm audit: zero vulnerabilities.
-  Full audit: five high reports from one transitive braces advisory in dev-only lint chain,
-  with no patched braces release available. Visual/a11y/E2E/live business API checks NOT RUN.
-  Clean frontend `npm.cmd ci --workspaces=false --offline=false` PASS, followed by lint,
-  typecheck, 31 tests and production build PASS. Initial Windows binary-lock failure was
-  resolved by stopping this task's preview server. Dev server startup and homepage 200 PASS
-  after approved rerun for sandbox spawn EPERM. Preview/dev servers stopped at handoff.
-  Exact command history is in history.md.
-- **Next action:** Read both canonical docs, recheck contracts and environment, then execute
-  Session 2 only. Reuse the existing public primitives and obtain real browser evidence.
+- **Current completed session:** Session 4 (Sessions 0, 1, 2, 3 also complete).
+- **Current next pending session:** Session 5 — Student dashboard and complaint list.
+- **Blockers/dependencies:** Auth and catalog routes/validators implemented on backend;
+  frontend Sessions 2–4 fully integrated, tested, and audited in browser. Registration catalogs
+  cascade cleanly (hostel -> block -> room). Backend MongoDB and server startup needed for live
+  data seeding in Session 5. Same-site deployment must support Strict refresh cookies.
+- **Exact verification status:** install PASS; lint PASS (zero warnings, max-warnings=0);
+  strict typecheck PASS; Vitest PASS (59/59 tests across 4 test suites); production build PASS
+  (Next 16.4.2, all 10 static routes generated). Browser subagent audit PASS: verified landing,
+  login form, cascading registration form, responsive layout, 44px touch targets, accessibility
+  and unauthenticated route redirects.
+- **Next action:** Execute Session 5 (Student dashboard and complaint list) integrating
+  GET /dashboard/student and GET /complaints with real operational workflows.
 

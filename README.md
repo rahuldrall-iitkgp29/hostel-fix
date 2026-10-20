@@ -4,87 +4,69 @@ JavaScript/CommonJS backend for hostel maintenance. Product contracts are in
 [prd.md](prd.md); the active backend queue and verified work are in
 [docs-backend/task.md](docs-backend/task.md) and [docs-backend/history.md](docs-backend/history.md).
 
-## Current backend
+## Current backend (P0 Complete)
 
-Sessions 1–4 provide database models, authentication/profile APIs and an importable Express application with process liveness at
-`GET /api/v1/health`. It returns:
+The backend implements all **33 P0 REST endpoints** under `/api/v1` matching the PRD specification:
 
-```json
-{"data":{"status":"ok"},"meta":{"requestId":"<generated UUID>"}}
+| Area | Method / Path | Role / Access | Purpose |
+|---|---|---|---|
+| **Health** | `GET /api/v1/health` | Public | Process liveness probe. |
+| **Health** | `GET /api/v1/health/ready` | Public | Database & private storage readiness probe. |
+| **Auth** | `POST /api/v1/auth/register` | Public + CSRF | Student registration with enrollment code verification. |
+| **Auth** | `POST /api/v1/auth/login` | Public + CSRF | Creates session, returns JWT and sets `hf_refresh` cookie. |
+| **Auth** | `POST /api/v1/auth/refresh` | Refresh cookie | Rotates refresh token, detects reuse, and revokes compromised family. |
+| **Auth** | `POST /api/v1/auth/logout` | Bearer / Cookie | Revokes addressed session(s) and clears cookie. |
+| **Auth** | `GET /api/v1/auth/me` | Authenticated | Current session user profile. |
+| **Users** | `GET /api/v1/users/me` | Authenticated | Profile view. |
+| **Users** | `PATCH /api/v1/users/me` | Authenticated + CSRF | Updates editable profile fields (`name`, `phone`) with version check. |
+| **Users** | `POST /api/v1/users/me/password` | Authenticated + CSRF | Password change, revokes all sessions, forces re-login. |
+| **Catalog** | `GET /api/v1/catalog/hostels` | Public | Paginated list of active hostels. |
+| **Catalog** | `GET /api/v1/catalog/hostels/:hostelId/blocks` | Public | Active blocks in a hostel. |
+| **Catalog** | `GET /api/v1/catalog/rooms` | Public | Paginated rooms in a block without leaking occupants. |
+| **Categories** | `GET /api/v1/categories` | Authenticated | Active categories in caller's hostel (`includeInactive` admin only). |
+| **Uploads** | `POST /api/v1/uploads` | STUDENT + CSRF | Stages complaint photo (JPEG, PNG, WebP ≤5 MiB, ≤12 MP). Max 10 unattached. |
+| **Uploads** | `GET /api/v1/uploads/:attachmentId/content` | Authorized | Streams private photo with secure headers. |
+| **Uploads** | `DELETE /api/v1/uploads/:attachmentId` | STUDENT owner + CSRF | Deletes unattached staged upload. |
+| **Complaints** | `POST /api/v1/complaints` | STUDENT + CSRF | Submits report with deterministic SLA deadlines & priority calculation. Idempotent. |
+| **Complaints** | `GET /api/v1/complaints` | Authenticated | Scoped complaint list (Student: own; Staff: assigned; Admin: scoped hostels). |
+| **Complaints** | `GET /api/v1/complaints/:complaintId` | Authorized | Detailed complaint view with allowed actions and cycle history. |
+| **Complaints** | `PATCH /api/v1/complaints/:complaintId` | STUDENT owner + CSRF | Edits complaint content before triage (`SUBMITTED` only). |
+| **Complaints** | `GET /api/v1/complaints/:complaintId/comments` | Authorized | Chronological public discussion comments. |
+| **Complaints** | `POST /api/v1/complaints/:complaintId/comments` | Authorized + CSRF | Adds comment to nonterminal complaint. |
+| **Complaints** | `GET /api/v1/complaints/:complaintId/activity` | Authorized | Immutable timeline of audit events. |
+| **Workflow** | `POST /api/v1/complaints/:complaintId/transitions` | Authorized + CSRF | State transitions (`TRIAGED`, `REJECTED`, `IN_PROGRESS`, `RESOLVED`, `CLOSED`). |
+| **Workflow** | `POST /api/v1/complaints/:complaintId/assignment` | ADMIN + CSRF | Assigns/reassigns eligible technician in hostel/category with concurrency check. |
+| **Workflow** | `POST /api/v1/complaints/:complaintId/priority` | ADMIN + CSRF | Overrides priority and tightens deadlines. |
+| **Workflow** | `POST /api/v1/complaints/:complaintId/reopen` | STUDENT owner + CSRF | Reopens resolved complaint within 7-day window (max 2 reopens). Clears assignee. |
+| **Workflow** | `POST /api/v1/complaints/:complaintId/feedback` | STUDENT owner + CSRF | Rates resolution 1–5 stars on `RESOLVED` or `CLOSED` complaint. |
+| **Admin** | `GET /api/v1/admin/staff` | ADMIN | Assignment picker with `eligibleForComplaintId` filtering and open count. |
+| **Dashboard** | `GET /api/v1/dashboard/student` | STUDENT | Personal overview (status counts, recent complaints, latest activity). |
+| **Dashboard** | `GET /api/v1/dashboard/staff` | STAFF | Workload overview (status counts, overdue counts, work queue sorted per §15.4). |
+| **Dashboard** | `GET /api/v1/dashboard/admin` | ADMIN | Operational overview (hostel-scoped counts, unassigned, overdue, staff workload). |
+
+## Seed and Demo Accounts
+
+To populate the development database with deterministic reference data and demo accounts:
+
+```powershell
+npm.cmd run seed
 ```
 
-The response includes the same UUID in `X-Request-Id`. Health accepts no query
-or body input and has a separate 60-request/IP/minute limit. Errors are JSON
-envelopes; JSON bodies are limited to 32 KiB.
+To cleanly reset the test/local database and re-seed (strictly guarded against non-test hosts):
 
-`GET /api/v1/health/ready` returns the same envelope with `status: "ready"` only
-when MongoDB responds and private storage can create/read/remove its own probe
-file. Checks have a one-second response deadline; failures return a safe
-503 `SERVICE_UNAVAILABLE`. Both probes share the health limiter. Liveness remains
-independent of dependencies. Catalog, complaint routes and seeding remain pending;
-the full P0 release is still in progress.
+```powershell
+npm.cmd run seed:reset
+```
 
-The twelve P0 Mongoose models now cover accounts/sessions, reference data,
-complaints, activity/comments, attachments, feedback and hostel policies. They
-include safe projections, unique/TTL/query indexes, immutable history and
-versioned transaction helpers. See [database conventions](docs-backend/models.md) for
-service integration, reference guards and cycle history.
+### Provisioned Demo Accounts
 
-## Authentication and profiles
+| Role | Name | Email | Password | Scope |
+|---|---|---|---|---|
+| `STUDENT` | Asha Student | `student.a@hostelfix.demo` | `DemoStudent@2026` | Hostel A, Block Alpha, Room A-101 |
+| `STAFF` | Ravi Technician | `staff.r@hostelfix.demo` | `DemoStaff@2026!` | Hostel A, Electrical & Plumbing |
+| `ADMIN` | Priya Warden | `admin.p@hostelfix.demo` | `DemoAdmin@2026!` | Hostel A (Admin scope) |
 
-The following routes implement PRD §9.2 under `/api/v1`:
-
-| Method / path | Behavior |
-|---|---|
-| `POST /auth/register` | Student only; active matching hostel/block/room and enrollment code; returns a safe user profile with no session. |
-| `POST /auth/login` | Normalized email/password; returns `{user,accessToken,expiresIn:600}` and sets the refresh cookie. |
-| `POST /auth/refresh` | Empty JSON `{}` and current refresh cookie; rotates the secret and returns the same login response shape. |
-| `POST /auth/logout` | Empty JSON `{}`; revokes sessions addressed by valid cookie/bearer credentials, clears the cookie, returns 204. |
-| `GET /auth/me`, `GET /users/me` | Bearer token; both return `{user}` from the current account/session state. No query or body. |
-| `PATCH /users/me` | Bearer token; `{expectedVersion,name?,phone?}` with at least one editable field; returns the updated user. |
-| `POST /users/me/password` | Bearer token; `{currentPassword,newPassword}`; changes password, revokes every session, clears the cookie, returns 204. |
-
-Responses use the shared `data`/`meta` envelope; authentication responses are
-`Cache-Control: no-store`. Every mutation requires the configured Origin and
-`X-CSRF-Protection: 1`. Unknown fields, body tokens, unsafe query parameters and
-invalid IDs are rejected. Staff/admin accounts are provisioned by the future seed
-runner; public registration cannot choose a role. Reference data/seed commands
-arrive in Session 5, so an empty development database cannot yet register users.
-
-HS256 JWTs expire after ten minutes. Protected requests recheck the current
-session, expiry and active account in MongoDB, deriving permissions from the
-account rather than cached JWT scope. Forced-change accounts may only read either
-self endpoint, change their password, refresh or log out. Password change clears
-the forced-change flag and requires a fresh login.
-
-The single HttpOnly, SameSite=Strict refresh cookie is `hf_refresh`, scoped to
-`/api/v1/auth`, Secure in production and host-only unless `COOKIE_DOMAIN` is set.
-Its value is `v1.<UUID-v4 family>.<64-byte random hex secret>`. The family is only a
-lookup identifier. Each rotation retains the absolute seven-day session expiry;
-the seven-day cookie lifetime never extends server validity. Replaying an old
-secret revokes its family, immediately invalidating that family's access JWTs.
-Concurrent refreshes deliberately trigger the same reuse protection; clients
-must coordinate a single refresh. Logout with both valid credentials revokes both
-addressed sessions. Failed server revocation returns 503.
-
-Passwords, enrollment codes and refresh secrets use the approved full-input
-SHA-256/base64 prehash in PRD §13.1, followed by bcrypt at costs 12/10/12. Passwords
-are never trimmed or truncated. Future seed/operations code must use
-`src/utils/hashUtils.js`; direct bcrypt hashes are not interchangeable. There is
-no extra hashing secret or email recovery flow.
-
-Login, refresh and password changes share a transactional User write guard, so
-sessions cannot escape concurrent password-change revocation. These guards also
-increment the user version; profile forms must use the latest returned version
-and refetch after `409 VERSION_CONFLICT`. Registration guards all active location
-references in its transaction. Profile changes also guard the current session.
-
-Public auth calls share 30/IP/15 minutes; refresh has a separate 20/IP/15 minutes.
-Both self reads share 120/user/minute across sessions. Profile/password writes
-and bearer logout share 30/user/minute; cookie-only/anonymous logout uses the
-public IP limit. Failures count, and throttling returns `429 RATE_LIMITED` with
-`Retry-After`. A single process uses in-memory stores; a shared store and explicit
-trusted-proxy deployment configuration remain release/deployment work.
+Enrollment code for Hostel A: `ENROLL-HOSTEL-A-2026`.
 
 ## Local setup
 
@@ -97,31 +79,21 @@ npm.cmd ci
 Copy-Item backend/.env.example backend/.env
 ```
 
-Only copy the example if `backend/.env` does not already exist. This checkout's
-local MongoDB setup has already created it. For a fresh checkout, fill the two
-database placeholders with the local URIs below, set `JWT_SECRET` to a
+Only copy the example if `backend/.env` does not already exist. For a fresh checkout,
+fill the two database placeholders with the local URIs below, set `JWT_SECRET` to a
 cryptographically random secret of at least 32 bytes, and set `UPLOAD_DIR` to
 an absolute persistent directory on your machine.
-Keep credentials out of Git and terminal output. The example intentionally has
-empty required values so it cannot start with a shared default secret.
-
-Server startup loads `backend/.env` independently of the working directory;
-process environment values take precedence. The existing root `.env` is not
-loaded or modified. Tests never load either env file.
+Keep credentials out of Git and terminal output.
 
 | Command | Behavior |
 |---|---|
 | `npm.cmd run dev` | Nodemon watches backend JavaScript and runs the server. |
-| `npm.cmd start` | Validates config, connects to a replica-set primary, prepares storage, then listens on port 5000. |
-| `npm.cmd test` | Runs all backend Vitest/Supertest tests once. |
-| `npm.cmd test -- tests/integration/health.test.js` | Runs the health tests only. |
-| `npm.cmd run test:coverage` | Runs the suite with V8 coverage; HTML report at `backend/coverage/index.html`. |
-| `npm.cmd run db:ensure-indexes` | Adds declared indexes for all twelve models using the configured database, then disconnects. |
-
-On macOS/Linux use `npm` in place of `npm.cmd`. For production, set
-`NODE_ENV=production` in the deployment environment before `npm start`.
-No seed/reset command is published yet: the Session 5 runners remain pending.
-Their database lifecycle and model prerequisites are ready. No successful no-op is used.
+| `npm.cmd start` | Validates config, connects to replica set, prepares storage, listens on port 5000. |
+| `npm.cmd test` | Runs all backend Vitest/Supertest tests. |
+| `npm.cmd run test:coverage` | Runs the full suite with V8 coverage; HTML report at `backend/coverage/index.html`. |
+| `npm.cmd run seed` | Seeds deterministic reference data, policies, accounts, and sample complaints. |
+| `npm.cmd run seed:reset` | Guarded test reset runner (drops collections and re-seeds cleanly). |
+| `npm.cmd run db:ensure-indexes` | Adds declared indexes for all twelve models using the configured database. |
 
 ## Configuration
 
