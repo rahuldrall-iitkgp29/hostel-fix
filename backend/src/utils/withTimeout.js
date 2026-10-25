@@ -5,7 +5,9 @@ async function withTimeout(operation, timeoutMs) {
   try {
     return await Promise.race([
       Promise.resolve().then(operation),
-      new Promise((resolve, reject) => { timer = setTimeout(() => reject(unavailable()), timeoutMs); }),
+      new Promise((resolve, reject) => {
+        timer = setTimeout(() => reject(unavailable()), timeoutMs);
+      }),
     ]);
   } finally {
     clearTimeout(timer);

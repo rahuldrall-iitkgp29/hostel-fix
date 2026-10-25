@@ -1,42 +1,44 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   ShieldCheck,
   UsersRound,
   AlertTriangle,
   CheckSquare,
   Building2,
-  Calendar,
-  ArrowRight,
-  Filter,
-} from "lucide-react";
-import { AuthGuard } from "@/features/auth/components/auth-guard";
-import { useAuth } from "@/features/auth/context/auth-context";
-import { AppShell } from "@/components/layout/app-shell";
-import { PageHeader } from "@/components/layout/page-header";
-import { Card } from "@/components/ui/card";
-import { ButtonLink } from "@/components/ui/button";
-import { StatePanel } from "@/components/feedback/state-panel";
-import { Skeleton } from "@/components/ui/skeleton";
-import { StatusBadge } from "@/features/complaints/components/status-badge";
-import { PriorityBadge } from "@/features/complaints/components/priority-badge";
-import { getAdminDashboard } from "@/lib/api/complaints";
-import type { AdminDashboardData, ComplaintSummary } from "@/features/complaints/types";
+} from 'lucide-react';
+import { AuthGuard } from '@/features/auth/components/auth-guard';
+import { useAuth } from '@/features/auth/context/auth-context';
+import { AppShell } from '@/components/layout/app-shell';
+import { PageHeader } from '@/components/layout/page-header';
+import { Card } from '@/components/ui/card';
+import { ButtonLink } from '@/components/ui/button';
+import { StatePanel } from '@/components/feedback/state-panel';
+import { Skeleton } from '@/components/ui/skeleton';
+import { StatusBadge } from '@/features/complaints/components/status-badge';
+import { PriorityBadge } from '@/features/complaints/components/priority-badge';
+import { getAdminDashboard } from '@/lib/api/complaints';
+import type {
+  AdminDashboardData,
+  ComplaintSummary,
+} from '@/features/complaints/types';
 
 function AdminDashboardContent() {
   const { user, logout, apiClient } = useAuth();
   const [data, setData] = useState<AdminDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedHostelId, setSelectedHostelId] = useState<string>("");
+  const [selectedHostelId, setSelectedHostelId] = useState<string>('');
 
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     let active = true;
-    const filters = selectedHostelId ? { hostelId: selectedHostelId } : undefined;
+    const filters = selectedHostelId
+      ? { hostelId: selectedHostelId }
+      : undefined;
     getAdminDashboard(apiClient, filters)
       .then((res) => {
         if (active) {
@@ -47,7 +49,9 @@ function AdminDashboardContent() {
       })
       .catch(() => {
         if (active) {
-          setError("Unable to load administrator dashboard. Please check your connection.");
+          setError(
+            'Unable to load administrator dashboard. Please check your connection.'
+          );
           setLoading(false);
         }
       });
@@ -58,16 +62,18 @@ function AdminDashboardContent() {
 
   if (!user) return null;
 
-  const adminHostelIds = (user.adminHostelIds || []).filter(Boolean) as string[];
+  const adminHostelIds = (user.adminHostelIds || []).filter(
+    Boolean
+  ) as string[];
 
   const formatLocation = (c: ComplaintSummary) => {
-    if (c.location.type === "ROOM") {
-      return `Room ${c.location.roomLabel || "Assigned"}`;
+    if (c.location.type === 'ROOM') {
+      return `Room ${c.location.roomLabel || 'Assigned'}`;
     }
-    if (c.location.type === "BLOCK_COMMON") {
-      return `${c.location.blockName || "Block"}: ${c.location.areaLabel}`;
+    if (c.location.type === 'BLOCK_COMMON') {
+      return `${c.location.blockName || 'Block'}: ${c.location.areaLabel}`;
     }
-    return c.location.areaLabel || "Hostel Common Area";
+    return c.location.areaLabel || 'Hostel Common Area';
   };
 
   return (
@@ -75,7 +81,7 @@ function AdminDashboardContent() {
       user={{
         name: user.name,
         email: user.email,
-        role: "ADMIN",
+        role: 'ADMIN',
       }}
       onLogout={logout}
     >
@@ -102,11 +108,12 @@ function AdminDashboardContent() {
                 </select>
               )}
               <ButtonLink href="/admin/triage" variant="primary">
-                <CheckSquare className="size-4" aria-hidden="true" /> Open triage queue
+                <CheckSquare className="size-4" aria-hidden="true" /> Open
+                triage queue
               </ButtonLink>
             </div>
           }
-          breadcrumbs={[{ label: "Admin Operations" }]}
+          breadcrumbs={[{ label: 'Admin Operations' }]}
         />
 
         {loading ? (
@@ -212,7 +219,10 @@ function AdminDashboardContent() {
 
                 {data.recentComplaints.length === 0 ? (
                   <StatePanel kind="empty" title="All complaints processed">
-                    <p>There are no unaddressed or recently reported complaints in your scoped hostels.</p>
+                    <p>
+                      There are no unaddressed or recently reported complaints
+                      in your scoped hostels.
+                    </p>
                   </StatePanel>
                 ) : (
                   <div className="space-y-3">
@@ -267,9 +277,14 @@ function AdminDashboardContent() {
                 ) : (
                   <div className="rounded-2xl border border-line bg-surface p-4 divide-y divide-line">
                     {data.staffWorkload.map((sw) => (
-                      <div key={sw.staffId} className="py-3 first:pt-0 last:pb-0 text-xs">
+                      <div
+                        key={sw.staffId}
+                        className="py-3 first:pt-0 last:pb-0 text-xs"
+                      >
                         <div className="flex items-center justify-between">
-                          <span className="font-semibold text-ink">{sw.name}</span>
+                          <span className="font-semibold text-ink">
+                            {sw.name}
+                          </span>
                           <span className="font-bold text-brand">
                             {sw.openAssigned} active
                           </span>
@@ -293,7 +308,7 @@ function AdminDashboardContent() {
 
 export default function AdminDashboardPage() {
   return (
-    <AuthGuard allowedRoles={["ADMIN"]}>
+    <AuthGuard allowedRoles={['ADMIN']}>
       <AdminDashboardContent />
     </AuthGuard>
   );

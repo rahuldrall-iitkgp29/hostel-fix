@@ -1,6 +1,6 @@
-import type { ComponentProps } from "react";
-import { ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
+import type { ComponentProps } from 'react';
+import { ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils/cn';
 
 export type SelectOption = {
   value: string;
@@ -8,7 +8,7 @@ export type SelectOption = {
   disabled?: boolean;
 };
 
-type SelectFieldProps = Omit<ComponentProps<"select">, "children"> & {
+type SelectFieldProps = Omit<ComponentProps<'select'>, 'children'> & {
   id: string;
   label: string;
   hint?: string;
@@ -26,11 +26,17 @@ export function SelectField({
   options,
   placeholder,
   className,
-  "aria-describedby": describedBy,
+  'aria-describedby': describedBy,
   children,
   ...props
 }: SelectFieldProps) {
-  const description = [describedBy, hint && `${id}-hint`, error && `${id}-error`].filter(Boolean).join(" ");
+  const description = [
+    describedBy,
+    hint && `${id}-hint`,
+    error && `${id}-error`,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <div className="space-y-2">
@@ -41,11 +47,11 @@ export function SelectField({
         <select
           {...props}
           id={id}
-          aria-invalid={error ? true : props["aria-invalid"]}
+          aria-invalid={error ? true : props['aria-invalid']}
           aria-describedby={description || undefined}
           className={cn(
-            "min-h-11 w-full appearance-none rounded-xl border bg-surface px-3.5 py-3 pr-10 text-base text-ink disabled:cursor-not-allowed disabled:bg-canvas disabled:text-muted",
-            error ? "border-danger" : "border-line",
+            'min-h-11 w-full appearance-none rounded-xl border bg-surface px-3.5 py-3 pr-10 text-base text-ink disabled:cursor-not-allowed disabled:bg-canvas disabled:text-muted',
+            error ? 'border-danger' : 'border-line',
             className
           )}
         >
@@ -56,7 +62,11 @@ export function SelectField({
           )}
           {options
             ? options.map((opt) => (
-                <option key={opt.value} value={opt.value} disabled={opt.disabled}>
+                <option
+                  key={opt.value}
+                  value={opt.value}
+                  disabled={opt.disabled}
+                >
                   {opt.label}
                 </option>
               ))

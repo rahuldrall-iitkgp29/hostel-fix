@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef } from "react";
-import { useForm, useWatch } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { useState, useEffect, useRef } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import {
   ArrowRight,
   Upload,
@@ -12,24 +12,24 @@ import {
   CircleAlert,
   LoaderCircle,
   FileImage,
-} from "lucide-react";
-import { useAuth } from "@/features/auth/context/auth-context";
+} from 'lucide-react';
+import { useAuth } from '@/features/auth/context/auth-context';
 import {
   createComplaintSchema,
   type CreateComplaintFormData,
-} from "../schemas";
+} from '../schemas';
 import {
   getCategories,
   createComplaint,
   uploadAttachment,
   deleteAttachment,
-} from "@/lib/api/complaints";
-import type { CategoryItem, AttachmentItem } from "../types";
-import { TextField } from "@/components/ui/text-field";
-import { TextareaField } from "@/components/ui/textarea-field";
-import { SelectField } from "@/components/ui/select-field";
-import { Button } from "@/components/ui/button";
-import { ApiError } from "@/lib/api/errors";
+} from '@/lib/api/complaints';
+import type { CategoryItem, AttachmentItem } from '../types';
+import { TextField } from '@/components/ui/text-field';
+import { TextareaField } from '@/components/ui/textarea-field';
+import { SelectField } from '@/components/ui/select-field';
+import { Button } from '@/components/ui/button';
+import { ApiError } from '@/lib/api/errors';
 
 export function CreateComplaintForm() {
   const router = useRouter();
@@ -53,15 +53,15 @@ export function CreateComplaintForm() {
   } = useForm<CreateComplaintFormData>({
     resolver: zodResolver(createComplaintSchema),
     defaultValues: {
-      title: "",
-      description: "",
-      categoryId: "",
+      title: '',
+      description: '',
+      categoryId: '',
       location: {
-        type: "ROOM",
-        hostelId: user?.hostelId || "",
-        blockId: user?.blockId || "",
-        roomId: user?.roomId || "",
-        areaLabel: "",
+        type: 'ROOM',
+        hostelId: user?.hostelId || '',
+        blockId: user?.blockId || '',
+        roomId: user?.roomId || '',
+        areaLabel: '',
       },
       indicators: {
         safetyRisk: false,
@@ -73,7 +73,7 @@ export function CreateComplaintForm() {
     },
   });
 
-  const locationType = useWatch({ control, name: "location.type" });
+  const locationType = useWatch({ control, name: 'location.type' });
 
   // Load categories for student's hostel
   useEffect(() => {
@@ -97,18 +97,18 @@ export function CreateComplaintForm() {
   // Adjust location fields based on type
   useEffect(() => {
     if (user?.hostelId) {
-      setValue("location.hostelId", user.hostelId);
+      setValue('location.hostelId', user.hostelId);
     }
-    if (locationType === "ROOM") {
-      setValue("location.blockId", user?.blockId || "");
-      setValue("location.roomId", user?.roomId || "");
-      setValue("location.areaLabel", "");
-    } else if (locationType === "BLOCK_COMMON") {
-      setValue("location.blockId", user?.blockId || "");
-      setValue("location.roomId", "");
+    if (locationType === 'ROOM') {
+      setValue('location.blockId', user?.blockId || '');
+      setValue('location.roomId', user?.roomId || '');
+      setValue('location.areaLabel', '');
+    } else if (locationType === 'BLOCK_COMMON') {
+      setValue('location.blockId', user?.blockId || '');
+      setValue('location.roomId', '');
     } else {
-      setValue("location.blockId", "");
-      setValue("location.roomId", "");
+      setValue('location.blockId', '');
+      setValue('location.roomId', '');
     }
   }, [locationType, user, setValue]);
 
@@ -117,7 +117,7 @@ export function CreateComplaintForm() {
     if (!files || files.length === 0) return;
 
     if (attachments.length >= 3) {
-      toast.error("Maximum 3 photos allowed per report.");
+      toast.error('Maximum 3 photos allowed per report.');
       return;
     }
 
@@ -126,7 +126,7 @@ export function CreateComplaintForm() {
 
     // Check client-side limit
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("File size cannot exceed 5MB.");
+      toast.error('File size cannot exceed 5MB.');
       return;
     }
 
@@ -136,17 +136,17 @@ export function CreateComplaintForm() {
       const newAttachments = [...attachments, uploaded];
       setAttachments(newAttachments);
       setValue(
-        "attachmentIds",
+        'attachmentIds',
         newAttachments.map((a) => a.id)
       );
-      toast.success("Photo attached");
+      toast.success('Photo attached');
     } catch (err: unknown) {
       toast.error(
-        err instanceof Error ? err.message : "Failed to upload photo"
+        err instanceof Error ? err.message : 'Failed to upload photo'
       );
     } finally {
       setUploadingPhoto(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -159,7 +159,7 @@ export function CreateComplaintForm() {
     const filtered = attachments.filter((a) => a.id !== attachmentId);
     setAttachments(filtered);
     setValue(
-      "attachmentIds",
+      'attachmentIds',
       filtered.map((a) => a.id)
     );
   };
@@ -174,7 +174,7 @@ export function CreateComplaintForm() {
         clientRequestId,
       });
 
-      toast.success("Complaint submitted successfully!", {
+      toast.success('Complaint submitted successfully!', {
         description: `Reference #${created.reference}`,
       });
       router.push(`/complaints/${created.id}`);
@@ -188,7 +188,9 @@ export function CreateComplaintForm() {
         }
         setServerError(err.message);
       } else {
-        setServerError("Failed to submit complaint. Please check your connection.");
+        setServerError(
+          'Failed to submit complaint. Please check your connection.'
+        );
       }
     }
   };
@@ -216,17 +218,21 @@ export function CreateComplaintForm() {
           hint="Summarize the repair in 8 to 120 characters"
           error={errors.title?.message}
           disabled={isSubmitting}
-          {...register("title")}
+          {...register('title')}
         />
 
         <SelectField
           id="complaint-category"
           label="Category"
-          placeholder={loadingCategories ? "Loading categories..." : "Select repair category"}
+          placeholder={
+            loadingCategories
+              ? 'Loading categories...'
+              : 'Select repair category'
+          }
           error={errors.categoryId?.message}
           disabled={isSubmitting || loadingCategories}
           options={categories.map((c) => ({ value: c.id, label: c.name }))}
-          {...register("categoryId")}
+          {...register('categoryId')}
         />
 
         <TextareaField
@@ -237,7 +243,7 @@ export function CreateComplaintForm() {
           hint="At least 20 characters explaining the issue context"
           error={errors.description?.message}
           disabled={isSubmitting}
-          {...register("description")}
+          {...register('description')}
         />
       </div>
 
@@ -251,23 +257,29 @@ export function CreateComplaintForm() {
           error={errors.location?.type?.message}
           disabled={isSubmitting}
           options={[
-            { value: "ROOM", label: "My Assigned Room" },
-            { value: "BLOCK_COMMON", label: "My Block Shared Area (Corridor, Washroom)" },
-            { value: "HOSTEL_COMMON", label: "Hostel Common Facility (Mess, Entrance, Lawn)" },
+            { value: 'ROOM', label: 'My Assigned Room' },
+            {
+              value: 'BLOCK_COMMON',
+              label: 'My Block Shared Area (Corridor, Washroom)',
+            },
+            {
+              value: 'HOSTEL_COMMON',
+              label: 'Hostel Common Facility (Mess, Entrance, Lawn)',
+            },
           ]}
-          {...register("location.type")}
+          {...register('location.type')}
         />
 
-        {locationType === "ROOM" && (
+        {locationType === 'ROOM' && (
           <div className="rounded-xl border border-line bg-canvas/70 p-4 text-xs text-muted">
             <p>
-              This report will be linked to your allocated room:{" "}
-              <strong>Room {user?.roomId || "Assigned"}</strong>.
+              This report will be linked to your allocated room:{' '}
+              <strong>Room {user?.roomId || 'Assigned'}</strong>.
             </p>
           </div>
         )}
 
-        {locationType === "BLOCK_COMMON" && (
+        {locationType === 'BLOCK_COMMON' && (
           <TextField
             id="location-block-area"
             label="Specific common area"
@@ -275,11 +287,11 @@ export function CreateComplaintForm() {
             hint="Describe which area of your block is affected"
             error={errors.location?.areaLabel?.message}
             disabled={isSubmitting}
-            {...register("location.areaLabel")}
+            {...register('location.areaLabel')}
           />
         )}
 
-        {locationType === "HOSTEL_COMMON" && (
+        {locationType === 'HOSTEL_COMMON' && (
           <TextField
             id="location-hostel-area"
             label="Specific hostel facility"
@@ -287,7 +299,7 @@ export function CreateComplaintForm() {
             hint="Describe the specific facility or shared space"
             error={errors.location?.areaLabel?.message}
             disabled={isSubmitting}
-            {...register("location.areaLabel")}
+            {...register('location.areaLabel')}
           />
         )}
       </div>
@@ -295,9 +307,12 @@ export function CreateComplaintForm() {
       {/* Priority Indicators */}
       <div className="space-y-4 rounded-2xl border border-line bg-surface p-6">
         <div>
-          <h2 className="text-base font-semibold text-ink">3. Severity indicators</h2>
+          <h2 className="text-base font-semibold text-ink">
+            3. Severity indicators
+          </h2>
           <p className="text-xs text-muted mt-1">
-            Check any conditions that apply. The system uses these to suggest appropriate urgency.
+            Check any conditions that apply. The system uses these to suggest
+            appropriate urgency.
           </p>
         </div>
 
@@ -307,12 +322,13 @@ export function CreateComplaintForm() {
               type="checkbox"
               className="mt-1 size-4 rounded text-brand focus:ring-brand"
               disabled={isSubmitting}
-              {...register("indicators.safetyRisk")}
+              {...register('indicators.safetyRisk')}
             />
             <div>
               <p className="text-sm font-medium text-ink">Safety hazard</p>
               <p className="text-xs text-muted">
-                Exposed wires, broken glass, sparking switch, or hazardous condition
+                Exposed wires, broken glass, sparking switch, or hazardous
+                condition
               </p>
             </div>
           </label>
@@ -322,12 +338,15 @@ export function CreateComplaintForm() {
               type="checkbox"
               className="mt-1 size-4 rounded text-brand focus:ring-brand"
               disabled={isSubmitting}
-              {...register("indicators.essentialServiceOutage")}
+              {...register('indicators.essentialServiceOutage')}
             />
             <div>
-              <p className="text-sm font-medium text-ink">Essential service outage</p>
+              <p className="text-sm font-medium text-ink">
+                Essential service outage
+              </p>
               <p className="text-xs text-muted">
-                Total loss of water supply, electricity outage, or toilet blockage
+                Total loss of water supply, electricity outage, or toilet
+                blockage
               </p>
             </div>
           </label>
@@ -337,10 +356,12 @@ export function CreateComplaintForm() {
               type="checkbox"
               className="mt-1 size-4 rounded text-brand focus:ring-brand"
               disabled={isSubmitting}
-              {...register("indicators.affectsMultipleRooms")}
+              {...register('indicators.affectsMultipleRooms')}
             />
             <div>
-              <p className="text-sm font-medium text-ink">Affects multiple rooms or residents</p>
+              <p className="text-sm font-medium text-ink">
+                Affects multiple rooms or residents
+              </p>
               <p className="text-xs text-muted">
                 Issue impacting a shared wing, corridor, or water line
               </p>
@@ -352,10 +373,12 @@ export function CreateComplaintForm() {
               type="checkbox"
               className="mt-1 size-4 rounded text-brand focus:ring-brand"
               disabled={isSubmitting}
-              {...register("indicators.functionalityLoss")}
+              {...register('indicators.functionalityLoss')}
             />
             <div>
-              <p className="text-sm font-medium text-ink">Complete functionality loss</p>
+              <p className="text-sm font-medium text-ink">
+                Complete functionality loss
+              </p>
               <p className="text-xs text-muted">
                 The fixture, door lock, or appliance cannot be used at all
               </p>
@@ -368,9 +391,12 @@ export function CreateComplaintForm() {
       <div className="space-y-4 rounded-2xl border border-line bg-surface p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base font-semibold text-ink">4. Photos (optional)</h2>
+            <h2 className="text-base font-semibold text-ink">
+              4. Photos (optional)
+            </h2>
             <p className="text-xs text-muted mt-1">
-              Add up to 3 photos (JPEG, PNG, WebP up to 5MB each) to assist maintenance staff.
+              Add up to 3 photos (JPEG, PNG, WebP up to 5MB each) to assist
+              maintenance staff.
             </p>
           </div>
           <span className="text-xs font-semibold text-muted">
@@ -441,7 +467,8 @@ export function CreateComplaintForm() {
         loading={isSubmitting}
         className="w-full justify-center text-base"
       >
-        Submit maintenance report <ArrowRight className="size-4" aria-hidden="true" />
+        Submit maintenance report{' '}
+        <ArrowRight className="size-4" aria-hidden="true" />
       </Button>
     </form>
   );

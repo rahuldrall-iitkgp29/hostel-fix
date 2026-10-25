@@ -11,23 +11,36 @@ function locationSchema() {
   });
   schema.pre('validate', function () {
     const valid = {
-      ROOM: this.blockId != null && this.roomId != null && this.areaLabel == null,
-      BLOCK_COMMON: this.blockId != null && this.roomId == null && this.areaLabel != null,
-      HOSTEL_COMMON: this.blockId == null && this.roomId == null && this.areaLabel != null,
+      ROOM:
+        this.blockId != null && this.roomId != null && this.areaLabel == null,
+      BLOCK_COMMON:
+        this.blockId != null && this.roomId == null && this.areaLabel != null,
+      HOSTEL_COMMON:
+        this.blockId == null && this.roomId == null && this.areaLabel != null,
     };
-    if (!valid[this.type]) this.invalidate('type', 'Location fields must match its type.');
+    if (!valid[this.type])
+      this.invalidate('type', 'Location fields must match its type.');
   });
   return schema;
 }
 
 function indicatorsSchema() {
-  return embedded(Object.fromEntries(INDICATORS.map((field) => [field, {
-    type: Boolean, required: true,
-    cast: (value) => {
-      if (typeof value !== 'boolean') throw new Error('An indicator must be a boolean.');
-      return value;
-    },
-  }])));
+  return embedded(
+    Object.fromEntries(
+      INDICATORS.map((field) => [
+        field,
+        {
+          type: Boolean,
+          required: true,
+          cast: (value) => {
+            if (typeof value !== 'boolean')
+              throw new Error('An indicator must be a boolean.');
+            return value;
+          },
+        },
+      ])
+    )
+  );
 }
 
 module.exports = { locationSchema, indicatorsSchema };

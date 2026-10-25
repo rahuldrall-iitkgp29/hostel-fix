@@ -1,7 +1,10 @@
 const request = require('supertest');
 const { randomUUID } = require('node:crypto');
 const { openAuthDatabase } = require('../helpers/auth.helper');
-const { runTransaction, updateWithVersion } = require('../../src/utils/transactions');
+const {
+  runTransaction,
+  updateWithVersion,
+} = require('../../src/utils/transactions');
 const {
   hostelInput,
   blockInput,
@@ -32,7 +35,10 @@ describe('complaint creation, idempotency, scoped queries, edits, comments and a
     app = authDb.app();
 
     // Ensure hostel policy exists for primary hostel
-    await authDb.create('HostelPolicy', policyInput({ hostelId: authDb.hostel._id }));
+    await authDb.create(
+      'HostelPolicy',
+      policyInput({ hostelId: authDb.hostel._id })
+    );
 
     // Create student
     student = await authDb.user({ role: 'STUDENT' });
@@ -50,15 +56,27 @@ describe('complaint creation, idempotency, scoped queries, edits, comments and a
     staffToken = stLogin.token;
 
     // Create admin scoped to primary hostel
-    admin = await authDb.user({ role: 'ADMIN', adminHostelIds: [authDb.hostel._id] });
+    admin = await authDb.user({
+      role: 'ADMIN',
+      adminHostelIds: [authDb.hostel._id],
+    });
     const aLogin = await authDb.login(app, admin);
     adminToken = aLogin.token;
 
     // Create foreign hostel and a foreign student
     foreignHostel = await authDb.create('Hostel', hostelInput());
-    const foreignBlock = await authDb.create('Block', blockInput({ hostelId: foreignHostel._id }));
-    const foreignRoom = await authDb.create('Room', roomInput({ hostelId: foreignHostel._id, blockId: foreignBlock._id }));
-    await authDb.create('HostelPolicy', policyInput({ hostelId: foreignHostel._id }));
+    const foreignBlock = await authDb.create(
+      'Block',
+      blockInput({ hostelId: foreignHostel._id })
+    );
+    const foreignRoom = await authDb.create(
+      'Room',
+      roomInput({ hostelId: foreignHostel._id, blockId: foreignBlock._id })
+    );
+    await authDb.create(
+      'HostelPolicy',
+      policyInput({ hostelId: foreignHostel._id })
+    );
     foreignStudent = await authDb.user({
       role: 'STUDENT',
       hostelId: foreignHostel._id,
@@ -76,7 +94,8 @@ describe('complaint creation, idempotency, scoped queries, edits, comments and a
   const validPayload = (overrides = {}) => ({
     clientRequestId: randomUUID(),
     title: 'Ceiling fan is vibrating loudly',
-    description: 'The ceiling fan makes an unbearable rattling noise on settings 3 to 5.',
+    description:
+      'The ceiling fan makes an unbearable rattling noise on settings 3 to 5.',
     categoryId: String(authDb.category._id),
     location: {
       type: 'ROOM',
@@ -123,7 +142,9 @@ describe('complaint creation, idempotency, scoped queries, edits, comments and a
     });
 
     // Verify CREATED activity was written
-    const act = await authDb.models.Activity.findOne({ complaintId: res.body.data.complaint.id });
+    const act = await authDb.models.Activity.findOne({
+      complaintId: res.body.data.complaint.id,
+    });
     expect(act).not.toBeNull();
     expect(act.type).toBe('CREATED');
     expect(String(act.actorId)).toBe(String(student._id));
@@ -154,8 +175,14 @@ describe('complaint creation, idempotency, scoped queries, edits, comments and a
 
   test('CMP-T03: create with same clientRequestId + different payload returns 409 IDEMPOTENCY_CONFLICT', async () => {
     const clientRequestId = randomUUID();
-    const payload1 = validPayload({ clientRequestId, title: 'First complaint title here' });
-    const payload2 = validPayload({ clientRequestId, title: 'Second completely different title' });
+    const payload1 = validPayload({
+      clientRequestId,
+      title: 'First complaint title here',
+    });
+    const payload2 = validPayload({
+      clientRequestId,
+      title: 'Second completely different title',
+    });
 
     await request(app)
       .post('/api/v1/complaints')
@@ -179,7 +206,11 @@ describe('complaint creation, idempotency, scoped queries, edits, comments and a
   test('CMP-T04: create with inactive category returns 409 REFERENCE_INACTIVE', async () => {
     const inactiveCategory = await authDb.create(
       'Category',
-      categoryInput({ hostelId: authDb.hostel._id, isActive: false, code: 'INACTIVE_PLUMBING' })
+      categoryInput({
+        hostelId: authDb.hostel._id,
+        isActive: false,
+        code: 'INACTIVE_PLUMBING',
+      })
     );
 
     const res = await request(app)
@@ -285,7 +316,9 @@ describe('complaint creation, idempotency, scoped queries, edits, comments and a
       .expect(200);
 
     expect(editRes.body.data.complaint.version).toBe(2);
-    expect(editRes.body.data.complaint.title).toBe('Updated title: Fan is definitely broken');
+    expect(editRes.body.data.complaint.title).toBe(
+      'Updated title: Fan is definitely broken'
+    );
     expect(editRes.body.data.complaint.priority).toBe('HIGH');
     expect(editRes.body.data.activity.type).toBe('CONTENT_UPDATED');
   });
@@ -387,7 +420,9 @@ describe('complaint creation, idempotency, scoped queries, edits, comments and a
 
     // Title substring search test (CMP-T14)
     const titleRes = await request(app)
-      .get(`/api/v1/complaints?q=${encodeURIComponent(uniqueTitle.slice(5, 20))}`)
+      .get(
+        `/api/v1/complaints?q=${encodeURIComponent(uniqueTitle.slice(5, 20))}`
+      )
       .set('Authorization', `Bearer ${studentToken}`)
       .expect(200);
 
@@ -552,7 +587,9 @@ describe('complaint creation, idempotency, scoped queries, edits, comments and a
         .expect(201);
 
       expect(res.body.data.complaint.version).toBe(2);
-      expect(res.body.data.comment.body).toBe('The noise has gotten louder this morning.');
+      expect(res.body.data.comment.body).toBe(
+        'The noise has gotten louder this morning.'
+      );
       expect(res.body.data.activity.type).toBe('COMMENT_ADDED');
     });
 
@@ -571,7 +608,9 @@ describe('complaint creation, idempotency, scoped queries, edits, comments and a
 
     test('get comments returns paginated comments ordered by createdAt', async () => {
       const res = await request(app)
-        .get(`/api/v1/complaints/${commentComplaint.id}/comments?page=1&limit=10`)
+        .get(
+          `/api/v1/complaints/${commentComplaint.id}/comments?page=1&limit=10`
+        )
         .set('Authorization', `Bearer ${studentToken}`)
         .expect(200);
 
@@ -589,7 +628,9 @@ describe('complaint creation, idempotency, scoped queries, edits, comments and a
 
     test('get activity returns paginated timeline ordered by occurredAt', async () => {
       const res = await request(app)
-        .get(`/api/v1/complaints/${commentComplaint.id}/activity?page=1&limit=10`)
+        .get(
+          `/api/v1/complaints/${commentComplaint.id}/activity?page=1&limit=10`
+        )
         .set('Authorization', `Bearer ${studentToken}`)
         .expect(200);
 

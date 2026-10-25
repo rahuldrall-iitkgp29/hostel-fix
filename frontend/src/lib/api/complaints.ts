@@ -1,5 +1,5 @@
-import { z } from "zod";
-import type { ApiClient } from "./client";
+import { z } from 'zod';
+import type { ApiClient } from './client';
 import type {
   ComplaintSummary,
   ComplaintDetail,
@@ -12,24 +12,43 @@ import type {
   FeedbackItem,
   CategoryItem,
   AdminStaffItem,
-} from "@/features/complaints/types";
+} from '@/features/complaints/types';
 import type {
   CreateComplaintFormData,
   EditComplaintFormData,
   CommentFormData,
-} from "@/features/complaints/schemas";
+} from '@/features/complaints/schemas';
 
-const passThrough = z.custom<unknown>();
+const passThrough = z.unknown();
+
+function unwrapComplaint(data: unknown): ComplaintDetail {
+  if (data && typeof data === 'object' && 'complaint' in data) {
+    return (data as { complaint: ComplaintDetail }).complaint;
+  }
+  return data as ComplaintDetail;
+}
+
+function unwrapComment(data: unknown): CommentItem {
+  if (data && typeof data === 'object' && 'comment' in data) {
+    return (data as { comment: CommentItem }).comment;
+  }
+  return data as CommentItem;
+}
+
+function unwrapFeedback(data: unknown): FeedbackItem {
+  if (data && typeof data === 'object' && 'feedback' in data) {
+    return (data as { feedback: FeedbackItem }).feedback;
+  }
+  return data as FeedbackItem;
+}
 
 export async function getStudentDashboard(
   client: ApiClient,
   filters?: Record<string, string | number | boolean | null | undefined>
 ): Promise<StudentDashboardData> {
-  const response = await client.request(
-    "/dashboard/student",
-    passThrough,
-    { query: filters }
-  );
+  const response = await client.request('/dashboard/student', passThrough, {
+    query: filters,
+  });
   return response.data as StudentDashboardData;
 }
 
@@ -37,11 +56,9 @@ export async function getStaffDashboard(
   client: ApiClient,
   filters?: Record<string, string | number | boolean | null | undefined>
 ): Promise<StaffDashboardData> {
-  const response = await client.request(
-    "/dashboard/staff",
-    passThrough,
-    { query: filters }
-  );
+  const response = await client.request('/dashboard/staff', passThrough, {
+    query: filters,
+  });
   return response.data as StaffDashboardData;
 }
 
@@ -49,26 +66,30 @@ export async function getAdminDashboard(
   client: ApiClient,
   filters?: Record<string, string | number | boolean | null | undefined>
 ): Promise<AdminDashboardData> {
-  const response = await client.request(
-    "/dashboard/admin",
-    passThrough,
-    { query: filters }
-  );
+  const response = await client.request('/dashboard/admin', passThrough, {
+    query: filters,
+  });
   return response.data as AdminDashboardData;
 }
 
 export async function listComplaints(
   client: ApiClient,
   filters?: Record<string, string | number | boolean | null | undefined>
-): Promise<{ data: ComplaintSummary[]; meta: { page: number; limit: number; total: number; totalPages: number } }> {
-  const response = await client.request(
-    "/complaints",
-    z.array(passThrough),
-    { query: filters }
-  );
+): Promise<{
+  data: ComplaintSummary[];
+  meta: { page: number; limit: number; total: number; totalPages: number };
+}> {
+  const response = await client.request('/complaints', z.array(passThrough), {
+    query: filters,
+  });
   return {
     data: response.data as ComplaintSummary[],
-    meta: response.meta as unknown as { page: number; limit: number; total: number; totalPages: number },
+    meta: response.meta as unknown as {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    },
   };
 }
 
@@ -80,7 +101,7 @@ export async function getComplaintDetail(
     `/complaints/${encodeURIComponent(complaintId)}`,
     passThrough
   );
-  return response.data as ComplaintDetail;
+  return unwrapComplaint(response.data);
 }
 
 export async function createComplaint(
@@ -94,13 +115,13 @@ export async function createComplaint(
     location: {
       type: data.location.type,
       hostelId: data.location.hostelId,
-      ...(data.location.type === "ROOM"
+      ...(data.location.type === 'ROOM'
         ? { blockId: data.location.blockId, roomId: data.location.roomId }
         : {}),
-      ...(data.location.type === "BLOCK_COMMON"
+      ...(data.location.type === 'BLOCK_COMMON'
         ? { blockId: data.location.blockId, areaLabel: data.location.areaLabel }
         : {}),
-      ...(data.location.type === "HOSTEL_COMMON"
+      ...(data.location.type === 'HOSTEL_COMMON'
         ? { areaLabel: data.location.areaLabel }
         : {}),
     },
@@ -109,15 +130,11 @@ export async function createComplaint(
     clientRequestId: data.clientRequestId,
   };
 
-  const response = await client.request(
-    "/complaints",
-    passThrough,
-    {
-      method: "POST",
-      body: payload,
-    }
-  );
-  return response.data as ComplaintDetail;
+  const response = await client.request('/complaints', passThrough, {
+    method: 'POST',
+    body: payload,
+  });
+  return unwrapComplaint(response.data);
 }
 
 export async function editComplaint(
@@ -129,11 +146,11 @@ export async function editComplaint(
     `/complaints/${encodeURIComponent(complaintId)}`,
     passThrough,
     {
-      method: "PATCH",
+      method: 'PATCH',
       body: data,
     }
   );
-  return response.data as ComplaintDetail;
+  return unwrapComplaint(response.data);
 }
 
 export async function listComments(
@@ -158,11 +175,11 @@ export async function addComment(
     `/complaints/${encodeURIComponent(complaintId)}/comments`,
     passThrough,
     {
-      method: "POST",
+      method: 'POST',
       body: data,
     }
   );
-  return response.data as CommentItem;
+  return unwrapComment(response.data);
 }
 
 export async function listActivities(
@@ -187,11 +204,11 @@ export async function transitionComplaint(
     `/complaints/${encodeURIComponent(complaintId)}/transitions`,
     passThrough,
     {
-      method: "POST",
+      method: 'POST',
       body: payload,
     }
   );
-  return response.data as ComplaintDetail;
+  return unwrapComplaint(response.data);
 }
 
 export async function assignComplaint(
@@ -203,11 +220,11 @@ export async function assignComplaint(
     `/complaints/${encodeURIComponent(complaintId)}/assignment`,
     passThrough,
     {
-      method: "POST",
+      method: 'POST',
       body: payload,
     }
   );
-  return response.data as ComplaintDetail;
+  return unwrapComplaint(response.data);
 }
 
 export async function overridePriority(
@@ -219,11 +236,11 @@ export async function overridePriority(
     `/complaints/${encodeURIComponent(complaintId)}/priority`,
     passThrough,
     {
-      method: "POST",
+      method: 'POST',
       body: payload,
     }
   );
-  return response.data as ComplaintDetail;
+  return unwrapComplaint(response.data);
 }
 
 export async function reopenComplaint(
@@ -235,11 +252,11 @@ export async function reopenComplaint(
     `/complaints/${encodeURIComponent(complaintId)}/reopen`,
     passThrough,
     {
-      method: "POST",
+      method: 'POST',
       body: payload,
     }
   );
-  return response.data as ComplaintDetail;
+  return unwrapComplaint(response.data);
 }
 
 export async function submitFeedback(
@@ -251,22 +268,20 @@ export async function submitFeedback(
     `/complaints/${encodeURIComponent(complaintId)}/feedback`,
     passThrough,
     {
-      method: "POST",
+      method: 'POST',
       body: payload,
     }
   );
-  return response.data as FeedbackItem;
+  return unwrapFeedback(response.data);
 }
 
 export async function getCategories(
   client: ApiClient,
   hostelId: string
 ): Promise<CategoryItem[]> {
-  const response = await client.request(
-    "/categories",
-    z.array(passThrough),
-    { query: { hostelId, limit: 100 } }
-  );
+  const response = await client.request('/categories', z.array(passThrough), {
+    query: { hostelId, limit: 100 },
+  });
   return response.data as CategoryItem[];
 }
 
@@ -274,11 +289,9 @@ export async function getAdminStaff(
   client: ApiClient,
   query: { hostelId: string; eligibleForComplaintId?: string }
 ): Promise<AdminStaffItem[]> {
-  const response = await client.request(
-    "/admin/staff",
-    z.array(passThrough),
-    { query: { ...query, limit: 100 } }
-  );
+  const response = await client.request('/admin/staff', z.array(passThrough), {
+    query: { ...query, limit: 100 },
+  });
   return response.data as AdminStaffItem[];
 }
 
@@ -288,29 +301,30 @@ export async function uploadAttachment(
   accessToken?: string | null
 ): Promise<AttachmentItem> {
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append('file', file);
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api/v1";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1';
   const headers = new Headers({
-    Accept: "application/json",
-    "X-CSRF-Protection": "1",
+    Accept: 'application/json',
+    'X-CSRF-Protection': '1',
   });
   if (accessToken) {
-    headers.set("Authorization", `Bearer ${accessToken}`);
+    headers.set('Authorization', `Bearer ${accessToken}`);
   }
 
   const response = await fetch(`${baseUrl}/uploads`, {
-    method: "POST",
+    method: 'POST',
     headers,
     body: formData,
-    credentials: "include",
+    credentials: 'include',
   });
 
   if (!response.ok) {
     const errorBody: unknown = await response.json().catch(() => null);
     throw new Error(
       (errorBody as { error?: { message?: string } })?.error?.message ||
-        "Failed to upload photo"
+        'Failed to upload photo'
     );
   }
 
@@ -322,7 +336,10 @@ export async function deleteAttachment(
   client: ApiClient,
   attachmentId: string
 ): Promise<void> {
-  await client.requestNoContent(`/uploads/${encodeURIComponent(attachmentId)}`, {
-    method: "DELETE",
-  });
+  await client.requestNoContent(
+    `/uploads/${encodeURIComponent(attachmentId)}`,
+    {
+      method: 'DELETE',
+    }
+  );
 }

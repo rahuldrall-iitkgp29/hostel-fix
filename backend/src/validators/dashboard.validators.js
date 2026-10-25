@@ -7,9 +7,17 @@ function validateDateRange(val, ctx) {
     const from = new Date(val.createdFrom);
     const to = new Date(val.createdTo);
     if (to < from) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'createdTo must be on or after createdFrom', path: ['createdTo'] });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'createdTo must be on or after createdFrom',
+        path: ['createdTo'],
+      });
     } else if (to.getTime() - from.getTime() > 366 * 24 * 60 * 60 * 1000) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Date range cannot exceed 366 days', path: ['createdTo'] });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Date range cannot exceed 366 days',
+        path: ['createdTo'],
+      });
     }
   }
 }

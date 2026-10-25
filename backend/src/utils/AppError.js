@@ -7,6 +7,11 @@ class AppError extends Error {
   }
 }
 
-const unavailable = () => new AppError(503, 'SERVICE_UNAVAILABLE', 'Service is temporarily unavailable.');
+const unavailable = () =>
+  new AppError(
+    503,
+    'SERVICE_UNAVAILABLE',
+    'Service is temporarily unavailable.'
+  );
 
 module.exports = { AppError, unavailable };

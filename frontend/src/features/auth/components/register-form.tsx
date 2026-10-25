@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback } from "react";
-import { useForm, useWatch } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import Link from "next/link";
-import { toast } from "sonner";
-import { ArrowRight, CircleAlert, RefreshCw } from "lucide-react";
-import { TextField } from "@/components/ui/text-field";
-import { SelectField } from "@/components/ui/select-field";
-import { Button } from "@/components/ui/button";
-import { StatePanel } from "@/components/feedback/state-panel";
-import { useAuth } from "../context/auth-context";
-import { registerSchema, type RegisterFormData } from "../schemas";
+import { useState, useEffect, useCallback } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import Link from 'next/link';
+import { toast } from 'sonner';
+import { ArrowRight, CircleAlert, RefreshCw } from 'lucide-react';
+import { TextField } from '@/components/ui/text-field';
+import { SelectField } from '@/components/ui/select-field';
+import { Button } from '@/components/ui/button';
+import { StatePanel } from '@/components/feedback/state-panel';
+import { useAuth } from '../context/auth-context';
+import { registerSchema, type RegisterFormData } from '../schemas';
 import {
   getHostels,
   getHostelBlocks,
@@ -19,9 +19,9 @@ import {
   type CatalogHostel,
   type CatalogBlock,
   type CatalogRoom,
-} from "@/lib/api/catalog";
-import { registerStudent } from "@/lib/api/auth";
-import { ApiError } from "@/lib/api/errors";
+} from '@/lib/api/catalog';
+import { registerStudent } from '@/lib/api/auth';
+import { ApiError } from '@/lib/api/errors';
 
 export function RegisterForm() {
   const { apiClient } = useAuth();
@@ -47,19 +47,19 @@ export function RegisterForm() {
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      name: "",
-      email: "",
-      password: "",
-      phone: "",
-      hostelId: "",
-      blockId: "",
-      roomId: "",
-      enrollmentCode: "",
+      name: '',
+      email: '',
+      password: '',
+      phone: '',
+      hostelId: '',
+      blockId: '',
+      roomId: '',
+      enrollmentCode: '',
     },
   });
 
-  const selectedHostelId = useWatch({ control, name: "hostelId" });
-  const selectedBlockId = useWatch({ control, name: "blockId" });
+  const selectedHostelId = useWatch({ control, name: 'hostelId' });
+  const selectedBlockId = useWatch({ control, name: 'blockId' });
 
   const fetchHostels = useCallback(() => {
     setLoadingHostels(true);
@@ -71,7 +71,7 @@ export function RegisterForm() {
       })
       .catch(() => {
         setCatalogError(
-          "Hostel catalogs are currently unavailable. The server may be unreachable."
+          'Hostel catalogs are currently unavailable. The server may be unreachable.'
         );
         setLoadingHostels(false);
       });
@@ -90,7 +90,7 @@ export function RegisterForm() {
       .catch(() => {
         if (active) {
           setCatalogError(
-            "Hostel catalogs are currently unavailable. The server may be unreachable."
+            'Hostel catalogs are currently unavailable. The server may be unreachable.'
           );
           setLoadingHostels(false);
         }
@@ -150,15 +150,15 @@ export function RegisterForm() {
   }, [selectedHostelId, selectedBlockId, apiClient]);
 
   const handleHostelChange = () => {
-    setValue("blockId", "");
-    setValue("roomId", "");
+    setValue('blockId', '');
+    setValue('roomId', '');
     setBlocks([]);
     setRooms([]);
     setLoadingBlocks(true);
   };
 
   const handleBlockChange = () => {
-    setValue("roomId", "");
+    setValue('roomId', '');
     setRooms([]);
     setLoadingRooms(true);
   };
@@ -168,8 +168,8 @@ export function RegisterForm() {
     try {
       const res = await registerStudent(apiClient, data);
       setRegisteredUser(res.user.email);
-      toast.success("Account created successfully!", {
-        description: "Please sign in with your email and password.",
+      toast.success('Account created successfully!', {
+        description: 'Please sign in with your email and password.',
       });
     } catch (err: unknown) {
       if (err instanceof ApiError) {
@@ -183,7 +183,9 @@ export function RegisterForm() {
         }
         setServerError(err.message);
       } else {
-        setServerError("Registration failed. Please check your connection and try again.");
+        setServerError(
+          'Registration failed. Please check your connection and try again.'
+        );
       }
     }
   };
@@ -199,16 +201,19 @@ export function RegisterForm() {
               href="/login"
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-brand-dark"
             >
-              Sign in to your account <ArrowRight className="size-4" aria-hidden="true" />
+              Sign in to your account{' '}
+              <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
           }
         >
           <div className="space-y-3">
             <p>
-              Your student account for <strong>{registeredUser}</strong> has been registered.
+              Your student account for <strong>{registeredUser}</strong> has
+              been registered.
             </p>
             <p className="text-xs text-muted">
-              For security, new accounts require an initial sign-in. Use your registered email and password to access your hostel dashboard.
+              For security, new accounts require an initial sign-in. Use your
+              registered email and password to access your hostel dashboard.
             </p>
           </div>
         </StatePanel>
@@ -254,7 +259,7 @@ export function RegisterForm() {
         placeholder="Alex Sharma"
         error={errors.name?.message}
         disabled={isSubmitting}
-        {...register("name")}
+        {...register('name')}
       />
 
       <TextField
@@ -266,7 +271,7 @@ export function RegisterForm() {
         hint="Used to sign in and receive repair updates"
         error={errors.email?.message}
         disabled={isSubmitting}
-        {...register("email")}
+        {...register('email')}
       />
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -278,7 +283,7 @@ export function RegisterForm() {
           hint="Minimum 12 characters"
           error={errors.password?.message}
           disabled={isSubmitting}
-          {...register("password")}
+          {...register('password')}
         />
 
         <TextField
@@ -290,7 +295,7 @@ export function RegisterForm() {
           hint="E.164 format with country code"
           error={errors.phone?.message}
           disabled={isSubmitting}
-          {...register("phone")}
+          {...register('phone')}
         />
       </div>
 
@@ -304,9 +309,14 @@ export function RegisterForm() {
           label="Hostel"
           error={errors.hostelId?.message}
           disabled={isSubmitting || loadingHostels || hostels.length === 0}
-          placeholder={loadingHostels ? "Loading hostels..." : "Select your hostel"}
-          options={hostels.map((h) => ({ value: h.id, label: `${h.name} (${h.code})` }))}
-          {...register("hostelId", { onChange: handleHostelChange })}
+          placeholder={
+            loadingHostels ? 'Loading hostels...' : 'Select your hostel'
+          }
+          options={hostels.map((h) => ({
+            value: h.id,
+            label: `${h.name} (${h.code})`,
+          }))}
+          {...register('hostelId', { onChange: handleHostelChange })}
         />
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -317,15 +327,18 @@ export function RegisterForm() {
             disabled={isSubmitting || !selectedHostelId || loadingBlocks}
             placeholder={
               !selectedHostelId
-                ? "Select hostel first"
+                ? 'Select hostel first'
                 : loadingBlocks
-                ? "Loading blocks..."
-                : blocks.length === 0
-                ? "No blocks found"
-                : "Select your block"
+                  ? 'Loading blocks...'
+                  : blocks.length === 0
+                    ? 'No blocks found'
+                    : 'Select your block'
             }
-            options={blocks.map((b) => ({ value: b.id, label: `${b.name} (${b.code})` }))}
-            {...register("blockId", { onChange: handleBlockChange })}
+            options={blocks.map((b) => ({
+              value: b.id,
+              label: `${b.name} (${b.code})`,
+            }))}
+            {...register('blockId', { onChange: handleBlockChange })}
           />
 
           <SelectField
@@ -335,15 +348,18 @@ export function RegisterForm() {
             disabled={isSubmitting || !selectedBlockId || loadingRooms}
             placeholder={
               !selectedBlockId
-                ? "Select block first"
+                ? 'Select block first'
                 : loadingRooms
-                ? "Loading rooms..."
-                : rooms.length === 0
-                ? "No rooms found"
-                : "Select your room"
+                  ? 'Loading rooms...'
+                  : rooms.length === 0
+                    ? 'No rooms found'
+                    : 'Select your room'
             }
-            options={rooms.map((r) => ({ value: r.id, label: `Room ${r.label}` }))}
-            {...register("roomId")}
+            options={rooms.map((r) => ({
+              value: r.id,
+              label: `Room ${r.label}`,
+            }))}
+            {...register('roomId')}
           />
         </div>
 
@@ -355,7 +371,7 @@ export function RegisterForm() {
           hint="Verification code provided by your hostel office"
           error={errors.enrollmentCode?.message}
           disabled={isSubmitting}
-          {...register("enrollmentCode")}
+          {...register('enrollmentCode')}
         />
       </div>
 
@@ -365,7 +381,8 @@ export function RegisterForm() {
         loading={isSubmitting}
         className="w-full justify-center text-base"
       >
-        Complete student registration <ArrowRight className="size-4" aria-hidden="true" />
+        Complete student registration{' '}
+        <ArrowRight className="size-4" aria-hidden="true" />
       </Button>
     </form>
   );

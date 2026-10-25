@@ -6,15 +6,27 @@ const { createLogger } = require('./config/logger');
 const { unavailable } = require('./utils/AppError');
 const { withTimeout } = require('./utils/withTimeout');
 
-async function startServer({ config = loadEnv(), host, logger = createLogger(config),
-  database = createDatabase(config, { logger }), storage = createStorage(config), shutdownMs = 5000 } = {}) {
+async function startServer({
+  config = loadEnv(),
+  host,
+  logger = createLogger(config),
+  database = createDatabase(config, { logger }),
+  storage = createStorage(config),
+  shutdownMs = 5000,
+} = {}) {
   let shuttingDown = false;
   let shutdownPromise;
   let server;
   try {
     await database.connect();
     await withTimeout(() => storage.prepare(), 5000);
-    const app = createApp({ config, database, storage, logger, isShuttingDown: () => shuttingDown });
+    const app = createApp({
+      config,
+      database,
+      storage,
+      logger,
+      isShuttingDown: () => shuttingDown,
+    });
     server = await new Promise((resolve, reject) => {
       const listener = app.listen(config.PORT, host);
       listener.once('error', reject);
@@ -34,16 +46,22 @@ async function startServer({ config = loadEnv(), host, logger = createLogger(con
     shutdownPromise = (async () => {
       try {
         await new Promise((resolve, reject) => {
-          const timer = setTimeout(() => server.closeAllConnections(), shutdownMs);
+          const timer = setTimeout(
+            () => server.closeAllConnections(),
+            shutdownMs
+          );
           server.close((error) => {
             clearTimeout(timer);
-            if (error) reject(error); else resolve();
+            if (error) reject(error);
+            else resolve();
           });
         });
       } finally {
         await withTimeout(() => database.disconnect(), shutdownMs);
       }
-    })().catch(() => { throw unavailable(); });
+    })().catch(() => {
+      throw unavailable();
+    });
     return shutdownPromise;
   };
   return server;
@@ -84,9 +102,15 @@ async function main() {
     installShutdownHandlers(server, { logger });
     logger.info({ port: server.address().port }, 'HTTP server listening.');
   } catch (error) {
-    const message = error instanceof ConfigurationError ? error.message : 'HTTP server could not start.';
+    const message =
+      error instanceof ConfigurationError
+        ? error.message
+        : 'HTTP server could not start.';
     // Even invalid LOG_LEVEL/configuration must produce a safe diagnostic.
-    createLogger({ LOG_LEVEL: 'error' }, process.stderr).error({ message }, 'Startup failed.');
+    createLogger({ LOG_LEVEL: 'error' }, process.stderr).error(
+      { message },
+      'Startup failed.'
+    );
     process.exitCode = 1;
   }
 }

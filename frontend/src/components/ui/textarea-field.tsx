@@ -1,7 +1,7 @@
-import type { ComponentProps } from "react";
-import { cn } from "@/lib/utils/cn";
+import type { ComponentProps } from 'react';
+import { cn } from '@/lib/utils/cn';
 
-type TextareaFieldProps = ComponentProps<"textarea"> & {
+type TextareaFieldProps = ComponentProps<'textarea'> & {
   id: string;
   label: string;
   hint?: string;
@@ -15,10 +15,16 @@ export function TextareaField({
   error,
   className,
   rows = 4,
-  "aria-describedby": describedBy,
+  'aria-describedby': describedBy,
   ...props
 }: TextareaFieldProps) {
-  const description = [describedBy, hint && `${id}-hint`, error && `${id}-error`].filter(Boolean).join(" ");
+  const description = [
+    describedBy,
+    hint && `${id}-hint`,
+    error && `${id}-error`,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <div className="space-y-2">
@@ -29,11 +35,11 @@ export function TextareaField({
         {...props}
         id={id}
         rows={rows}
-        aria-invalid={error ? true : props["aria-invalid"]}
+        aria-invalid={error ? true : props['aria-invalid']}
         aria-describedby={description || undefined}
         className={cn(
-          "w-full rounded-xl border bg-surface px-3.5 py-3 text-base text-ink placeholder:text-muted disabled:cursor-not-allowed disabled:bg-canvas disabled:text-muted",
-          error ? "border-danger" : "border-line",
+          'w-full rounded-xl border bg-surface px-3.5 py-3 text-base text-ink placeholder:text-muted disabled:cursor-not-allowed disabled:bg-canvas disabled:text-muted',
+          error ? 'border-danger' : 'border-line',
           className
         )}
       />

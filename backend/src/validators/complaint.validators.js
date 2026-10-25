@@ -13,33 +13,69 @@ const locationSchema = z
   .superRefine((val, ctx) => {
     if (val.type === 'ROOM') {
       if (!val.blockId) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'blockId is required for ROOM location', path: ['blockId'] });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'blockId is required for ROOM location',
+          path: ['blockId'],
+        });
       }
       if (!val.roomId) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'roomId is required for ROOM location', path: ['roomId'] });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'roomId is required for ROOM location',
+          path: ['roomId'],
+        });
       }
       if (val.areaLabel !== undefined) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'areaLabel is forbidden for ROOM location', path: ['areaLabel'] });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'areaLabel is forbidden for ROOM location',
+          path: ['areaLabel'],
+        });
       }
     } else if (val.type === 'BLOCK_COMMON') {
       if (!val.blockId) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'blockId is required for BLOCK_COMMON location', path: ['blockId'] });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'blockId is required for BLOCK_COMMON location',
+          path: ['blockId'],
+        });
       }
       if (!val.areaLabel) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'areaLabel is required for BLOCK_COMMON location', path: ['areaLabel'] });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'areaLabel is required for BLOCK_COMMON location',
+          path: ['areaLabel'],
+        });
       }
       if (val.roomId !== undefined) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'roomId is forbidden for BLOCK_COMMON location', path: ['roomId'] });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'roomId is forbidden for BLOCK_COMMON location',
+          path: ['roomId'],
+        });
       }
     } else if (val.type === 'HOSTEL_COMMON') {
       if (!val.areaLabel) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'areaLabel is required for HOSTEL_COMMON location', path: ['areaLabel'] });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'areaLabel is required for HOSTEL_COMMON location',
+          path: ['areaLabel'],
+        });
       }
       if (val.blockId !== undefined) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'blockId is forbidden for HOSTEL_COMMON location', path: ['blockId'] });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'blockId is forbidden for HOSTEL_COMMON location',
+          path: ['blockId'],
+        });
       }
       if (val.roomId !== undefined) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'roomId is forbidden for HOSTEL_COMMON location', path: ['roomId'] });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'roomId is forbidden for HOSTEL_COMMON location',
+          path: ['roomId'],
+        });
       }
     }
   });
@@ -115,16 +151,28 @@ const complaintFilters = z
   })
   .superRefine((val, ctx) => {
     if (!ALLOWED_SORTS.includes(val.sort)) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid sort field: ${val.sort}`, path: ['sort'] });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Invalid sort field: ${val.sort}`,
+        path: ['sort'],
+      });
     }
     if (val.status) {
       const statuses = val.status.split(',').map((s) => s.trim());
       if (statuses.length > 8) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Maximum 8 statuses allowed', path: ['status'] });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Maximum 8 statuses allowed',
+          path: ['status'],
+        });
       }
       for (const s of statuses) {
         if (!STATUSES.includes(s)) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid status: ${s}`, path: ['status'] });
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Invalid status: ${s}`,
+            path: ['status'],
+          });
         }
       }
     }
@@ -132,9 +180,17 @@ const complaintFilters = z
       const from = new Date(val.createdFrom);
       const to = new Date(val.createdTo);
       if (to < from) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'createdTo must be on or after createdFrom', path: ['createdTo'] });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'createdTo must be on or after createdFrom',
+          path: ['createdTo'],
+        });
       } else if (to.getTime() - from.getTime() > 366 * 24 * 60 * 60 * 1000) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Date range cannot exceed 366 days', path: ['createdTo'] });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Date range cannot exceed 366 days',
+          path: ['createdTo'],
+        });
       }
     }
   });

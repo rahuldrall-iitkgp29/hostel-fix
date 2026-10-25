@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { AuthGuard } from "@/features/auth/components/auth-guard";
-import { useAuth } from "@/features/auth/context/auth-context";
-import { AppShell } from "@/components/layout/app-shell";
-import { ProfileView } from "@/features/profile/components/profile-view";
+import { AuthGuard } from '@/features/auth/components/auth-guard';
+import { useAuth } from '@/features/auth/context/auth-context';
+import { AppShell } from '@/components/layout/app-shell';
+import { ProfileView } from '@/features/profile/components/profile-view';
 
 function ProfileContent() {
   const { user, logout } = useAuth();

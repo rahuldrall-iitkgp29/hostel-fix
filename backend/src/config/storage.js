@@ -17,14 +17,25 @@ function createStorage(config, { filesystem = fs } = {}) {
     } finally {
       // Remove only a file that this probe created. Never touch upload records.
       if (handle) {
-        try { await handle.close(); } finally { await filesystem.unlink(file); }
+        try {
+          await handle.close();
+        } finally {
+          await filesystem.unlink(file);
+        }
       }
     }
   }
 
   function check() {
     // Coalesce checks so a stalled filesystem cannot accumulate probe files.
-    if (!pending) pending = probe().catch(() => { throw unavailable(); }).finally(() => { pending = undefined; });
+    if (!pending)
+      pending = probe()
+        .catch(() => {
+          throw unavailable();
+        })
+        .finally(() => {
+          pending = undefined;
+        });
     return pending;
   }
 

@@ -32,7 +32,9 @@ async function openModelDatabase() {
     async function create(Model, input) {
       // Construct a fresh document on a transient retry, never reuse an aborted
       // Mongoose document whose in-memory save state may have advanced.
-      return runTransaction(database.connection, (session) => save(Model, input, session));
+      return runTransaction(database.connection, (session) =>
+        save(Model, input, session)
+      );
     }
     async function close() {
       try {
@@ -45,13 +47,25 @@ async function openModelDatabase() {
           // this guarded cleanup because audit models rightly prohibit deletes.
           const collection = database.connection.db.collection(name);
           await collection.deleteMany({ _id: { $in: ids } });
-          assert.equal(await collection.countDocuments({ _id: { $in: ids } }), 0);
+          assert.equal(
+            await collection.countDocuments({ _id: { $in: ids } }),
+            0
+          );
         }
       } finally {
         await database.disconnect();
       }
     }
-    return { config, database, connection: database.connection, models, track, save, create, close };
+    return {
+      config,
+      database,
+      connection: database.connection,
+      models,
+      track,
+      save,
+      create,
+      close,
+    };
   } catch (error) {
     await database.disconnect();
     throw error;

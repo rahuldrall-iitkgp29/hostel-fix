@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useAuth } from "@/features/auth/context/auth-context";
-import { Container, PageHeading } from "@/components/layout/container";
-import { ChangePasswordForm } from "@/features/auth/components/change-password-form";
-import { ShieldAlert, LogOut } from "lucide-react";
+import { useAuth } from '@/features/auth/context/auth-context';
+import { Container, PageHeading } from '@/components/layout/container';
+import { ChangePasswordForm } from '@/features/auth/components/change-password-form';
+import { ShieldAlert, LogOut } from 'lucide-react';
 
 export default function ChangePasswordPage() {
   const { user, logout } = useAuth();
@@ -16,16 +16,21 @@ export default function ChangePasswordPage() {
             eyebrow="Security requirement"
             title="Update your password"
           >
-            {user?.name ? `Hello ${user.name}. ` : ""}
-            Your account requires a new password before you can continue to your hostel workspace.
+            {user?.name ? `Hello ${user.name}. ` : ''}
+            Your account requires a new password before you can continue to your
+            hostel workspace.
           </PageHeading>
         </div>
 
         <div className="rounded-2xl border border-line bg-surface p-6 shadow-xs sm:p-8">
           <div className="mb-6 flex items-start gap-3 rounded-xl border border-warning/20 bg-warning/10 p-4 text-xs leading-5 text-warning">
-            <ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            <ShieldAlert
+              className="mt-0.5 size-4 shrink-0"
+              aria-hidden="true"
+            />
             <p>
-              Your current password cannot be reused. Choose a strong password of at least 12 characters.
+              Your current password cannot be reused. Choose a strong password
+              of at least 12 characters.
             </p>
           </div>
 

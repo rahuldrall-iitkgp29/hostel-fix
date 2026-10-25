@@ -8,14 +8,19 @@ const { createAdminRouter } = require('./admin.routes');
 const { createUploadRouter } = require('./upload.routes');
 const { createComplaintRouter } = require('./complaint.routes');
 const { createDashboardRouter } = require('./dashboard.routes');
-const { createIpLimiter, createUserLimiter } = require('../middleware/rateLimiter');
+const {
+  createIpLimiter,
+  createUserLimiter,
+} = require('../middleware/rateLimiter');
 
 function createApiRouter(options) {
   const router = Router({ caseSensitive: true, strict: true });
   router.use(createHealthRouter(options));
   const limiters = {
-    public: createIpLimiter('public'), refresh: createIpLimiter('refresh'),
-    read: createUserLimiter('read'), write: createUserLimiter('write'),
+    public: createIpLimiter('public'),
+    refresh: createIpLimiter('refresh'),
+    read: createUserLimiter('read'),
+    write: createUserLimiter('write'),
     upload: createUserLimiter('upload'),
   };
   router.use('/auth', createAuthRouter({ ...options, limiters }));
@@ -30,4 +35,3 @@ function createApiRouter(options) {
 }
 
 module.exports = { createApiRouter };
-

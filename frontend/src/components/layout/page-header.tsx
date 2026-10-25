@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
-import { Breadcrumbs, type BreadcrumbItem } from "./breadcrumbs";
-import { cn } from "@/lib/utils/cn";
+import type { ReactNode } from 'react';
+import { Breadcrumbs, type BreadcrumbItem } from './breadcrumbs';
+import { cn } from '@/lib/utils/cn';
 
 export type PageHeaderProps = {
   eyebrow?: string;
@@ -22,7 +22,7 @@ export function PageHeader({
   className,
 }: PageHeaderProps) {
   return (
-    <header className={cn("space-y-4 pb-6 pt-2 sm:pb-8", className)}>
+    <header className={cn('space-y-4 pb-6 pt-2 sm:pb-8', className)}>
       {breadcrumbs && <Breadcrumbs items={breadcrumbs} className="mb-2" />}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">

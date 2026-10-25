@@ -4,7 +4,12 @@ const { clearRefreshCookie } = require('../utils/tokens');
 function createUserController(getServices) {
   return {
     me: (req, res) => sendData(req, res, getServices().users.self(req.user)),
-    update: async (req, res) => sendData(req, res, await getServices().users.update(req.auth.claims, req.body)),
+    update: async (req, res) =>
+      sendData(
+        req,
+        res,
+        await getServices().users.update(req.auth.claims, req.body)
+      ),
     password: async (req, res) => {
       const services = getServices();
       await services.auth.changePassword(req.auth.claims, req.body);

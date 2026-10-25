@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   Wrench,
   Clock,
@@ -10,19 +10,22 @@ import {
   Building2,
   Calendar,
   ArrowRight,
-} from "lucide-react";
-import { AuthGuard } from "@/features/auth/components/auth-guard";
-import { useAuth } from "@/features/auth/context/auth-context";
-import { AppShell } from "@/components/layout/app-shell";
-import { PageHeader } from "@/components/layout/page-header";
-import { Card } from "@/components/ui/card";
-import { ButtonLink } from "@/components/ui/button";
-import { StatePanel } from "@/components/feedback/state-panel";
-import { Skeleton } from "@/components/ui/skeleton";
-import { StatusBadge } from "@/features/complaints/components/status-badge";
-import { PriorityBadge } from "@/features/complaints/components/priority-badge";
-import { getStaffDashboard } from "@/lib/api/complaints";
-import type { StaffDashboardData, ComplaintSummary } from "@/features/complaints/types";
+} from 'lucide-react';
+import { AuthGuard } from '@/features/auth/components/auth-guard';
+import { useAuth } from '@/features/auth/context/auth-context';
+import { AppShell } from '@/components/layout/app-shell';
+import { PageHeader } from '@/components/layout/page-header';
+import { Card } from '@/components/ui/card';
+import { ButtonLink } from '@/components/ui/button';
+import { StatePanel } from '@/components/feedback/state-panel';
+import { Skeleton } from '@/components/ui/skeleton';
+import { StatusBadge } from '@/features/complaints/components/status-badge';
+import { PriorityBadge } from '@/features/complaints/components/priority-badge';
+import { getStaffDashboard } from '@/lib/api/complaints';
+import type {
+  StaffDashboardData,
+  ComplaintSummary,
+} from '@/features/complaints/types';
 
 function StaffDashboardContent() {
   const { user, logout, apiClient } = useAuth();
@@ -44,7 +47,9 @@ function StaffDashboardContent() {
       })
       .catch(() => {
         if (active) {
-          setError("Unable to load staff dashboard. Please check your connection.");
+          setError(
+            'Unable to load staff dashboard. Please check your connection.'
+          );
           setLoading(false);
         }
       });
@@ -56,13 +61,13 @@ function StaffDashboardContent() {
   if (!user) return null;
 
   const formatLocation = (c: ComplaintSummary) => {
-    if (c.location.type === "ROOM") {
-      return `Room ${c.location.roomLabel || "Assigned"}`;
+    if (c.location.type === 'ROOM') {
+      return `Room ${c.location.roomLabel || 'Assigned'}`;
     }
-    if (c.location.type === "BLOCK_COMMON") {
-      return `${c.location.blockName || "Block"}: ${c.location.areaLabel}`;
+    if (c.location.type === 'BLOCK_COMMON') {
+      return `${c.location.blockName || 'Block'}: ${c.location.areaLabel}`;
     }
-    return c.location.areaLabel || "Hostel Common Area";
+    return c.location.areaLabel || 'Hostel Common Area';
   };
 
   return (
@@ -70,21 +75,21 @@ function StaffDashboardContent() {
       user={{
         name: user.name,
         email: user.email,
-        role: "STAFF",
+        role: 'STAFF',
       }}
       onLogout={logout}
     >
       <div className="space-y-8">
         <PageHeader
           eyebrow="Staff Queue"
-          title={`Welcome, ${user.name.split(" ")[0]}`}
+          title={`Welcome, ${user.name.split(' ')[0]}`}
           description="View your assigned repairs, start work, record resolution notes, and communicate with students."
           actions={
             <ButtonLink href="/staff/queue" variant="primary">
               <Wrench className="size-4" aria-hidden="true" /> Open full queue
             </ButtonLink>
           }
-          breadcrumbs={[{ label: "Staff Dashboard" }]}
+          breadcrumbs={[{ label: 'Staff Dashboard' }]}
         />
 
         {loading ? (
@@ -197,7 +202,9 @@ function StaffDashboardContent() {
                   }
                 >
                   <p>
-                    When complaints matching your categories are assigned to you by administrators, they will appear here in work queue order.
+                    When complaints matching your categories are assigned to you
+                    by administrators, they will appear here in work queue
+                    order.
                   </p>
                 </StatePanel>
               ) : (
@@ -230,7 +237,9 @@ function StaffDashboardContent() {
                               <Building2 className="size-3.5" />
                               {formatLocation(c)}
                             </span>
-                            {c.category && <span>Category: {c.category.name}</span>}
+                            {c.category && (
+                              <span>Category: {c.category.name}</span>
+                            )}
                             <span className="flex items-center gap-1">
                               <Calendar className="size-3.5" />
                               {new Date(c.createdAt).toLocaleDateString()}
@@ -257,7 +266,7 @@ function StaffDashboardContent() {
 
 export default function StaffDashboardPage() {
   return (
-    <AuthGuard allowedRoles={["STAFF"]}>
+    <AuthGuard allowedRoles={['STAFF']}>
       <StaffDashboardContent />
     </AuthGuard>
   );

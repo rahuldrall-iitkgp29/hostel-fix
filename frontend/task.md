@@ -24,4 +24,3 @@ The user requested frontend Markdown under root `docs-frontend/`.
 Those files contain all session definitions, acceptance criteria and live status.
 Update the canonical files, not a duplicate queue here. The original resume command
 remains valid because these links are mandatory continuation instructions.
-

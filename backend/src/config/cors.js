@@ -3,7 +3,8 @@ const { POLICY } = require('./policy');
 
 function createCors(config) {
   return cors({
-    origin: (origin, callback) => callback(null, Boolean(origin && origin === config.CORS_ORIGIN)),
+    origin: (origin, callback) =>
+      callback(null, Boolean(origin && origin === config.CORS_ORIGIN)),
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization', POLICY.csrfHeader],

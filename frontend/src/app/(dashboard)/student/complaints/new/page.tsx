@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { AuthGuard } from "@/features/auth/components/auth-guard";
-import { useAuth } from "@/features/auth/context/auth-context";
-import { AppShell } from "@/components/layout/app-shell";
-import { PageHeader } from "@/components/layout/page-header";
-import { CreateComplaintForm } from "@/features/complaints/components/create-complaint-form";
+import { AuthGuard } from '@/features/auth/components/auth-guard';
+import { useAuth } from '@/features/auth/context/auth-context';
+import { AppShell } from '@/components/layout/app-shell';
+import { PageHeader } from '@/components/layout/page-header';
+import { CreateComplaintForm } from '@/features/complaints/components/create-complaint-form';
 
 function CreateComplaintContent() {
   const { user, logout } = useAuth();
@@ -15,7 +15,7 @@ function CreateComplaintContent() {
       user={{
         name: user.name,
         email: user.email,
-        role: "STUDENT",
+        role: 'STUDENT',
         roomLabel: user.roomId ?? undefined,
       }}
       onLogout={logout}
@@ -26,9 +26,9 @@ function CreateComplaintContent() {
           title="Report a Maintenance Issue"
           description="Submit a repair request for your room, your block shared areas, or common hostel facilities."
           breadcrumbs={[
-            { label: "Dashboard", href: "/student/dashboard" },
-            { label: "My Complaints", href: "/student/complaints" },
-            { label: "New Report" },
+            { label: 'Dashboard', href: '/student/dashboard' },
+            { label: 'My Complaints', href: '/student/complaints' },
+            { label: 'New Report' },
           ]}
         />
 
@@ -40,7 +40,7 @@ function CreateComplaintContent() {
 
 export default function NewComplaintPage() {
   return (
-    <AuthGuard allowedRoles={["STUDENT"]}>
+    <AuthGuard allowedRoles={['STUDENT']}>
       <CreateComplaintContent />
     </AuthGuard>
   );

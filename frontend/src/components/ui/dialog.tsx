@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, type ReactNode } from "react";
-import { X } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
+import { useEffect, useRef, type ReactNode } from 'react';
+import { X } from 'lucide-react';
+import { cn } from '@/lib/utils/cn';
 
 export type DialogProps = {
   open: boolean;
@@ -11,14 +11,14 @@ export type DialogProps = {
   description?: string;
   children: ReactNode;
   className?: string;
-  maxWidth?: "sm" | "md" | "lg" | "xl";
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl';
 };
 
 const widthClasses = {
-  sm: "max-w-sm",
-  md: "max-w-md",
-  lg: "max-w-lg",
-  xl: "max-w-xl",
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-xl',
 };
 
 export function Dialog({
@@ -28,7 +28,7 @@ export function Dialog({
   description,
   children,
   className,
-  maxWidth = "md",
+  maxWidth = 'md',
 }: DialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedElement = useRef<HTMLElement | null>(null);
@@ -43,7 +43,7 @@ export function Dialog({
 
     // Lock body scroll
     const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow = 'hidden';
 
     // Focus the first focusable element or the dialog itself
     const timer = setTimeout(() => {
@@ -60,13 +60,13 @@ export function Dialog({
 
     // Escape listener and focus trapping
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         e.preventDefault();
         onClose();
         return;
       }
 
-      if (e.key === "Tab" && dialogRef.current) {
+      if (e.key === 'Tab' && dialogRef.current) {
         const focusables = Array.from(
           dialogRef.current.querySelectorAll<HTMLElement>(
             'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -91,12 +91,12 @@ export function Dialog({
       }
     }
 
-    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
 
     return () => {
       clearTimeout(timer);
       document.body.style.overflow = originalOverflow;
-      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown);
       // Restore focus
       if (previouslyFocusedElement.current) {
         previouslyFocusedElement.current.focus();
@@ -106,8 +106,8 @@ export function Dialog({
 
   if (!open) return null;
 
-  const titleId = "dialog-title";
-  const descId = description ? "dialog-description" : undefined;
+  const titleId = 'dialog-title';
+  const descId = description ? 'dialog-description' : undefined;
 
   return (
     <div
@@ -129,14 +129,17 @@ export function Dialog({
         ref={dialogRef}
         tabIndex={-1}
         className={cn(
-          "relative z-10 w-full rounded-2xl border border-line bg-surface p-6 shadow-xl sm:p-8",
+          'relative z-10 w-full rounded-2xl border border-line bg-surface p-6 shadow-xl sm:p-8',
           widthClasses[maxWidth],
           className
         )}
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 id={titleId} className="text-xl font-semibold tracking-tight text-ink">
+            <h2
+              id={titleId}
+              className="text-xl font-semibold tracking-tight text-ink"
+            >
               {title}
             </h2>
             {description && (

@@ -1,5 +1,7 @@
 const { Router } = require('express');
-const { createDashboardController } = require('../controllers/dashboard.controller');
+const {
+  createDashboardController,
+} = require('../controllers/dashboard.controller');
 const { authenticate } = require('../middleware/authenticate');
 const { requireRole } = require('../middleware/authorize');
 const { validateQuery } = require('../middleware/validateQuery');

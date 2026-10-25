@@ -1,11 +1,11 @@
-import { Suspense } from "react";
-import type { Metadata } from "next";
-import { AccountEntry } from "@/features/auth/components/account-entry";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Container } from "@/components/layout/container";
+import { Suspense } from 'react';
+import type { Metadata } from 'next';
+import { AccountEntry } from '@/features/auth/components/account-entry';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Container } from '@/components/layout/container';
 
 export const metadata: Metadata = {
-  title: "Sign in",
+  title: 'Sign in',
   robots: { index: false, follow: false },
 };
 

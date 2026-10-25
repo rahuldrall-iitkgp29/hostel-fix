@@ -1,10 +1,13 @@
-import type { ApiClient } from "./client";
-import { userResponseSchema, type UserResponse } from "@/features/auth/types";
-import type { ProfileFormData, ChangePasswordFormData } from "@/features/auth/schemas";
+import type { ApiClient } from './client';
+import { userResponseSchema, type UserResponse } from '@/features/auth/types';
+import type {
+  ProfileFormData,
+  ChangePasswordFormData,
+} from '@/features/auth/schemas';
 
 export async function getMe(client: ApiClient): Promise<UserResponse> {
-  const response = await client.request("/users/me", userResponseSchema, {
-    method: "GET",
+  const response = await client.request('/users/me', userResponseSchema, {
+    method: 'GET',
   });
   return response.data;
 }
@@ -23,8 +26,8 @@ export async function updateProfile(
     payload.phone = data.phone ? data.phone.trim() : null;
   }
 
-  const response = await client.request("/users/me", userResponseSchema, {
-    method: "PATCH",
+  const response = await client.request('/users/me', userResponseSchema, {
+    method: 'PATCH',
     body: payload,
   });
   return response.data;
@@ -34,8 +37,8 @@ export async function changePassword(
   client: ApiClient,
   data: ChangePasswordFormData
 ): Promise<void> {
-  await client.requestNoContent("/users/me/password", {
-    method: "POST",
+  await client.requestNoContent('/users/me/password', {
+    method: 'POST',
     body: {
       currentPassword: data.currentPassword,
       newPassword: data.newPassword,

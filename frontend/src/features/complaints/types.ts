@@ -1,18 +1,19 @@
 export type ComplaintStatus =
-  | "SUBMITTED"
-  | "TRIAGED"
-  | "ASSIGNED"
-  | "IN_PROGRESS"
-  | "RESOLVED"
-  | "CLOSED"
-  | "REOPENED"
-  | "REJECTED";
+  | 'SUBMITTED'
+  | 'TRIAGED'
+  | 'ASSIGNED'
+  | 'IN_PROGRESS'
+  | 'RESOLVED'
+  | 'CLOSED'
+  | 'REOPENED'
+  | 'REJECTED';
 
-export type Priority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
-export type LocationType = "ROOM" | "BLOCK_COMMON" | "HOSTEL_COMMON";
+export type LocationType = 'ROOM' | 'BLOCK_COMMON' | 'HOSTEL_COMMON';
 
-export type RejectionCode = "OUT_OF_SCOPE" | "INVALID_LOCATION" | "INSUFFICIENT_INFORMATION";
+export type RejectionCode =
+  'OUT_OF_SCOPE' | 'INVALID_LOCATION' | 'INSUFFICIENT_INFORMATION';
 
 export type Indicators = {
   safetyRisk: boolean;
@@ -98,7 +99,10 @@ export type ComplaintDetail = ComplaintSummary & {
   owner: PersonSummary | null;
   attachments: AttachmentItem[];
   currentCycle: CycleItem;
-  priorCycles: (CycleItem & { reopenedAt: string | null; reopenReason: string | null })[];
+  priorCycles: (CycleItem & {
+    reopenedAt: string | null;
+    reopenReason: string | null;
+  })[];
   resolutionNote?: string | null;
   resolvedAt?: string | null;
   reopenUntil?: string | null;

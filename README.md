@@ -8,41 +8,41 @@ JavaScript/CommonJS backend for hostel maintenance. Product contracts are in
 
 The backend implements all **33 P0 REST endpoints** under `/api/v1` matching the PRD specification:
 
-| Area | Method / Path | Role / Access | Purpose |
-|---|---|---|---|
-| **Health** | `GET /api/v1/health` | Public | Process liveness probe. |
-| **Health** | `GET /api/v1/health/ready` | Public | Database & private storage readiness probe. |
-| **Auth** | `POST /api/v1/auth/register` | Public + CSRF | Student registration with enrollment code verification. |
-| **Auth** | `POST /api/v1/auth/login` | Public + CSRF | Creates session, returns JWT and sets `hf_refresh` cookie. |
-| **Auth** | `POST /api/v1/auth/refresh` | Refresh cookie | Rotates refresh token, detects reuse, and revokes compromised family. |
-| **Auth** | `POST /api/v1/auth/logout` | Bearer / Cookie | Revokes addressed session(s) and clears cookie. |
-| **Auth** | `GET /api/v1/auth/me` | Authenticated | Current session user profile. |
-| **Users** | `GET /api/v1/users/me` | Authenticated | Profile view. |
-| **Users** | `PATCH /api/v1/users/me` | Authenticated + CSRF | Updates editable profile fields (`name`, `phone`) with version check. |
-| **Users** | `POST /api/v1/users/me/password` | Authenticated + CSRF | Password change, revokes all sessions, forces re-login. |
-| **Catalog** | `GET /api/v1/catalog/hostels` | Public | Paginated list of active hostels. |
-| **Catalog** | `GET /api/v1/catalog/hostels/:hostelId/blocks` | Public | Active blocks in a hostel. |
-| **Catalog** | `GET /api/v1/catalog/rooms` | Public | Paginated rooms in a block without leaking occupants. |
-| **Categories** | `GET /api/v1/categories` | Authenticated | Active categories in caller's hostel (`includeInactive` admin only). |
-| **Uploads** | `POST /api/v1/uploads` | STUDENT + CSRF | Stages complaint photo (JPEG, PNG, WebP ≤5 MiB, ≤12 MP). Max 10 unattached. |
-| **Uploads** | `GET /api/v1/uploads/:attachmentId/content` | Authorized | Streams private photo with secure headers. |
-| **Uploads** | `DELETE /api/v1/uploads/:attachmentId` | STUDENT owner + CSRF | Deletes unattached staged upload. |
-| **Complaints** | `POST /api/v1/complaints` | STUDENT + CSRF | Submits report with deterministic SLA deadlines & priority calculation. Idempotent. |
-| **Complaints** | `GET /api/v1/complaints` | Authenticated | Scoped complaint list (Student: own; Staff: assigned; Admin: scoped hostels). |
-| **Complaints** | `GET /api/v1/complaints/:complaintId` | Authorized | Detailed complaint view with allowed actions and cycle history. |
-| **Complaints** | `PATCH /api/v1/complaints/:complaintId` | STUDENT owner + CSRF | Edits complaint content before triage (`SUBMITTED` only). |
-| **Complaints** | `GET /api/v1/complaints/:complaintId/comments` | Authorized | Chronological public discussion comments. |
-| **Complaints** | `POST /api/v1/complaints/:complaintId/comments` | Authorized + CSRF | Adds comment to nonterminal complaint. |
-| **Complaints** | `GET /api/v1/complaints/:complaintId/activity` | Authorized | Immutable timeline of audit events. |
-| **Workflow** | `POST /api/v1/complaints/:complaintId/transitions` | Authorized + CSRF | State transitions (`TRIAGED`, `REJECTED`, `IN_PROGRESS`, `RESOLVED`, `CLOSED`). |
-| **Workflow** | `POST /api/v1/complaints/:complaintId/assignment` | ADMIN + CSRF | Assigns/reassigns eligible technician in hostel/category with concurrency check. |
-| **Workflow** | `POST /api/v1/complaints/:complaintId/priority` | ADMIN + CSRF | Overrides priority and tightens deadlines. |
-| **Workflow** | `POST /api/v1/complaints/:complaintId/reopen` | STUDENT owner + CSRF | Reopens resolved complaint within 7-day window (max 2 reopens). Clears assignee. |
-| **Workflow** | `POST /api/v1/complaints/:complaintId/feedback` | STUDENT owner + CSRF | Rates resolution 1–5 stars on `RESOLVED` or `CLOSED` complaint. |
-| **Admin** | `GET /api/v1/admin/staff` | ADMIN | Assignment picker with `eligibleForComplaintId` filtering and open count. |
-| **Dashboard** | `GET /api/v1/dashboard/student` | STUDENT | Personal overview (status counts, recent complaints, latest activity). |
-| **Dashboard** | `GET /api/v1/dashboard/staff` | STAFF | Workload overview (status counts, overdue counts, work queue sorted per §15.4). |
-| **Dashboard** | `GET /api/v1/dashboard/admin` | ADMIN | Operational overview (hostel-scoped counts, unassigned, overdue, staff workload). |
+| Area           | Method / Path                                      | Role / Access        | Purpose                                                                             |
+| -------------- | -------------------------------------------------- | -------------------- | ----------------------------------------------------------------------------------- |
+| **Health**     | `GET /api/v1/health`                               | Public               | Process liveness probe.                                                             |
+| **Health**     | `GET /api/v1/health/ready`                         | Public               | Database & private storage readiness probe.                                         |
+| **Auth**       | `POST /api/v1/auth/register`                       | Public + CSRF        | Student registration with enrollment code verification.                             |
+| **Auth**       | `POST /api/v1/auth/login`                          | Public + CSRF        | Creates session, returns JWT and sets `hf_refresh` cookie.                          |
+| **Auth**       | `POST /api/v1/auth/refresh`                        | Refresh cookie       | Rotates refresh token, detects reuse, and revokes compromised family.               |
+| **Auth**       | `POST /api/v1/auth/logout`                         | Bearer / Cookie      | Revokes addressed session(s) and clears cookie.                                     |
+| **Auth**       | `GET /api/v1/auth/me`                              | Authenticated        | Current session user profile.                                                       |
+| **Users**      | `GET /api/v1/users/me`                             | Authenticated        | Profile view.                                                                       |
+| **Users**      | `PATCH /api/v1/users/me`                           | Authenticated + CSRF | Updates editable profile fields (`name`, `phone`) with version check.               |
+| **Users**      | `POST /api/v1/users/me/password`                   | Authenticated + CSRF | Password change, revokes all sessions, forces re-login.                             |
+| **Catalog**    | `GET /api/v1/catalog/hostels`                      | Public               | Paginated list of active hostels.                                                   |
+| **Catalog**    | `GET /api/v1/catalog/hostels/:hostelId/blocks`     | Public               | Active blocks in a hostel.                                                          |
+| **Catalog**    | `GET /api/v1/catalog/rooms`                        | Public               | Paginated rooms in a block without leaking occupants.                               |
+| **Categories** | `GET /api/v1/categories`                           | Authenticated        | Active categories in caller's hostel (`includeInactive` admin only).                |
+| **Uploads**    | `POST /api/v1/uploads`                             | STUDENT + CSRF       | Stages complaint photo (JPEG, PNG, WebP ≤5 MiB, ≤12 MP). Max 10 unattached.         |
+| **Uploads**    | `GET /api/v1/uploads/:attachmentId/content`        | Authorized           | Streams private photo with secure headers.                                          |
+| **Uploads**    | `DELETE /api/v1/uploads/:attachmentId`             | STUDENT owner + CSRF | Deletes unattached staged upload.                                                   |
+| **Complaints** | `POST /api/v1/complaints`                          | STUDENT + CSRF       | Submits report with deterministic SLA deadlines & priority calculation. Idempotent. |
+| **Complaints** | `GET /api/v1/complaints`                           | Authenticated        | Scoped complaint list (Student: own; Staff: assigned; Admin: scoped hostels).       |
+| **Complaints** | `GET /api/v1/complaints/:complaintId`              | Authorized           | Detailed complaint view with allowed actions and cycle history.                     |
+| **Complaints** | `PATCH /api/v1/complaints/:complaintId`            | STUDENT owner + CSRF | Edits complaint content before triage (`SUBMITTED` only).                           |
+| **Complaints** | `GET /api/v1/complaints/:complaintId/comments`     | Authorized           | Chronological public discussion comments.                                           |
+| **Complaints** | `POST /api/v1/complaints/:complaintId/comments`    | Authorized + CSRF    | Adds comment to nonterminal complaint.                                              |
+| **Complaints** | `GET /api/v1/complaints/:complaintId/activity`     | Authorized           | Immutable timeline of audit events.                                                 |
+| **Workflow**   | `POST /api/v1/complaints/:complaintId/transitions` | Authorized + CSRF    | State transitions (`TRIAGED`, `REJECTED`, `IN_PROGRESS`, `RESOLVED`, `CLOSED`).     |
+| **Workflow**   | `POST /api/v1/complaints/:complaintId/assignment`  | ADMIN + CSRF         | Assigns/reassigns eligible technician in hostel/category with concurrency check.    |
+| **Workflow**   | `POST /api/v1/complaints/:complaintId/priority`    | ADMIN + CSRF         | Overrides priority and tightens deadlines.                                          |
+| **Workflow**   | `POST /api/v1/complaints/:complaintId/reopen`      | STUDENT owner + CSRF | Reopens resolved complaint within 7-day window (max 2 reopens). Clears assignee.    |
+| **Workflow**   | `POST /api/v1/complaints/:complaintId/feedback`    | STUDENT owner + CSRF | Rates resolution 1–5 stars on `RESOLVED` or `CLOSED` complaint.                     |
+| **Admin**      | `GET /api/v1/admin/staff`                          | ADMIN                | Assignment picker with `eligibleForComplaintId` filtering and open count.           |
+| **Dashboard**  | `GET /api/v1/dashboard/student`                    | STUDENT              | Personal overview (status counts, recent complaints, latest activity).              |
+| **Dashboard**  | `GET /api/v1/dashboard/staff`                      | STAFF                | Workload overview (status counts, overdue counts, work queue sorted per §15.4).     |
+| **Dashboard**  | `GET /api/v1/dashboard/admin`                      | ADMIN                | Operational overview (hostel-scoped counts, unassigned, overdue, staff workload).   |
 
 ## Seed and Demo Accounts
 
@@ -60,11 +60,11 @@ npm.cmd run seed:reset
 
 ### Provisioned Demo Accounts
 
-| Role | Name | Email | Password | Scope |
-|---|---|---|---|---|
-| `STUDENT` | Asha Student | `student.a@hostelfix.demo` | `DemoStudent@2026` | Hostel A, Block Alpha, Room A-101 |
-| `STAFF` | Ravi Technician | `staff.r@hostelfix.demo` | `DemoStaff@2026!` | Hostel A, Electrical & Plumbing |
-| `ADMIN` | Priya Warden | `admin.p@hostelfix.demo` | `DemoAdmin@2026!` | Hostel A (Admin scope) |
+| Role      | Name            | Email                      | Password           | Scope                             |
+| --------- | --------------- | -------------------------- | ------------------ | --------------------------------- |
+| `STUDENT` | Asha Student    | `student.a@hostelfix.demo` | `DemoStudent@2026` | Hostel A, Block Alpha, Room A-101 |
+| `STAFF`   | Ravi Technician | `staff.r@hostelfix.demo`   | `DemoStaff@2026!`  | Hostel A, Electrical & Plumbing   |
+| `ADMIN`   | Priya Warden    | `admin.p@hostelfix.demo`   | `DemoAdmin@2026!`  | Hostel A (Admin scope)            |
 
 Enrollment code for Hostel A: `ENROLL-HOSTEL-A-2026`.
 
@@ -85,15 +85,15 @@ cryptographically random secret of at least 32 bytes, and set `UPLOAD_DIR` to
 an absolute persistent directory on your machine.
 Keep credentials out of Git and terminal output.
 
-| Command | Behavior |
-|---|---|
-| `npm.cmd run dev` | Nodemon watches backend JavaScript and runs the server. |
-| `npm.cmd start` | Validates config, connects to replica set, prepares storage, listens on port 5000. |
-| `npm.cmd test` | Runs all backend Vitest/Supertest tests. |
-| `npm.cmd run test:coverage` | Runs the full suite with V8 coverage; HTML report at `backend/coverage/index.html`. |
-| `npm.cmd run seed` | Seeds deterministic reference data, policies, accounts, and sample complaints. |
-| `npm.cmd run seed:reset` | Guarded test reset runner (drops collections and re-seeds cleanly). |
-| `npm.cmd run db:ensure-indexes` | Adds declared indexes for all twelve models using the configured database. |
+| Command                         | Behavior                                                                            |
+| ------------------------------- | ----------------------------------------------------------------------------------- |
+| `npm.cmd run dev`               | Nodemon watches backend JavaScript and runs the server.                             |
+| `npm.cmd start`                 | Validates config, connects to replica set, prepares storage, listens on port 5000.  |
+| `npm.cmd test`                  | Runs all backend Vitest/Supertest tests.                                            |
+| `npm.cmd run test:coverage`     | Runs the full suite with V8 coverage; HTML report at `backend/coverage/index.html`. |
+| `npm.cmd run seed`              | Seeds deterministic reference data, policies, accounts, and sample complaints.      |
+| `npm.cmd run seed:reset`        | Guarded test reset runner (drops collections and re-seeds cleanly).                 |
+| `npm.cmd run db:ensure-indexes` | Adds declared indexes for all twelve models using the configured database.          |
 
 ## Configuration
 
@@ -221,16 +221,16 @@ It retains existing installations and refuses a partial installation or mismatch
 archive. Windows x64/AVX and the Visual C++ x64 runtime are required; missing
 system prerequisites are reported, never automatically installed.
 
-| Setting | Local value |
-|---|---|
-| Executable | `tools/mongodb/mongodb-win32-x86_64-windows-8.0.34/bin/mongod.exe` |
-| Archive/checksum | `tools/mongodb/mongodb-windows-x86_64-8.0.34.zip[.sha256]` |
-| Data | `.local/mongodb-data/` |
-| Logs | `.local/mongodb-logs/mongod.log`, `stdout.log`, `stderr.log` |
-| Runtime config/ownership/lock | `.local/mongodb-runtime/` |
-| Bind / port | `127.0.0.1:27017` exclusively |
-| Replica set | `rs0`, single member `127.0.0.1:27017` |
-| WiredTiger cache | 0.25 GB |
+| Setting                       | Local value                                                        |
+| ----------------------------- | ------------------------------------------------------------------ |
+| Executable                    | `tools/mongodb/mongodb-win32-x86_64-windows-8.0.34/bin/mongod.exe` |
+| Archive/checksum              | `tools/mongodb/mongodb-windows-x86_64-8.0.34.zip[.sha256]`         |
+| Data                          | `.local/mongodb-data/`                                             |
+| Logs                          | `.local/mongodb-logs/mongod.log`, `stdout.log`, `stderr.log`       |
+| Runtime config/ownership/lock | `.local/mongodb-runtime/`                                          |
+| Bind / port                   | `127.0.0.1:27017` exclusively                                      |
+| Replica set                   | `rs0`, single member `127.0.0.1:27017`                             |
+| WiredTiger cache              | 0.25 GB                                                            |
 
 The ignored **`backend/.env`** uses the existing application key and an independent
 test key. For a new checkout, set these non-secret local URIs there:

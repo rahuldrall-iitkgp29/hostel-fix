@@ -32,7 +32,10 @@ describe('Full P0 Lifecycle Integration Journey (Session 11)', () => {
     app = authDb.app();
 
     // Ensure hostel policy exists for primary hostel
-    await authDb.create('HostelPolicy', policyInput({ hostelId: authDb.hostel._id }));
+    await authDb.create(
+      'HostelPolicy',
+      policyInput({ hostelId: authDb.hostel._id })
+    );
 
     // Create student
     student = await authDb.user({ role: 'STUDENT' });
@@ -40,12 +43,18 @@ describe('Full P0 Lifecycle Integration Journey (Session 11)', () => {
     studentToken = sLogin.token;
 
     // Create staff member with matching category
-    staff = await authDb.user({ role: 'STAFF', categoryIds: [authDb.category._id] });
+    staff = await authDb.user({
+      role: 'STAFF',
+      categoryIds: [authDb.category._id],
+    });
     const stLogin = await authDb.login(app, staff);
     staffToken = stLogin.token;
 
     // Create admin scoped to hostel
-    admin = await authDb.user({ role: 'ADMIN', adminHostelIds: [authDb.hostel._id] });
+    admin = await authDb.user({
+      role: 'ADMIN',
+      adminHostelIds: [authDb.hostel._id],
+    });
     const aLogin = await authDb.login(app, admin);
     adminToken = aLogin.token;
   });
@@ -62,7 +71,8 @@ describe('Full P0 Lifecycle Integration Journey (Session 11)', () => {
       .send({
         clientRequestId: randomUUID(),
         title: 'Broken electrical switch sparking intermittently',
-        description: 'Room 101 switchboard sparks when turning on the ceiling fan. Potential fire hazard.',
+        description:
+          'Room 101 switchboard sparks when turning on the ceiling fan. Potential fire hazard.',
         categoryId: String(authDb.category._id),
         location: {
           type: 'ROOM',
@@ -91,7 +101,9 @@ describe('Full P0 Lifecycle Integration Journey (Session 11)', () => {
       .set(readHeaders(studentToken));
     expect(sDash1.status).toBe(200);
     expect(sDash1.body.data.statusCounts.SUBMITTED).toBeGreaterThanOrEqual(1);
-    expect(sDash1.body.data.recentComplaints.some((c) => c.id === complaintId)).toBe(true);
+    expect(
+      sDash1.body.data.recentComplaints.some((c) => c.id === complaintId)
+    ).toBe(true);
 
     // 3. Admin checks admin dashboard: sees unassigned count >= 1
     const aDash1 = await request(app)
@@ -102,10 +114,14 @@ describe('Full P0 Lifecycle Integration Journey (Session 11)', () => {
 
     // 4. Admin queries eligible staff for this complaint
     const staffQueryRes = await request(app)
-      .get(`/api/v1/admin/staff?hostelId=${authDb.hostel._id}&eligibleForComplaintId=${complaintId}`)
+      .get(
+        `/api/v1/admin/staff?hostelId=${authDb.hostel._id}&eligibleForComplaintId=${complaintId}`
+      )
       .set(readHeaders(adminToken));
     expect(staffQueryRes.status).toBe(200);
-    expect(staffQueryRes.body.data.some((s) => s.id === String(staff._id))).toBe(true);
+    expect(
+      staffQueryRes.body.data.some((s) => s.id === String(staff._id))
+    ).toBe(true);
 
     // 5. Admin triages the complaint
     const triageRes = await request(app)
@@ -140,7 +156,9 @@ describe('Full P0 Lifecycle Integration Journey (Session 11)', () => {
       .set(readHeaders(staffToken));
     expect(stDash1.status).toBe(200);
     expect(stDash1.body.data.assignedPending).toBeGreaterThanOrEqual(1);
-    expect(stDash1.body.data.queue.some((c) => c.id === complaintId)).toBe(true);
+    expect(stDash1.body.data.queue.some((c) => c.id === complaintId)).toBe(
+      true
+    );
 
     // 8. Staff adds a comment
     const commentRes = await request(app)
@@ -173,7 +191,8 @@ describe('Full P0 Lifecycle Integration Journey (Session 11)', () => {
       .send({
         toStatus: 'RESOLVED',
         expectedVersion: version,
-        resolutionNote: 'Replaced scorched modular switch with new 16A Schneider switch. Tested with fan on full load.',
+        resolutionNote:
+          'Replaced scorched modular switch with new 16A Schneider switch. Tested with fan on full load.',
       });
     expect(resolveRes.status).toBe(200);
     version = resolveRes.body.data.complaint.version;
@@ -211,7 +230,8 @@ describe('Full P0 Lifecycle Integration Journey (Session 11)', () => {
       .set(mutationHeaders(studentToken))
       .send({
         expectedVersion: version,
-        reason: 'Switch works but the mounting screws are stripped and the entire plate came off the wall.',
+        reason:
+          'Switch works but the mounting screws are stripped and the entire plate came off the wall.',
       });
     expect(reopenRes.status).toBe(200);
     version = reopenRes.body.data.complaint.version;
@@ -253,7 +273,8 @@ describe('Full P0 Lifecycle Integration Journey (Session 11)', () => {
       .send({
         toStatus: 'RESOLVED',
         expectedVersion: version,
-        resolutionNote: 'Fitted metal rawlplugs into concrete backbox. Plate is completely rigid and safe.',
+        resolutionNote:
+          'Fitted metal rawlplugs into concrete backbox. Plate is completely rigid and safe.',
       });
     expect(resolve2Res.status).toBe(200);
     version = resolve2Res.body.data.complaint.version;

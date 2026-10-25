@@ -1,27 +1,23 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   Search,
-  Filter,
   ChevronLeft,
   ChevronRight,
-  Clock,
   AlertTriangle,
   Building2,
   Calendar,
-  CheckCircle2,
   ArrowRight,
-} from "lucide-react";
-import { useAuth } from "@/features/auth/context/auth-context";
-import { listComplaints } from "@/lib/api/complaints";
-import type { ComplaintSummary, ComplaintStatus, Priority } from "../types";
-import { StatusBadge } from "./status-badge";
-import { PriorityBadge } from "./priority-badge";
-import { StatePanel } from "@/components/feedback/state-panel";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils/cn";
+} from 'lucide-react';
+import { useAuth } from '@/features/auth/context/auth-context';
+import { listComplaints } from '@/lib/api/complaints';
+import type { ComplaintSummary } from '../types';
+import { StatusBadge } from './status-badge';
+import { PriorityBadge } from './priority-badge';
+import { StatePanel } from '@/components/feedback/state-panel';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export type ComplaintListProps = {
   initialStatus?: string;
@@ -32,8 +28,8 @@ export type ComplaintListProps = {
 
 export function ComplaintList({
   initialStatus,
-  initialSort = "createdAt:desc",
-  scopeTitle = "Complaints",
+  initialSort = 'createdAt:desc',
+  scopeTitle = 'Complaints',
   fixedFilters = {},
 }: ComplaintListProps) {
   const { apiClient } = useAuth();
@@ -42,67 +38,83 @@ export function ComplaintList({
   const [error, setError] = useState<string | null>(null);
 
   // Filter state
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<string>(initialStatus || "");
-  const [priority, setPriority] = useState<string>("");
-  const [overdue, setOverdue] = useState<string>("");
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState<string>(initialStatus || '');
+  const [priority, setPriority] = useState<string>('');
   const [sort, setSort] = useState<string>(initialSort);
   const [page, setPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [totalCount, setTotalCount] = useState<number>(0);
-
-  const fetchComplaints = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const query: Record<string, string | number | boolean> = {
-        page,
-        limit: 10,
-        sort,
-        ...fixedFilters,
-      };
-
-      if (search.trim().length >= 2) query.q = search.trim();
-      if (status) query.status = status;
-      if (priority) query.priority = priority;
-      if (overdue) query.overdue = overdue;
-
-      const res = await listComplaints(apiClient, query);
-      setComplaints(res.data);
-      setTotalPages(res.meta.totalPages || 1);
-      setTotalCount(res.meta.total || 0);
-    } catch {
-      setError("Failed to load complaints. Please check your connection.");
-    } finally {
-      setLoading(false);
-    }
-  }, [apiClient, page, sort, search, status, priority, overdue, fixedFilters]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    void fetchComplaints();
-  }, [fetchComplaints]);
+    let active = true;
+    const query: Record<string, string | number | boolean> = {
+      page,
+      limit: 10,
+      sort,
+      ...fixedFilters,
+    };
+
+    if (search.trim().length >= 2) query.q = search.trim();
+    if (status) query.status = status;
+    if (priority) query.priority = priority;
+
+    listComplaints(apiClient, query)
+      .then((res) => {
+        if (active) {
+          setComplaints(res.data);
+          setTotalPages(res.meta.totalPages || 1);
+          setTotalCount(res.meta.total || 0);
+          setError(null);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setError('Failed to load complaints. Please check your connection.');
+          setLoading(false);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [
+    apiClient,
+    page,
+    sort,
+    search,
+    status,
+    priority,
+    fixedFilters,
+    refreshKey,
+  ]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
-    void fetchComplaints();
+    setLoading(true);
+    setRefreshKey((k) => k + 1);
   };
 
   const formatLocation = (c: ComplaintSummary) => {
-    if (c.location.type === "ROOM") {
-      return `Room ${c.location.roomLabel || "Assigned"}`;
+    if (c.location.type === 'ROOM') {
+      return `Room ${c.location.roomLabel || 'Assigned'}`;
     }
-    if (c.location.type === "BLOCK_COMMON") {
-      return `${c.location.blockName || "Block"}: ${c.location.areaLabel}`;
+    if (c.location.type === 'BLOCK_COMMON') {
+      return `${c.location.blockName || 'Block'}: ${c.location.areaLabel}`;
     }
-    return c.location.areaLabel || "Hostel Common Area";
+    return c.location.areaLabel || 'Hostel Common Area';
   };
 
   return (
     <div className="space-y-6">
       {/* Filters Header */}
       <div className="rounded-2xl border border-line bg-surface p-4 sm:p-5">
-        <form onSubmit={handleSearchSubmit} className="flex flex-col gap-4 sm:flex-row sm:items-center">
+        <form
+          onSubmit={handleSearchSubmit}
+          className="flex flex-col gap-4 sm:flex-row sm:items-center"
+        >
           <div className="relative flex-1">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted" />
             <input
@@ -163,7 +175,9 @@ export function ComplaintList({
               <option value="createdAt:desc">Newest first</option>
               <option value="createdAt:asc">Oldest first</option>
               <option value="priority:desc">Highest priority</option>
-              <option value="resolutionDueAt:asc">Resolution due soonest</option>
+              <option value="resolutionDueAt:asc">
+                Resolution due soonest
+              </option>
               <option value="workQueue">Work Queue order</option>
             </select>
           </div>
@@ -182,7 +196,10 @@ export function ComplaintList({
           <p>{error}</p>
           <button
             type="button"
-            onClick={fetchComplaints}
+            onClick={() => {
+              setLoading(true);
+              setRefreshKey((k) => k + 1);
+            }}
             className="mt-3 text-xs font-semibold text-brand underline underline-offset-2"
           >
             Retry
@@ -193,7 +210,10 @@ export function ComplaintList({
           kind="empty"
           title={`No ${scopeTitle.toLowerCase()} match your criteria`}
         >
-          <p>Try adjusting your search terms or filters to find what you are looking for.</p>
+          <p>
+            Try adjusting your search terms or filters to find what you are
+            looking for.
+          </p>
         </StatePanel>
       ) : (
         <div className="space-y-3">
@@ -229,8 +249,8 @@ export function ComplaintList({
                     <span className="flex items-center gap-1">
                       <Calendar className="size-3.5" />
                       {new Date(c.createdAt).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
+                        month: 'short',
+                        day: 'numeric',
                       })}
                     </span>
                   </div>

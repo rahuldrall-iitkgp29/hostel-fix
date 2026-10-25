@@ -5,7 +5,9 @@ function authenticate(getServices, { allowPasswordChange = false } = {}) {
     const token = bearerToken(req);
     const { config, sessions } = getServices();
     const claims = verifyAccessToken(token, config);
-    const { user, record } = await sessions.loadAccount(claims, undefined, { allowPasswordChange });
+    const { user, record } = await sessions.loadAccount(claims, undefined, {
+      allowPasswordChange,
+    });
     req.user = user;
     req.auth = { claims, sessionId: record._id };
     next();

@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter, useSearchParams } from "next/navigation";
-import { toast } from "sonner";
-import { ArrowRight, CircleAlert } from "lucide-react";
-import { TextField } from "@/components/ui/text-field";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "../context/auth-context";
-import { loginSchema, type LoginFormData } from "../schemas";
-import { getSafeReturnTo } from "../utils/return-to";
-import { ApiError } from "@/lib/api/errors";
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
+import { ArrowRight, CircleAlert } from 'lucide-react';
+import { TextField } from '@/components/ui/text-field';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '../context/auth-context';
+import { loginSchema, type LoginFormData } from '../schemas';
+import { getSafeReturnTo } from '../utils/return-to';
+import { ApiError } from '@/lib/api/errors';
 
 export function LoginForm() {
   const router = useRouter();
@@ -27,8 +27,8 @@ export function LoginForm() {
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
-      password: "",
+      email: '',
+      password: '',
     },
   });
 
@@ -36,17 +36,17 @@ export function LoginForm() {
     setServerError(null);
     try {
       const authData = await login(data);
-      toast.success("Welcome back!", {
+      toast.success('Welcome back!', {
         description: `Signed in as ${authData.user.name}`,
       });
 
       if (authData.user.mustChangePassword) {
-        router.push("/change-password");
+        router.push('/change-password');
         return;
       }
 
       const returnTo = getSafeReturnTo(
-        searchParams?.get("returnTo"),
+        searchParams?.get('returnTo'),
         authData.user.role
       );
       router.push(returnTo);
@@ -54,14 +54,16 @@ export function LoginForm() {
       if (err instanceof ApiError) {
         if (err.fields && err.fields.length > 0) {
           for (const field of err.fields) {
-            if (field.path === "email" || field.path === "password") {
+            if (field.path === 'email' || field.path === 'password') {
               setError(field.path, { message: field.message });
             }
           }
         }
         setServerError(err.message);
       } else {
-        setServerError("Unable to sign in. Please check your connection and try again.");
+        setServerError(
+          'Unable to sign in. Please check your connection and try again.'
+        );
       }
     }
   };
@@ -86,7 +88,7 @@ export function LoginForm() {
         placeholder="student@hostel.edu"
         error={errors.email?.message}
         disabled={isSubmitting}
-        {...register("email")}
+        {...register('email')}
       />
 
       <TextField
@@ -97,7 +99,7 @@ export function LoginForm() {
         placeholder="••••••••••••"
         error={errors.password?.message}
         disabled={isSubmitting}
-        {...register("password")}
+        {...register('password')}
       />
 
       <Button

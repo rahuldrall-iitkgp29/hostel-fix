@@ -20,24 +20,24 @@ The default implementation is JavaScript using Next.js App Router, React, Tailwi
 
 Informal messages and paper registers lose complaint context, leave ownership unclear, and make students repeatedly ask for updates. Administrators lack reliable visibility into backlog and technicians lack a consistent assignment queue.
 
-| Objective | Release evidence / target |
-|---|---|
-| Make reporting fast | A student familiar with the form submits a valid report with a photo in under two minutes on mobile. |
-| Make ownership explicit | Every `ASSIGNED`/`IN_PROGRESS` complaint has exactly one eligible staff assignee. |
-| Make progress transparent | Every successful workflow action writes an immutable activity event atomically with its state change. |
-| Enforce hostel isolation | Integration tests prove students cannot read other students' complaints, staff cannot read unassigned complaints, and administrators cannot cross their hostel scope. |
-| Make the demo reliable | The P0 browser journey passes against the deployed environment; seed/reset instructions can reproduce the demo. |
-| Expose delays | P0 computes response/resolution deadlines and overdue queues; P1 adds recorded escalations and historical reporting. |
+| Objective                 | Release evidence / target                                                                                                                                             |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Make reporting fast       | A student familiar with the form submits a valid report with a photo in under two minutes on mobile.                                                                  |
+| Make ownership explicit   | Every `ASSIGNED`/`IN_PROGRESS` complaint has exactly one eligible staff assignee.                                                                                     |
+| Make progress transparent | Every successful workflow action writes an immutable activity event atomically with its state change.                                                                 |
+| Enforce hostel isolation  | Integration tests prove students cannot read other students' complaints, staff cannot read unassigned complaints, and administrators cannot cross their hostel scope. |
+| Make the demo reliable    | The P0 browser journey passes against the deployed environment; seed/reset instructions can reproduce the demo.                                                       |
+| Expose delays             | P0 computes response/resolution deadlines and overdue queues; P1 adds recorded escalations and historical reporting.                                                  |
 
 Do not present seeded metrics as measured product impact. Real adoption, reduced resolution time, and satisfaction improvements require a pilot after the hackathon.
 
 ## 3. Target users and personas
 
-| Role | Persona and needs | Scope |
-|---|---|---|
-| `STUDENT` | Resident reporting a broken fan or water problem from a phone; needs quick submission, updates, and recourse if a repair fails. | One active hostel and assigned room; own complaints only. Can report their room, common areas in their block, or hostel-wide common areas. |
-| `STAFF` | Maintenance worker responsible for one hostel and a configured set of complaint categories; needs actionable assignments and public work updates. | Currently assigned complaints in their hostel, including assigned historical complaints until reassignment. |
-| `ADMIN` | Warden or hostel manager triaging reports, allocating staff, and monitoring delays. | One or more explicitly assigned hostel IDs. No implied institution-wide access. |
+| Role      | Persona and needs                                                                                                                                 | Scope                                                                                                                                      |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `STUDENT` | Resident reporting a broken fan or water problem from a phone; needs quick submission, updates, and recourse if a repair fails.                   | One active hostel and assigned room; own complaints only. Can report their room, common areas in their block, or hostel-wide common areas. |
+| `STAFF`   | Maintenance worker responsible for one hostel and a configured set of complaint categories; needs actionable assignments and public work updates. | Currently assigned complaints in their hostel, including assigned historical complaints until reassignment.                                |
+| `ADMIN`   | Warden or hostel manager triaging reports, allocating staff, and monitoring delays.                                                               | One or more explicitly assigned hostel IDs. No implied institution-wide access.                                                            |
 
 Accounts have one role. Role selection is never accepted from public registration. No super-admin UI is required; the seed/operations command provisions administrator scope. Accounts cannot transfer hostels through profile editing in the MVP.
 
@@ -53,25 +53,25 @@ P0 uses seeded hostels, blocks, rooms, categories, staff, administrator scopes, 
 
 ## 5. Functional requirements
 
-| ID | Priority | Requirement / implementation decision |
-|---|---|---|
-| AUTH-01 | P0 | Register only students using email, password, profile, a valid location, and a hostel enrollment code. Normalize email; hash passwords and enrollment codes. Registration does not create a session. |
-| AUTH-02 | P0 | Login returns a short-lived access JWT and sets a rotating opaque refresh cookie. Verify account and session status on every protected request. Logout revokes the session immediately. |
-| AUTH-03 | P0 | Profile edits allow only name and optional phone. Password change verifies the old password and revokes every session. Seeded or provisioned staff may be forced to change an initial password. |
-| AUTH-04 | P0 | Enforce role, resource ownership, hostel scope, active references, and staff eligibility on the server. Treat client role/navigation as presentation only. |
-| CMP-01 | P0 | Create a uniquely referenced complaint with title, category, description, location, four priority indicators, and optional validated attachment IDs. Make create retries idempotent using a client UUID. |
-| CMP-02 | P0 | Provide scoped pagination, filters, search, details, public comments, and chronological activity. A student may edit report content only while `SUBMITTED`. |
-| FLOW-01 | P0 | Enforce the state machine in section 7 through dedicated commands. Require notes/reasons where specified and optimistic concurrency on every complaint mutation. |
-| FLOW-02 | P0 | Administrators triage, assign/reassign, reject, and override priority. Eligible assigned staff begin work and resolve with a resolution note. |
-| FLOW-03 | P0 | Owners confirm closure, reopen within the defined window, and leave one feedback record for the latest final resolution. |
-| SLA-01 | P0 | Snapshot the hostel's SLA policy, compute UTC deadlines, track first human response per cycle, and query overdue complaints without relying on a scheduler. |
-| DASH-01 | P0 | Show scoped complaint status counts, recent complaints, latest activity, and workload/overdue summaries using dedicated aggregation endpoints. |
-| OPS-01 | P0 | Use consistent validation/errors, secure private file access, request IDs, transactions, bounded queries, structured logs, readiness checks, and an explicit seed command. |
-| DUP-01 | P1 | Suggest deterministic similarity matches and let administrators link/unlink duplicates with reasons. Never discard or close a complaint automatically. |
-| NOT-01 | P1 | Create private in-app notifications from durable events, deduplicate delivery, and track read state. |
-| SLA-02 | P1 | Run idempotent escalation processing and support administrator escalation with a note. |
-| ADMIN-01 | P1 | Manage scoped staff, account status, categories, locations, and SLA/priority policy under referential-integrity constraints. |
-| ANA-01 | P1 | Aggregate category/priority/status distribution, resolution duration, trends, feedback, and staff workload with documented date semantics. |
+| ID       | Priority | Requirement / implementation decision                                                                                                                                                                    |
+| -------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AUTH-01  | P0       | Register only students using email, password, profile, a valid location, and a hostel enrollment code. Normalize email; hash passwords and enrollment codes. Registration does not create a session.     |
+| AUTH-02  | P0       | Login returns a short-lived access JWT and sets a rotating opaque refresh cookie. Verify account and session status on every protected request. Logout revokes the session immediately.                  |
+| AUTH-03  | P0       | Profile edits allow only name and optional phone. Password change verifies the old password and revokes every session. Seeded or provisioned staff may be forced to change an initial password.          |
+| AUTH-04  | P0       | Enforce role, resource ownership, hostel scope, active references, and staff eligibility on the server. Treat client role/navigation as presentation only.                                               |
+| CMP-01   | P0       | Create a uniquely referenced complaint with title, category, description, location, four priority indicators, and optional validated attachment IDs. Make create retries idempotent using a client UUID. |
+| CMP-02   | P0       | Provide scoped pagination, filters, search, details, public comments, and chronological activity. A student may edit report content only while `SUBMITTED`.                                              |
+| FLOW-01  | P0       | Enforce the state machine in section 7 through dedicated commands. Require notes/reasons where specified and optimistic concurrency on every complaint mutation.                                         |
+| FLOW-02  | P0       | Administrators triage, assign/reassign, reject, and override priority. Eligible assigned staff begin work and resolve with a resolution note.                                                            |
+| FLOW-03  | P0       | Owners confirm closure, reopen within the defined window, and leave one feedback record for the latest final resolution.                                                                                 |
+| SLA-01   | P0       | Snapshot the hostel's SLA policy, compute UTC deadlines, track first human response per cycle, and query overdue complaints without relying on a scheduler.                                              |
+| DASH-01  | P0       | Show scoped complaint status counts, recent complaints, latest activity, and workload/overdue summaries using dedicated aggregation endpoints.                                                           |
+| OPS-01   | P0       | Use consistent validation/errors, secure private file access, request IDs, transactions, bounded queries, structured logs, readiness checks, and an explicit seed command.                               |
+| DUP-01   | P1       | Suggest deterministic similarity matches and let administrators link/unlink duplicates with reasons. Never discard or close a complaint automatically.                                                   |
+| NOT-01   | P1       | Create private in-app notifications from durable events, deduplicate delivery, and track read state.                                                                                                     |
+| SLA-02   | P1       | Run idempotent escalation processing and support administrator escalation with a note.                                                                                                                   |
+| ADMIN-01 | P1       | Manage scoped staff, account status, categories, locations, and SLA/priority policy under referential-integrity constraints.                                                                             |
+| ANA-01   | P1       | Aggregate category/priority/status distribution, resolution duration, trends, feedback, and staff workload with documented date semantics.                                                               |
 
 Every P0 requirement maps to acceptance scenarios in section 17. Later-priority routes must not be shown as usable controls until implemented; P0 pages hide P1 actions instead of displaying nonfunctional buttons.
 
@@ -128,16 +128,16 @@ stateDiagram-v2
     REOPENED --> ASSIGNED: admin assigns again
 ```
 
-| From → to | Command / actor | Preconditions and required note |
-|---|---|---|
-| none → `SUBMITTED` | Create / student | Active account and references; authorized location; all content validated. |
-| `SUBMITTED` → `TRIAGED` | Transition / scoped admin | `note` 10–2,000 characters. Counts as first response. |
-| `SUBMITTED` or `TRIAGED` → `REJECTED` | Transition / scoped admin | `note` 10–2,000; `rejectionCode` is `OUT_OF_SCOPE`, `INVALID_LOCATION`, or `INSUFFICIENT_INFORMATION`. No rejection after assignment. A new corrected report is allowed. |
-| `TRIAGED` or `REOPENED` → `ASSIGNED` | Assignment / scoped admin | Eligible staff, `note` 10–2,000. First assignment of a reopened cycle counts as its first response. |
-| `ASSIGNED` → `IN_PROGRESS` | Transition / current assigned staff | `note` 10–2,000 describing commencement. |
-| `IN_PROGRESS` → `RESOLVED` | Transition / current assigned staff | `resolutionNote` 20–2,000 describing the action and result. Record `resolvedAt`, resolver, cycle, duration. |
-| `RESOLVED` → `CLOSED` | Transition / owner; scoped admin only after seven days | Owner: `note` 5–2,000 confirming success. Admin: `note` 10–2,000; only when `now > reopenUntil`. No scheduled auto-close. |
-| `RESOLVED` → `REOPENED` | Reopen / owner only | `reason` 20–2,000, `now <= reopenUntil`, `reopenCount < 2`. Start a new SLA cycle, clear assignee/current resolution fields, and invalidate existing feedback as described below. |
+| From → to                             | Command / actor                                        | Preconditions and required note                                                                                                                                                   |
+| ------------------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| none → `SUBMITTED`                    | Create / student                                       | Active account and references; authorized location; all content validated.                                                                                                        |
+| `SUBMITTED` → `TRIAGED`               | Transition / scoped admin                              | `note` 10–2,000 characters. Counts as first response.                                                                                                                             |
+| `SUBMITTED` or `TRIAGED` → `REJECTED` | Transition / scoped admin                              | `note` 10–2,000; `rejectionCode` is `OUT_OF_SCOPE`, `INVALID_LOCATION`, or `INSUFFICIENT_INFORMATION`. No rejection after assignment. A new corrected report is allowed.          |
+| `TRIAGED` or `REOPENED` → `ASSIGNED`  | Assignment / scoped admin                              | Eligible staff, `note` 10–2,000. First assignment of a reopened cycle counts as its first response.                                                                               |
+| `ASSIGNED` → `IN_PROGRESS`            | Transition / current assigned staff                    | `note` 10–2,000 describing commencement.                                                                                                                                          |
+| `IN_PROGRESS` → `RESOLVED`            | Transition / current assigned staff                    | `resolutionNote` 20–2,000 describing the action and result. Record `resolvedAt`, resolver, cycle, duration.                                                                       |
+| `RESOLVED` → `CLOSED`                 | Transition / owner; scoped admin only after seven days | Owner: `note` 5–2,000 confirming success. Admin: `note` 10–2,000; only when `now > reopenUntil`. No scheduled auto-close.                                                         |
+| `RESOLVED` → `REOPENED`               | Reopen / owner only                                    | `reason` 20–2,000, `now <= reopenUntil`, `reopenCount < 2`. Start a new SLA cycle, clear assignee/current resolution fields, and invalidate existing feedback as described below. |
 
 All other status transitions return `409 INVALID_TRANSITION` after authorization. `CLOSED` and `REJECTED` cannot be reopened; the UI explains that closure is final and a new complaint may be created. Administrators cannot impersonate staff resolution or a student's confirmation. Staff cannot reject, close, reopen, triage, or assign.
 
@@ -174,30 +174,30 @@ All other status transitions return `409 INVALID_TRANSITION` after authorization
 
 Legend: **Own** = owning student; **Assigned** = current assignee in the same hostel; **Scoped** = complaint/reference hostel is in `adminHostelIds`; **Self** = authenticated account. An inactive account is denied all protected access. A resource outside the caller's permitted scope returns 404; a disallowed action on an accessible resource returns 403.
 
-| Capability | Student | Staff | Admin | Additional restrictions |
-|---|---|---|---|---|
-| Read/update own profile; change password | Self | Self | Self | Field allowlist; no role/scope changes. |
-| Register account | Student only | No | No | Staff/admin cannot self-register. |
-| Submit complaint / stage photo | Yes | No | No | Student's permitted locations only. |
-| List/read complaint, activity, comments, attached photos | Own | Assigned | Scoped | Apply scope before filters/search/aggregation. |
-| Edit report content | Own | No | No | `SUBMITTED` only. |
-| Add public comment | Own | Assigned | Scoped | Nonterminal state; expected version. |
-| Triage/reject | No | No | Scoped | Exact transition table applies. |
-| Assign/reassign | No | No | Scoped | Eligible staff and transition restrictions. |
-| Begin work / resolve | No | Assigned | No | Exact transition table applies. |
-| Change effective priority | No | No | Scoped | Open only; reason required. |
-| Reopen | Own | No | No | Resolved, within seven days, maximum two. |
-| Confirm close | Own | No | Scoped | Admin only after reopen window. |
-| Submit feedback | Own | No | No | Latest resolved/closed cycle only. |
-| Duplicate suggestions | Own candidates | No | Scoped candidates | Student results never reveal another student's complaint. |
-| Link/unlink duplicates; escalate | No | No | Scoped | Both complaints scoped and same hostel; explicit reasons. |
-| Read role dashboard | Own | Assigned | Scoped | Every metric uses the same scope predicates as lists. |
-| Read notifications / mark read | Self | Self | Self | Stale links are reauthorized when followed. |
-| Read active category/location catalog | Own hostel + registration directory | Own hostel | Scoped | Public directory contains IDs/names only, no occupants. |
-| List staff for assignment | No | No | Scoped | Eligible filters; safe user projection. |
-| Manage staff/student account status | No | No | Scoped | Cannot manage admins, change student room, or move staff hostels. |
-| Manage categories, rooms, blocks, hostel policy | No | No | Scoped | No hard deletion or cross-hostel references. |
-| Create hostels/admin scope or change roles | No | No | No | Explicit seed/operations task, outside HTTP MVP. |
+| Capability                                               | Student                             | Staff      | Admin             | Additional restrictions                                           |
+| -------------------------------------------------------- | ----------------------------------- | ---------- | ----------------- | ----------------------------------------------------------------- |
+| Read/update own profile; change password                 | Self                                | Self       | Self              | Field allowlist; no role/scope changes.                           |
+| Register account                                         | Student only                        | No         | No                | Staff/admin cannot self-register.                                 |
+| Submit complaint / stage photo                           | Yes                                 | No         | No                | Student's permitted locations only.                               |
+| List/read complaint, activity, comments, attached photos | Own                                 | Assigned   | Scoped            | Apply scope before filters/search/aggregation.                    |
+| Edit report content                                      | Own                                 | No         | No                | `SUBMITTED` only.                                                 |
+| Add public comment                                       | Own                                 | Assigned   | Scoped            | Nonterminal state; expected version.                              |
+| Triage/reject                                            | No                                  | No         | Scoped            | Exact transition table applies.                                   |
+| Assign/reassign                                          | No                                  | No         | Scoped            | Eligible staff and transition restrictions.                       |
+| Begin work / resolve                                     | No                                  | Assigned   | No                | Exact transition table applies.                                   |
+| Change effective priority                                | No                                  | No         | Scoped            | Open only; reason required.                                       |
+| Reopen                                                   | Own                                 | No         | No                | Resolved, within seven days, maximum two.                         |
+| Confirm close                                            | Own                                 | No         | Scoped            | Admin only after reopen window.                                   |
+| Submit feedback                                          | Own                                 | No         | No                | Latest resolved/closed cycle only.                                |
+| Duplicate suggestions                                    | Own candidates                      | No         | Scoped candidates | Student results never reveal another student's complaint.         |
+| Link/unlink duplicates; escalate                         | No                                  | No         | Scoped            | Both complaints scoped and same hostel; explicit reasons.         |
+| Read role dashboard                                      | Own                                 | Assigned   | Scoped            | Every metric uses the same scope predicates as lists.             |
+| Read notifications / mark read                           | Self                                | Self       | Self              | Stale links are reauthorized when followed.                       |
+| Read active category/location catalog                    | Own hostel + registration directory | Own hostel | Scoped            | Public directory contains IDs/names only, no occupants.           |
+| List staff for assignment                                | No                                  | No         | Scoped            | Eligible filters; safe user projection.                           |
+| Manage staff/student account status                      | No                                  | No         | Scoped            | Cannot manage admins, change student room, or move staff hostels. |
+| Manage categories, rooms, blocks, hostel policy          | No                                  | No         | Scoped            | No hard deletion or cross-hostel references.                      |
+| Create hostels/admin scope or change roles               | No                                  | No         | No                | Explicit seed/operations task, outside HTTP MVP.                  |
 
 Enforcement order: request limits/validation → authentication/session/account → role gate → scoped resource query → state/business checks → transaction. Query filters cannot replace or widen the server-derived scope. A forged `ownerId`, `hostelId`, `role`, or `$` operator is rejected, never trusted.
 
@@ -235,60 +235,60 @@ All paths below are under `/api/v1`; the tables use complete paths. JSON is UTF-
 
 ### 9.2 Authentication and profiles (P0)
 
-| Method and endpoint | Purpose / auth | Input and specific validation | Success | Additional errors |
-|---|---|---|---|---|
-| `POST /api/v1/auth/register` | Student registration; Public + origin/header controls | `{name,email,password,phone?,hostelId,blockId,roomId,enrollmentCode}`; enrollmentCode 8–64; active matching location; compare hashed hostel code; forbid role/status/scope fields. | 201 `{user: UserSelf}`; no tokens/cookie. | 409 `EMAIL_IN_USE`; 422 `ENROLLMENT_INVALID` for incorrect code or inactive/mismatched registration location, without revealing which secret check failed. |
-| `POST /api/v1/auth/login` | Create session; Public + origin/header controls | `{email,password}`; same normalization/length limits; generic credential errors; reject inactive accounts after credential check. | 200 `{user,accessToken,expiresIn:600}` + rotating-cookie session described in section 13. | 401 `INVALID_CREDENTIALS`; 403 `ACCOUNT_INACTIVE`; 429 throttle. |
-| `POST /api/v1/auth/refresh` | Rotate current refresh token; Refresh | Empty JSON `{}`; cookie required; no role/body token accepted. Validate token hash, family/session, expiry and account. | 200 `{user,accessToken,expiresIn:600}` + replacement refresh cookie. | 401 `SESSION_INVALID`/`REFRESH_REUSE_DETECTED`; clear cookie and revoke family on reuse. |
-| `POST /api/v1/auth/logout` | Revoke current session; Refresh or bearer | Empty JSON; origin/header controls even if session is absent. Revoke session addressed by valid cookie or bearer sid; clear cookie at identical attributes. | 204, including already missing/revoked session. | 403 CSRF; infrastructure failure is 503, never a false successful server revocation. |
-| `GET /api/v1/auth/me` | Current authentication state; S/F/A | No body/query. Allowed when password change is required. | 200 `{user: UserSelf}`. | Common errors. |
-| `GET /api/v1/users/me` | Profile screen; S/F/A | No body/query; same projection as auth/me. | 200 `{user: UserSelf}`. | Common errors. |
-| `PATCH /api/v1/users/me` | Profile update; S/F/A | `{expectedVersion,name?,phone?}`; at least one editable field. Email/role/location/status/password are forbidden. | 200 `{user: UserSelf}` with incremented version. | 409 `VERSION_CONFLICT`. |
-| `POST /api/v1/users/me/password` | Change own password; S/F/A, including forced-change session | `{currentPassword,newPassword}`; verify old password; reject identical new value; password validation. | 204; clear refresh cookie, revoke all sessions, require fresh login. | 401 `INVALID_CREDENTIALS`; 422 `PASSWORD_UNCHANGED`. |
+| Method and endpoint              | Purpose / auth                                              | Input and specific validation                                                                                                                                                      | Success                                                                                   | Additional errors                                                                                                                                          |
+| -------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/v1/auth/register`     | Student registration; Public + origin/header controls       | `{name,email,password,phone?,hostelId,blockId,roomId,enrollmentCode}`; enrollmentCode 8–64; active matching location; compare hashed hostel code; forbid role/status/scope fields. | 201 `{user: UserSelf}`; no tokens/cookie.                                                 | 409 `EMAIL_IN_USE`; 422 `ENROLLMENT_INVALID` for incorrect code or inactive/mismatched registration location, without revealing which secret check failed. |
+| `POST /api/v1/auth/login`        | Create session; Public + origin/header controls             | `{email,password}`; same normalization/length limits; generic credential errors; reject inactive accounts after credential check.                                                  | 200 `{user,accessToken,expiresIn:600}` + rotating-cookie session described in section 13. | 401 `INVALID_CREDENTIALS`; 403 `ACCOUNT_INACTIVE`; 429 throttle.                                                                                           |
+| `POST /api/v1/auth/refresh`      | Rotate current refresh token; Refresh                       | Empty JSON `{}`; cookie required; no role/body token accepted. Validate token hash, family/session, expiry and account.                                                            | 200 `{user,accessToken,expiresIn:600}` + replacement refresh cookie.                      | 401 `SESSION_INVALID`/`REFRESH_REUSE_DETECTED`; clear cookie and revoke family on reuse.                                                                   |
+| `POST /api/v1/auth/logout`       | Revoke current session; Refresh or bearer                   | Empty JSON; origin/header controls even if session is absent. Revoke session addressed by valid cookie or bearer sid; clear cookie at identical attributes.                        | 204, including already missing/revoked session.                                           | 403 CSRF; infrastructure failure is 503, never a false successful server revocation.                                                                       |
+| `GET /api/v1/auth/me`            | Current authentication state; S/F/A                         | No body/query. Allowed when password change is required.                                                                                                                           | 200 `{user: UserSelf}`.                                                                   | Common errors.                                                                                                                                             |
+| `GET /api/v1/users/me`           | Profile screen; S/F/A                                       | No body/query; same projection as auth/me.                                                                                                                                         | 200 `{user: UserSelf}`.                                                                   | Common errors.                                                                                                                                             |
+| `PATCH /api/v1/users/me`         | Profile update; S/F/A                                       | `{expectedVersion,name?,phone?}`; at least one editable field. Email/role/location/status/password are forbidden.                                                                  | 200 `{user: UserSelf}` with incremented version.                                          | 409 `VERSION_CONFLICT`.                                                                                                                                    |
+| `POST /api/v1/users/me/password` | Change own password; S/F/A, including forced-change session | `{currentPassword,newPassword}`; verify old password; reject identical new value; password validation.                                                                             | 204; clear refresh cookie, revoke all sessions, require fresh login.                      | 401 `INVALID_CREDENTIALS`; 422 `PASSWORD_UNCHANGED`.                                                                                                       |
 
 `auth/me` and `users/me` intentionally share one self-profile service: the former bootstraps auth, the latter is a stable profile resource. Forced-password-change sessions can call only these two GETs, password change, refresh, and logout.
 
 ### 9.3 Catalog and private upload routes (P0)
 
-| Method and endpoint | Purpose / auth | Input and specific validation | Success | Additional errors |
-|---|---|---|---|---|
-| `GET /api/v1/catalog/hostels` | Registration choices; Public | Pagination; only active hostels; no arbitrary filters. | 200 paginated `{id,name,code}`. | Common public validation/throttle errors. |
-| `GET /api/v1/catalog/hostels/:hostelId/blocks` | Registration/location choices; Public | Id; active hostel; embedded active blocks, max 20, no pagination. | 200 array `{id,name,code}`. | 404 inactive/missing hostel. |
-| `GET /api/v1/catalog/rooms` | Registration choices; Public | Required hostelId and blockId; pagination; active matching references; sort room label ascending. | 200 paginated `{id,hostelId,blockId,label}`; no occupants or occupancy counts. | 404 inactive/missing parent. |
-| `GET /api/v1/categories` | Complaint/assignment categories; S/F/A | Required hostelId; optional `includeInactive=true` for admin only; pagination, name ascending. Validate caller hostel scope. | 200 paginated `{id,hostelId,code,name,description,isActive,version}`. | 403 inactive-category access by non-admin; 404 out of scope. |
-| `POST /api/v1/uploads` | Stage a complaint photo; S | Multipart exactly one `file`; ≤5 MiB input, JPEG/PNG/WebP only, decoded ≤12 megapixels and ≤6,000px per dimension; max ten unattached uploads per owner. | 201 `{attachment: Attachment,expiresAt}`. | 413 `FILE_TOO_LARGE`; 415 `UNSUPPORTED_MEDIA_TYPE`; 422 `INVALID_IMAGE`; 409 `UPLOAD_QUOTA_EXCEEDED`; 503 `STORAGE_UNAVAILABLE`. |
-| `GET /api/v1/uploads/:attachmentId/content` | Stream private photo; staged owner or complaint-authorized S/F/A | Id; load attachment then authorize its bound complaint, or uploader if unattached and not expired. | 200 binary image, accurate type, `Content-Disposition: inline`, `Cache-Control: private, no-store`, `X-Content-Type-Options: nosniff`; not JSON. | 404 inaccessible/expired/missing; 503 missing storage dependency. |
-| `DELETE /api/v1/uploads/:attachmentId` | Remove staged upload; S owner | Id; no body; must be unattached. Metadata deletion and storage removal follow cleanup rules. | 204; repeated request after deletion is 404. | 409 `ATTACHMENT_ALREADY_BOUND`; 404 inaccessible. |
+| Method and endpoint                            | Purpose / auth                                                   | Input and specific validation                                                                                                                            | Success                                                                                                                                          | Additional errors                                                                                                                |
+| ---------------------------------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/v1/catalog/hostels`                  | Registration choices; Public                                     | Pagination; only active hostels; no arbitrary filters.                                                                                                   | 200 paginated `{id,name,code}`.                                                                                                                  | Common public validation/throttle errors.                                                                                        |
+| `GET /api/v1/catalog/hostels/:hostelId/blocks` | Registration/location choices; Public                            | Id; active hostel; embedded active blocks, max 20, no pagination.                                                                                        | 200 array `{id,name,code}`.                                                                                                                      | 404 inactive/missing hostel.                                                                                                     |
+| `GET /api/v1/catalog/rooms`                    | Registration choices; Public                                     | Required hostelId and blockId; pagination; active matching references; sort room label ascending.                                                        | 200 paginated `{id,hostelId,blockId,label}`; no occupants or occupancy counts.                                                                   | 404 inactive/missing parent.                                                                                                     |
+| `GET /api/v1/categories`                       | Complaint/assignment categories; S/F/A                           | Required hostelId; optional `includeInactive=true` for admin only; pagination, name ascending. Validate caller hostel scope.                             | 200 paginated `{id,hostelId,code,name,description,isActive,version}`.                                                                            | 403 inactive-category access by non-admin; 404 out of scope.                                                                     |
+| `POST /api/v1/uploads`                         | Stage a complaint photo; S                                       | Multipart exactly one `file`; ≤5 MiB input, JPEG/PNG/WebP only, decoded ≤12 megapixels and ≤6,000px per dimension; max ten unattached uploads per owner. | 201 `{attachment: Attachment,expiresAt}`.                                                                                                        | 413 `FILE_TOO_LARGE`; 415 `UNSUPPORTED_MEDIA_TYPE`; 422 `INVALID_IMAGE`; 409 `UPLOAD_QUOTA_EXCEEDED`; 503 `STORAGE_UNAVAILABLE`. |
+| `GET /api/v1/uploads/:attachmentId/content`    | Stream private photo; staged owner or complaint-authorized S/F/A | Id; load attachment then authorize its bound complaint, or uploader if unattached and not expired.                                                       | 200 binary image, accurate type, `Content-Disposition: inline`, `Cache-Control: private, no-store`, `X-Content-Type-Options: nosniff`; not JSON. | 404 inaccessible/expired/missing; 503 missing storage dependency.                                                                |
+| `DELETE /api/v1/uploads/:attachmentId`         | Remove staged upload; S owner                                    | Id; no body; must be unattached. Metadata deletion and storage removal follow cleanup rules.                                                             | 204; repeated request after deletion is 404.                                                                                                     | 409 `ATTACHMENT_ALREADY_BOUND`; 404 inaccessible.                                                                                |
 
 The public catalog intentionally reveals only building labels/IDs needed for registration; it contains no enrollment codes, room residents, complaint information, or policy secrets. Images must be fetched with the authenticated API client as blobs; the frontend must not use an unauthenticated `<img src>` pointing at a bearer-protected URL.
 
 ### 9.4 Complaints, comments, and workflow (P0)
 
-| Method and endpoint | Purpose / permitted auth | Input and specific validation | Success | Additional errors |
-|---|---|---|---|---|
-| `POST /api/v1/complaints` | Submit; S | `ComplaintInput`; bound room/hostel/category; uploaded files owned, unexpired and unattached; owner/status/SLA assigned by server. | 201 `{complaint: ComplaintDetail}`; replay 200 as specified in §7.4. | 409 `IDEMPOTENCY_CONFLICT`, `REFERENCE_INACTIVE`, `ATTACHMENT_ALREADY_BOUND`; 422 `INVALID_REFERENCE`/`ATTACHMENT_INVALID`. |
-| `GET /api/v1/complaints` | Scoped list; S Own / F Assigned / A Scoped | Pagination + `ComplaintFilters`; intersect filters with role scope; projections above. | 200 paginated `ComplaintSummary[]`. | 422 unsupported filter/sort; 404 unauthorized referenced scope. |
-| `GET /api/v1/complaints/:complaintId` | Detail; S Own / F Assigned / A Scoped | Id; no query/body. | 200 `{complaint: ComplaintDetail}`. | 404 inaccessible; common errors. |
-| `PATCH /api/v1/complaints/:complaintId` | Correct original report; S Own only | `{expectedVersion,title?,description?,categoryId?,location?,indicators?}`; at least one field; full validation for changed nested objects; `SUBMITTED` only. | 200 `ComplaintCommandResult` with `CONTENT_UPDATED` event and refreshed priority/deadlines. | 409 `EDIT_WINDOW_CLOSED`, `REFERENCE_INACTIVE`; 422 `INVALID_REFERENCE`. |
-| `GET /api/v1/complaints/:complaintId/comments` | Read public discussion; authorized S/F/A | Id + pagination; order createdAt ascending. | 200 paginated `Comment[]`. | Common errors. |
-| `POST /api/v1/complaints/:complaintId/comments` | Add follow-up/work note; authorized S/F/A | `{expectedVersion,body}`; trim, 1–2,000; nonterminal; plain text only. | 201 `ComplaintCommandResult` plus `comment`. | 409 `COMPLAINT_READ_ONLY`. |
-| `GET /api/v1/complaints/:complaintId/activity` | Full authorized timeline; S/F/A | Id + pagination; ascending occurredAt then id; include immutable public events. | 200 paginated `Activity[]`. | Common errors. |
-| `POST /api/v1/complaints/:complaintId/transitions` | Triage/reject/start/resolve/close; actor per §7.1 | `{expectedVersion,toStatus,note?,resolutionNote?,rejectionCode?}` as a discriminated schema. Only TRIAGED, REJECTED, IN_PROGRESS, RESOLVED, CLOSED accepted here; forbid irrelevant fields. | 200 `ComplaintCommandResult`; records previous/new status. | 409 `INVALID_TRANSITION`, `CLOSE_WINDOW_NOT_ELAPSED`; 403 actor cannot perform transition. |
-| `POST /api/v1/complaints/:complaintId/assignment` | Assign/reassign; A Scoped | `{expectedVersion,staffId,note}`; note 10–2,000; exact eligible staff and state rules in §7.2. | 200 `ComplaintCommandResult`, safe assignee in detail. | 409 `INVALID_TRANSITION`, `STAFF_INELIGIBLE`, `ALREADY_ASSIGNED`; 404 out-of-scope staff. |
-| `POST /api/v1/complaints/:complaintId/priority` | Override priority; A Scoped | `{expectedVersion,priority,reason}`; priority LOW/MEDIUM/HIGH/CRITICAL; reason 10–2,000; open state only. | 200 `ComplaintCommandResult`, updated source/deadlines. | 409 `COMPLAINT_READ_ONLY`, `PRIORITY_UNCHANGED`. |
-| `POST /api/v1/complaints/:complaintId/reopen` | Contest repair; S Own | `{expectedVersion,reason}`; 20–2,000; resolved, within window, count <2. | 200 `ComplaintCommandResult`; new cycle, assignee null. | 409 `INVALID_TRANSITION`, `REOPEN_WINDOW_EXPIRED`, `REOPEN_LIMIT_REACHED`. |
-| `POST /api/v1/complaints/:complaintId/feedback` | Rate latest resolution; S Own | `{expectedVersion,rating,comment?}`; integer 1–5; comment 0–1,000; current status RESOLVED/CLOSED. | 201 `ComplaintCommandResult` plus feedback (including replacement after a new cycle). | 409 `FEEDBACK_NOT_ALLOWED`, `FEEDBACK_EXISTS`. |
+| Method and endpoint                                | Purpose / permitted auth                          | Input and specific validation                                                                                                                                                               | Success                                                                                     | Additional errors                                                                                                           |
+| -------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/v1/complaints`                          | Submit; S                                         | `ComplaintInput`; bound room/hostel/category; uploaded files owned, unexpired and unattached; owner/status/SLA assigned by server.                                                          | 201 `{complaint: ComplaintDetail}`; replay 200 as specified in §7.4.                        | 409 `IDEMPOTENCY_CONFLICT`, `REFERENCE_INACTIVE`, `ATTACHMENT_ALREADY_BOUND`; 422 `INVALID_REFERENCE`/`ATTACHMENT_INVALID`. |
+| `GET /api/v1/complaints`                           | Scoped list; S Own / F Assigned / A Scoped        | Pagination + `ComplaintFilters`; intersect filters with role scope; projections above.                                                                                                      | 200 paginated `ComplaintSummary[]`.                                                         | 422 unsupported filter/sort; 404 unauthorized referenced scope.                                                             |
+| `GET /api/v1/complaints/:complaintId`              | Detail; S Own / F Assigned / A Scoped             | Id; no query/body.                                                                                                                                                                          | 200 `{complaint: ComplaintDetail}`.                                                         | 404 inaccessible; common errors.                                                                                            |
+| `PATCH /api/v1/complaints/:complaintId`            | Correct original report; S Own only               | `{expectedVersion,title?,description?,categoryId?,location?,indicators?}`; at least one field; full validation for changed nested objects; `SUBMITTED` only.                                | 200 `ComplaintCommandResult` with `CONTENT_UPDATED` event and refreshed priority/deadlines. | 409 `EDIT_WINDOW_CLOSED`, `REFERENCE_INACTIVE`; 422 `INVALID_REFERENCE`.                                                    |
+| `GET /api/v1/complaints/:complaintId/comments`     | Read public discussion; authorized S/F/A          | Id + pagination; order createdAt ascending.                                                                                                                                                 | 200 paginated `Comment[]`.                                                                  | Common errors.                                                                                                              |
+| `POST /api/v1/complaints/:complaintId/comments`    | Add follow-up/work note; authorized S/F/A         | `{expectedVersion,body}`; trim, 1–2,000; nonterminal; plain text only.                                                                                                                      | 201 `ComplaintCommandResult` plus `comment`.                                                | 409 `COMPLAINT_READ_ONLY`.                                                                                                  |
+| `GET /api/v1/complaints/:complaintId/activity`     | Full authorized timeline; S/F/A                   | Id + pagination; ascending occurredAt then id; include immutable public events.                                                                                                             | 200 paginated `Activity[]`.                                                                 | Common errors.                                                                                                              |
+| `POST /api/v1/complaints/:complaintId/transitions` | Triage/reject/start/resolve/close; actor per §7.1 | `{expectedVersion,toStatus,note?,resolutionNote?,rejectionCode?}` as a discriminated schema. Only TRIAGED, REJECTED, IN_PROGRESS, RESOLVED, CLOSED accepted here; forbid irrelevant fields. | 200 `ComplaintCommandResult`; records previous/new status.                                  | 409 `INVALID_TRANSITION`, `CLOSE_WINDOW_NOT_ELAPSED`; 403 actor cannot perform transition.                                  |
+| `POST /api/v1/complaints/:complaintId/assignment`  | Assign/reassign; A Scoped                         | `{expectedVersion,staffId,note}`; note 10–2,000; exact eligible staff and state rules in §7.2.                                                                                              | 200 `ComplaintCommandResult`, safe assignee in detail.                                      | 409 `INVALID_TRANSITION`, `STAFF_INELIGIBLE`, `ALREADY_ASSIGNED`; 404 out-of-scope staff.                                   |
+| `POST /api/v1/complaints/:complaintId/priority`    | Override priority; A Scoped                       | `{expectedVersion,priority,reason}`; priority LOW/MEDIUM/HIGH/CRITICAL; reason 10–2,000; open state only.                                                                                   | 200 `ComplaintCommandResult`, updated source/deadlines.                                     | 409 `COMPLAINT_READ_ONLY`, `PRIORITY_UNCHANGED`.                                                                            |
+| `POST /api/v1/complaints/:complaintId/reopen`      | Contest repair; S Own                             | `{expectedVersion,reason}`; 20–2,000; resolved, within window, count <2.                                                                                                                    | 200 `ComplaintCommandResult`; new cycle, assignee null.                                     | 409 `INVALID_TRANSITION`, `REOPEN_WINDOW_EXPIRED`, `REOPEN_LIMIT_REACHED`.                                                  |
+| `POST /api/v1/complaints/:complaintId/feedback`    | Rate latest resolution; S Own                     | `{expectedVersion,rating,comment?}`; integer 1–5; comment 0–1,000; current status RESOLVED/CLOSED.                                                                                          | 201 `ComplaintCommandResult` plus feedback (including replacement after a new cycle).       | 409 `FEEDBACK_NOT_ALLOWED`, `FEEDBACK_EXISTS`.                                                                              |
 
 Register literal routes such as `/duplicate-suggestions` before `/:complaintId`. Dedicated action routes deliberately prevent a generic PATCH from changing status, ownership, assignment, or SLA fields.
 
 ### 9.5 Duplicate and escalation commands (P1)
 
-| Method and endpoint | Purpose / auth | Input and specific validation | Success | Additional errors |
-|---|---|---|---|---|
-| `POST /api/v1/complaints/duplicate-suggestions` | Pre-submit or review matches; S/A | `{categoryId,description,location,excludeComplaintId?}` using creation validation; exclusion must be readable. Candidate visibility/scoring in §14. No writes. | 200 `{candidates:[{complaint:ComplaintSummary,score,matchReasons}],algorithmVersion:"token-jaccard-v1"}`; max five. | 404 unauthorized scope/exclusion; 422 invalid input. |
-| `POST /api/v1/complaints/:complaintId/duplicate-link` | Link source to canonical; A Scoped on both | `{expectedVersion,canonicalComplaintId,canonicalExpectedVersion,reason}`; reason 10–2,000; distinct IDs, same hostel/category/location match, no chain/cycle, neither rejected. | 200 `{source:ComplaintDetail,canonical:ComplaintDetail}`; versions/activity on both change. | 409 `DUPLICATE_LINK_INVALID`, `DUPLICATE_ALREADY_LINKED`, `VERSION_CONFLICT`. |
-| `DELETE /api/v1/complaints/:complaintId/duplicate-link` | Undo link; A Scoped on both | JSON `{expectedVersion,canonicalExpectedVersion,reason}`; 10–2,000; existing link required. | 200 `{source:ComplaintDetail,canonical:ComplaintDetail}`. | 409 `DUPLICATE_LINK_MISSING`, `VERSION_CONFLICT`. |
-| `POST /api/v1/complaints/:complaintId/escalations` | Flag urgent intervention; A Scoped | `{expectedVersion,reason}`; 10–2,000; open state; increment current cycle level, maximum 2. Manual action need not be overdue. | 200 `ComplaintCommandResult` with escalation snapshot. | 409 `COMPLAINT_READ_ONLY`, `ESCALATION_LIMIT_REACHED`. |
+| Method and endpoint                                     | Purpose / auth                             | Input and specific validation                                                                                                                                                   | Success                                                                                                             | Additional errors                                                             |
+| ------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `POST /api/v1/complaints/duplicate-suggestions`         | Pre-submit or review matches; S/A          | `{categoryId,description,location,excludeComplaintId?}` using creation validation; exclusion must be readable. Candidate visibility/scoring in §14. No writes.                  | 200 `{candidates:[{complaint:ComplaintSummary,score,matchReasons}],algorithmVersion:"token-jaccard-v1"}`; max five. | 404 unauthorized scope/exclusion; 422 invalid input.                          |
+| `POST /api/v1/complaints/:complaintId/duplicate-link`   | Link source to canonical; A Scoped on both | `{expectedVersion,canonicalComplaintId,canonicalExpectedVersion,reason}`; reason 10–2,000; distinct IDs, same hostel/category/location match, no chain/cycle, neither rejected. | 200 `{source:ComplaintDetail,canonical:ComplaintDetail}`; versions/activity on both change.                         | 409 `DUPLICATE_LINK_INVALID`, `DUPLICATE_ALREADY_LINKED`, `VERSION_CONFLICT`. |
+| `DELETE /api/v1/complaints/:complaintId/duplicate-link` | Undo link; A Scoped on both                | JSON `{expectedVersion,canonicalExpectedVersion,reason}`; 10–2,000; existing link required.                                                                                     | 200 `{source:ComplaintDetail,canonical:ComplaintDetail}`.                                                           | 409 `DUPLICATE_LINK_MISSING`, `VERSION_CONFLICT`.                             |
+| `POST /api/v1/complaints/:complaintId/escalations`      | Flag urgent intervention; A Scoped         | `{expectedVersion,reason}`; 10–2,000; open state; increment current cycle level, maximum 2. Manual action need not be overdue.                                                  | 200 `ComplaintCommandResult` with escalation snapshot.                                                              | 409 `COMPLAINT_READ_ONLY`, `ESCALATION_LIMIT_REACHED`.                        |
 
 No destructive merge endpoint is included: linking satisfies duplicate review while preserving each owner's access, SLA, history, feedback, and independent resolution. Linking does not grant permission to read the canonical report. For readers lacking canonical access, detail returns only `{isLinked:true}`; admins/current authorized readers can receive its ID/reference.
 
@@ -296,41 +296,41 @@ No destructive merge endpoint is included: linking satisfies duplicate review wh
 
 All routes in this subsection require A and enforce the target hostel's inclusion in `adminHostelIds`. Each mutation records a separate security/config audit event. Staff/room/category IDs are never accepted across hostels. Creation fields are strict; client IDs, role elevation, and arbitrary nested fields are forbidden.
 
-| Method and endpoint | Priority / purpose | Input and specific validation | Success | Additional errors |
-|---|---|---|---|---|
-| `GET /api/v1/admin/staff` | P0 assignment picker / P1 management list | Required hostelId; optional categoryId, status ACTIVE/INACTIVE; pagination; `eligibleForComplaintId` optional (requires readable complaint in same hostel; implies active + category eligibility). Name ascending. | 200 paginated `StaffSummary[]`; admin list may include email. | 404 scope mismatch; 422 contradictory filters. |
-| `POST /api/v1/admin/staff` | P1 provision staff, no email integration | `{name,email,temporaryPassword,hostelId,categoryIds}`; nonempty unique active categories in hostel; password policy. Server fixes role STAFF and mustChangePassword true. | 201 `{user: StaffSummary, mustChangePassword:true}`; never return password. | 409 `EMAIL_IN_USE`, `REFERENCE_INACTIVE`; 422 invalid categories. |
-| `PATCH /api/v1/admin/staff/:userId` | P1 manage eligibility/account | `{expectedVersion,name?,categoryIds?,status?}`; at least one; target STAFF in scope; no hostel/email/role/password change; categoryIds nonempty. | 200 `{user:StaffSummary}`; revoke sessions on status change. | 409 `ACTIVE_ASSIGNMENTS_EXIST`, `VERSION_CONFLICT`; 404 nonstaff/out-of-scope. |
-| `GET /api/v1/admin/students` | P1 account status support | Required hostelId, optional status, q 2–100 literal name/email search, pagination. | 200 paginated `{id,name,email,hostelId,blockId,roomId,status,version}`. | Common admin errors. |
-| `PATCH /api/v1/admin/students/:userId/status` | P1 enable/disable account | `{expectedVersion,status,reason}`; ACTIVE/INACTIVE; reason 10–2,000; target STUDENT in scope. Does not delete complaints or stop staff workflow. | 200 `{user:UserSelf}` excluding irrelevant role fields; revoke sessions on disable. | 409 `STATUS_UNCHANGED`, `VERSION_CONFLICT`. |
-| `GET /api/v1/admin/hostels/:hostelId` | P1 inspect managed topology | Id; no query; inactive blocks included. | 200 `{hostel:{id,name,code,isActive,blocks,version}}`; no enrollment hash/code. | 404 scope mismatch. |
-| `PATCH /api/v1/admin/hostels/:hostelId` | P1 rename hostel | `{expectedVersion,name}`; 2–80; immutable code. | 200 `{hostel}`. | 409 `VERSION_CONFLICT`. |
-| `POST /api/v1/admin/hostels/:hostelId/blocks` | P1 add block | `{expectedVersion,name,code}`; code uppercase alphanumeric/hyphen 1–12, unique within hostel; maximum 20. | 201 `{hostel,block}`; hostel version incremented. | 409 `BLOCK_CODE_EXISTS`, `BLOCK_LIMIT_REACHED`, `REFERENCE_INACTIVE`. |
-| `PATCH /api/v1/admin/hostels/:hostelId/blocks/:blockId` | P1 rename/disable block | `{expectedVersion,name?,isActive?}`; block's parent hostel version used; immutable code. Disabling requires no active rooms, resident accounts, or open complaints referring to block. | 200 `{hostel,block}`. | 409 `REFERENCE_IN_USE`, `VERSION_CONFLICT`; 404 unknown block. |
-| `GET /api/v1/admin/rooms` | P1 room maintenance list | Required hostelId; optional blockId/isActive; pagination; label ascending. | 200 paginated `{id,hostelId,blockId,label,isActive,version}`. | 404 invalid parent scope. |
-| `POST /api/v1/admin/rooms` | P1 add room | `{hostelId,blockId,label}`; active parents; label trimmed uppercase 1–12, `[A-Z0-9-]+`. | 201 `{room}`. | 409 `ROOM_LABEL_EXISTS`, `REFERENCE_INACTIVE`. |
-| `PATCH /api/v1/admin/rooms/:roomId` | P1 rename/disable room | `{expectedVersion,label?,isActive?}`; no moving parents. Disable only without active residents or open complaints for room. | 200 `{room}`. | 409 `ROOM_LABEL_EXISTS`, `REFERENCE_IN_USE`, `VERSION_CONFLICT`. |
-| `POST /api/v1/admin/categories` | P1 create category | `{hostelId,code,name,description?}`; immutable code `[A-Z_]{2,30}`, name 2–60, description ≤300; unique hostel/code. | 201 `{category}`. | 409 `CATEGORY_CODE_EXISTS`, `REFERENCE_INACTIVE`. |
-| `PATCH /api/v1/admin/categories/:categoryId` | P1 rename/disable category | `{expectedVersion,name?,description?,isActive?}`; no hostel/code edits. Disable only without open complaints; remove inactive category from future picker eligibility without deleting historical staff references. | 200 `{category}`. | 409 `REFERENCE_IN_USE`, `VERSION_CONFLICT`. |
-| `GET /api/v1/admin/hostels/:hostelId/policy` | P1 view SLA/priority config | Scoped hostel Id. | 200 `{policy,policyVersion}` using §14 structure. | Common admin errors. |
-| `PATCH /api/v1/admin/hostels/:hostelId/policy` | P1 replace policy with audit | `{expectedPolicyVersion,reason,policy}`; reason 10–2,000; complete policy, known priorities/indicators; positive integer minute targets, response ≤ resolution, max 43,200; deadlines cannot be relaxed for higher priority. Escalation fractions 0.25–1, level2 min ≥1 and ≤10,080. | 200 `{policy,policyVersion}` incremented; existing cycles unchanged. | 409 `VERSION_CONFLICT`; 422 `POLICY_INVALID`. |
+| Method and endpoint                                     | Priority / purpose                        | Input and specific validation                                                                                                                                                                                                                                                        | Success                                                                             | Additional errors                                                              |
+| ------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `GET /api/v1/admin/staff`                               | P0 assignment picker / P1 management list | Required hostelId; optional categoryId, status ACTIVE/INACTIVE; pagination; `eligibleForComplaintId` optional (requires readable complaint in same hostel; implies active + category eligibility). Name ascending.                                                                   | 200 paginated `StaffSummary[]`; admin list may include email.                       | 404 scope mismatch; 422 contradictory filters.                                 |
+| `POST /api/v1/admin/staff`                              | P1 provision staff, no email integration  | `{name,email,temporaryPassword,hostelId,categoryIds}`; nonempty unique active categories in hostel; password policy. Server fixes role STAFF and mustChangePassword true.                                                                                                            | 201 `{user: StaffSummary, mustChangePassword:true}`; never return password.         | 409 `EMAIL_IN_USE`, `REFERENCE_INACTIVE`; 422 invalid categories.              |
+| `PATCH /api/v1/admin/staff/:userId`                     | P1 manage eligibility/account             | `{expectedVersion,name?,categoryIds?,status?}`; at least one; target STAFF in scope; no hostel/email/role/password change; categoryIds nonempty.                                                                                                                                     | 200 `{user:StaffSummary}`; revoke sessions on status change.                        | 409 `ACTIVE_ASSIGNMENTS_EXIST`, `VERSION_CONFLICT`; 404 nonstaff/out-of-scope. |
+| `GET /api/v1/admin/students`                            | P1 account status support                 | Required hostelId, optional status, q 2–100 literal name/email search, pagination.                                                                                                                                                                                                   | 200 paginated `{id,name,email,hostelId,blockId,roomId,status,version}`.             | Common admin errors.                                                           |
+| `PATCH /api/v1/admin/students/:userId/status`           | P1 enable/disable account                 | `{expectedVersion,status,reason}`; ACTIVE/INACTIVE; reason 10–2,000; target STUDENT in scope. Does not delete complaints or stop staff workflow.                                                                                                                                     | 200 `{user:UserSelf}` excluding irrelevant role fields; revoke sessions on disable. | 409 `STATUS_UNCHANGED`, `VERSION_CONFLICT`.                                    |
+| `GET /api/v1/admin/hostels/:hostelId`                   | P1 inspect managed topology               | Id; no query; inactive blocks included.                                                                                                                                                                                                                                              | 200 `{hostel:{id,name,code,isActive,blocks,version}}`; no enrollment hash/code.     | 404 scope mismatch.                                                            |
+| `PATCH /api/v1/admin/hostels/:hostelId`                 | P1 rename hostel                          | `{expectedVersion,name}`; 2–80; immutable code.                                                                                                                                                                                                                                      | 200 `{hostel}`.                                                                     | 409 `VERSION_CONFLICT`.                                                        |
+| `POST /api/v1/admin/hostels/:hostelId/blocks`           | P1 add block                              | `{expectedVersion,name,code}`; code uppercase alphanumeric/hyphen 1–12, unique within hostel; maximum 20.                                                                                                                                                                            | 201 `{hostel,block}`; hostel version incremented.                                   | 409 `BLOCK_CODE_EXISTS`, `BLOCK_LIMIT_REACHED`, `REFERENCE_INACTIVE`.          |
+| `PATCH /api/v1/admin/hostels/:hostelId/blocks/:blockId` | P1 rename/disable block                   | `{expectedVersion,name?,isActive?}`; block's parent hostel version used; immutable code. Disabling requires no active rooms, resident accounts, or open complaints referring to block.                                                                                               | 200 `{hostel,block}`.                                                               | 409 `REFERENCE_IN_USE`, `VERSION_CONFLICT`; 404 unknown block.                 |
+| `GET /api/v1/admin/rooms`                               | P1 room maintenance list                  | Required hostelId; optional blockId/isActive; pagination; label ascending.                                                                                                                                                                                                           | 200 paginated `{id,hostelId,blockId,label,isActive,version}`.                       | 404 invalid parent scope.                                                      |
+| `POST /api/v1/admin/rooms`                              | P1 add room                               | `{hostelId,blockId,label}`; active parents; label trimmed uppercase 1–12, `[A-Z0-9-]+`.                                                                                                                                                                                              | 201 `{room}`.                                                                       | 409 `ROOM_LABEL_EXISTS`, `REFERENCE_INACTIVE`.                                 |
+| `PATCH /api/v1/admin/rooms/:roomId`                     | P1 rename/disable room                    | `{expectedVersion,label?,isActive?}`; no moving parents. Disable only without active residents or open complaints for room.                                                                                                                                                          | 200 `{room}`.                                                                       | 409 `ROOM_LABEL_EXISTS`, `REFERENCE_IN_USE`, `VERSION_CONFLICT`.               |
+| `POST /api/v1/admin/categories`                         | P1 create category                        | `{hostelId,code,name,description?}`; immutable code `[A-Z_]{2,30}`, name 2–60, description ≤300; unique hostel/code.                                                                                                                                                                 | 201 `{category}`.                                                                   | 409 `CATEGORY_CODE_EXISTS`, `REFERENCE_INACTIVE`.                              |
+| `PATCH /api/v1/admin/categories/:categoryId`            | P1 rename/disable category                | `{expectedVersion,name?,description?,isActive?}`; no hostel/code edits. Disable only without open complaints; remove inactive category from future picker eligibility without deleting historical staff references.                                                                  | 200 `{category}`.                                                                   | 409 `REFERENCE_IN_USE`, `VERSION_CONFLICT`.                                    |
+| `GET /api/v1/admin/hostels/:hostelId/policy`            | P1 view SLA/priority config               | Scoped hostel Id.                                                                                                                                                                                                                                                                    | 200 `{policy,policyVersion}` using §14 structure.                                   | Common admin errors.                                                           |
+| `PATCH /api/v1/admin/hostels/:hostelId/policy`          | P1 replace policy with audit              | `{expectedPolicyVersion,reason,policy}`; reason 10–2,000; complete policy, known priorities/indicators; positive integer minute targets, response ≤ resolution, max 43,200; deadlines cannot be relaxed for higher priority. Escalation fractions 0.25–1, level2 min ≥1 and ≤10,080. | 200 `{policy,policyVersion}` incremented; existing cycles unchanged.                | 409 `VERSION_CONFLICT`; 422 `POLICY_INVALID`.                                  |
 
 There are no HTTP hard-delete routes for accounts, complaints, locations, categories, activity, or feedback. Hostel creation/deactivation, student transfers, and changing enrollment codes are explicit operational tasks deferred from the UI; changing codes never exposes their hashes.
 
 ### 9.7 Dashboards, reporting, notifications, and health
 
-| Method and endpoint | Priority / auth / purpose | Input and validation | Success shape | Additional errors |
-|---|---|---|---|---|
-| `GET /api/v1/dashboard/student` | P0 / S / personal overview | `DashboardFilters` constrained to own hostel. | 200 `{asOf,statusCounts,total,open,resolved,closed,rejected,recentComplaints:ComplaintSummary[≤5],latestActivity:Activity[≤10]}`. | Common scoped errors. |
-| `GET /api/v1/dashboard/staff` | P0 / F / workload | `DashboardFilters` constrained to assigned complaints; no assigneeId. | 200 `{asOf,statusCounts,total,assignedPending,inProgress,overdueResponse,overdueResolution,overdueAny,queue:ComplaintSummary[≤10]}`. | Common scoped errors. |
-| `GET /api/v1/dashboard/admin` | P0 / A / operational overview | `DashboardFilters`; optional permitted hostelId, otherwise all actor scopes. | 200 `{asOf,statusCounts,total,open,resolved,closed,rejected,unassigned,overdueResponse,overdueResolution,overdueAny,staffWorkload:[{staffId,name,assignedPending,inProgress,openAssigned}],recentComplaints:ComplaintSummary[≤5]}`. | Common scoped errors. |
-| `GET /api/v1/reports/complaints` | P1 / A / richer analytics | Dashboard filters + required createdFrom/createdTo ≤366 days; `bucket=day|week` default day; `timezone` fixed `Asia/Kolkata` for MVP. | 200 `{asOf,cohort,statusDistribution,categoryDistribution,priorityDistribution,averageResolutionMinutes,resolutionSampleSize,trend,staffWorkload,feedback:{averageRating,sampleSize}}`; exact formulas §15. | 422 invalid range/bucket/timezone. |
-| `GET /api/v1/notifications` | P1 / S/F/A / personal inbox | Pagination; `unreadOnly` boolean default false; newest first. | 200 paginated `{id,type,title,message,complaintId|null,createdAt,readAt|null}`. | Common errors; never accept userId filter. |
-| `GET /api/v1/notifications/unread-count` | P1 / S/F/A / badge | No params/body. | 200 `{unreadCount}`. | Common errors. |
-| `PATCH /api/v1/notifications/:notificationId/read` | P1 / S/F/A owner / mark one | Id; empty `{}`; preserve first readAt; idempotent. | 200 `{notification}`. | 404 nonexistent/another user's notification. |
-| `POST /api/v1/notifications/read-all` | P1 / S/F/A / mark visible inbox read | `{through}` ISO UTC ≤now; affects own unread records createdAt ≤through. | 200 `{updatedCount}`; newly arrived records stay unread. | 422 future/invalid cutoff. |
-| `GET /api/v1/health` | P0 / Public / process liveness | No input; no external dependency needed. | 200 `{status:"ok"}` + requestId. | Process unavailable is handled by host. |
-| `GET /api/v1/health/ready` | P0 / Public / readiness | No input; short-timeout database ping and private-storage writability/readiness check. | 200 `{status:"ready"}`. | 503 `SERVICE_UNAVAILABLE`; no hostnames, paths, credentials, or topology leaked. |
+| Method and endpoint                                | Priority / auth / purpose            | Input and validation                                                                   | Success shape                                                                                                                                                                                                                       | Additional errors                                                                                                                                                                                           |
+| -------------------------------------------------- | ------------------------------------ | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/v1/dashboard/student`                    | P0 / S / personal overview           | `DashboardFilters` constrained to own hostel.                                          | 200 `{asOf,statusCounts,total,open,resolved,closed,rejected,recentComplaints:ComplaintSummary[≤5],latestActivity:Activity[≤10]}`.                                                                                                   | Common scoped errors.                                                                                                                                                                                       |
+| `GET /api/v1/dashboard/staff`                      | P0 / F / workload                    | `DashboardFilters` constrained to assigned complaints; no assigneeId.                  | 200 `{asOf,statusCounts,total,assignedPending,inProgress,overdueResponse,overdueResolution,overdueAny,queue:ComplaintSummary[≤10]}`.                                                                                                | Common scoped errors.                                                                                                                                                                                       |
+| `GET /api/v1/dashboard/admin`                      | P0 / A / operational overview        | `DashboardFilters`; optional permitted hostelId, otherwise all actor scopes.           | 200 `{asOf,statusCounts,total,open,resolved,closed,rejected,unassigned,overdueResponse,overdueResolution,overdueAny,staffWorkload:[{staffId,name,assignedPending,inProgress,openAssigned}],recentComplaints:ComplaintSummary[≤5]}`. | Common scoped errors.                                                                                                                                                                                       |
+| `GET /api/v1/reports/complaints`                   | P1 / A / richer analytics            | Dashboard filters + required createdFrom/createdTo ≤366 days; `bucket=day              | week`default day;`timezone`fixed`Asia/Kolkata` for MVP.                                                                                                                                                                             | 200 `{asOf,cohort,statusDistribution,categoryDistribution,priorityDistribution,averageResolutionMinutes,resolutionSampleSize,trend,staffWorkload,feedback:{averageRating,sampleSize}}`; exact formulas §15. | 422 invalid range/bucket/timezone. |
+| `GET /api/v1/notifications`                        | P1 / S/F/A / personal inbox          | Pagination; `unreadOnly` boolean default false; newest first.                          | 200 paginated `{id,type,title,message,complaintId                                                                                                                                                                                   | null,createdAt,readAt                                                                                                                                                                                       | null}`.                            | Common errors; never accept userId filter. |
+| `GET /api/v1/notifications/unread-count`           | P1 / S/F/A / badge                   | No params/body.                                                                        | 200 `{unreadCount}`.                                                                                                                                                                                                                | Common errors.                                                                                                                                                                                              |
+| `PATCH /api/v1/notifications/:notificationId/read` | P1 / S/F/A owner / mark one          | Id; empty `{}`; preserve first readAt; idempotent.                                     | 200 `{notification}`.                                                                                                                                                                                                               | 404 nonexistent/another user's notification.                                                                                                                                                                |
+| `POST /api/v1/notifications/read-all`              | P1 / S/F/A / mark visible inbox read | `{through}` ISO UTC ≤now; affects own unread records createdAt ≤through.               | 200 `{updatedCount}`; newly arrived records stay unread.                                                                                                                                                                            | 422 future/invalid cutoff.                                                                                                                                                                                  |
+| `GET /api/v1/health`                               | P0 / Public / process liveness       | No input; no external dependency needed.                                               | 200 `{status:"ok"}` + requestId.                                                                                                                                                                                                    | Process unavailable is handled by host.                                                                                                                                                                     |
+| `GET /api/v1/health/ready`                         | P0 / Public / readiness              | No input; short-timeout database ping and private-storage writability/readiness check. | 200 `{status:"ready"}`.                                                                                                                                                                                                             | 503 `SERVICE_UNAVAILABLE`; no hostnames, paths, credentials, or topology leaked.                                                                                                                            |
 
 Health probes are exempt from user authentication and normal read limits but receive a separate modest IP cap. Read-all notification operations are bounded by the user's index and retention policy; no global update is allowed.
 
@@ -341,17 +341,33 @@ Example IDs are illustrative valid ObjectId strings. JWTs shown as placeholders 
 **Login** — `POST /api/v1/auth/login`, JSON and `X-CSRF-Protection: 1`, browser Origin on configured allowlist:
 
 ```json
-{"email":"student.a@hostelfix.demo","password":"<locally-supplied-demo-password>"}
+{
+  "email": "student.a@hostelfix.demo",
+  "password": "<locally-supplied-demo-password>"
+}
 ```
 
 ```json
 {
   "data": {
-    "user": {"id":"670000000000000000000001","name":"Asha Student","email":"student.a@hostelfix.demo","phone":null,"role":"STUDENT","status":"ACTIVE","mustChangePassword":false,"hostelId":"670000000000000000000101","blockId":"670000000000000000000201","roomId":"670000000000000000000301","version":1,"createdAt":"2026-10-18T04:00:00.000Z"},
-    "accessToken":"<short-lived-jwt>",
-    "expiresIn":600
+    "user": {
+      "id": "670000000000000000000001",
+      "name": "Asha Student",
+      "email": "student.a@hostelfix.demo",
+      "phone": null,
+      "role": "STUDENT",
+      "status": "ACTIVE",
+      "mustChangePassword": false,
+      "hostelId": "670000000000000000000101",
+      "blockId": "670000000000000000000201",
+      "roomId": "670000000000000000000301",
+      "version": 1,
+      "createdAt": "2026-10-18T04:00:00.000Z"
+    },
+    "accessToken": "<short-lived-jwt>",
+    "expiresIn": 600
   },
-  "meta":{"requestId":"a8477737-6761-4a73-af9a-b4d6f9c8eace"}
+  "meta": { "requestId": "a8477737-6761-4a73-af9a-b4d6f9c8eace" }
 }
 ```
 
@@ -361,13 +377,23 @@ The response also sets the HttpOnly refresh cookie; its value is absent from JSO
 
 ```json
 {
-  "clientRequestId":"d39064b2-f3fb-48d7-bd5c-07b090cc7eac",
-  "title":"Ceiling fan stopped working",
-  "description":"The ceiling fan in my room does not start, even after checking the wall switch.",
-  "categoryId":"670000000000000000000401",
-  "location":{"type":"ROOM","hostelId":"670000000000000000000101","blockId":"670000000000000000000201","roomId":"670000000000000000000301"},
-  "indicators":{"safetyRisk":false,"essentialServiceOutage":false,"affectsMultipleRooms":false,"functionalityLoss":true},
-  "attachmentIds":[]
+  "clientRequestId": "d39064b2-f3fb-48d7-bd5c-07b090cc7eac",
+  "title": "Ceiling fan stopped working",
+  "description": "The ceiling fan in my room does not start, even after checking the wall switch.",
+  "categoryId": "670000000000000000000401",
+  "location": {
+    "type": "ROOM",
+    "hostelId": "670000000000000000000101",
+    "blockId": "670000000000000000000201",
+    "roomId": "670000000000000000000301"
+  },
+  "indicators": {
+    "safetyRisk": false,
+    "essentialServiceOutage": false,
+    "affectsMultipleRooms": false,
+    "functionalityLoss": true
+  },
+  "attachmentIds": []
 }
 ```
 
@@ -375,44 +401,71 @@ The response also sets the HttpOnly refresh cookie; its value is absent from JSO
 
 ```json
 {
-  "data":{"complaint":{
-    "id":"670000000000000000000501",
-    "reference":"HFX-2026-7KM4Q2P9RX",
-    "title":"Ceiling fan stopped working",
-    "status":"SUBMITTED",
-    "priority":"MEDIUM",
-    "suggestedPriority":"MEDIUM",
-    "prioritySource":"RULE",
-    "priorityExplanation":"Loss of functionality was reported.",
-    "assignee":null,
-    "cycleNumber":1,
-    "version":1,
-    "createdAt":"2026-10-18T06:00:00.000Z",
-    "responseDueAt":"2026-10-18T14:00:00.000Z",
-    "resolutionDueAt":"2026-10-20T06:00:00.000Z",
-    "isResponseOverdue":false,
-    "isResolutionOverdue":false
-  }},
-  "meta":{"requestId":"83e5cbb8-91be-4251-bc80-c98f2fe8aef9"}
+  "data": {
+    "complaint": {
+      "id": "670000000000000000000501",
+      "reference": "HFX-2026-7KM4Q2P9RX",
+      "title": "Ceiling fan stopped working",
+      "status": "SUBMITTED",
+      "priority": "MEDIUM",
+      "suggestedPriority": "MEDIUM",
+      "prioritySource": "RULE",
+      "priorityExplanation": "Loss of functionality was reported.",
+      "assignee": null,
+      "cycleNumber": 1,
+      "version": 1,
+      "createdAt": "2026-10-18T06:00:00.000Z",
+      "responseDueAt": "2026-10-18T14:00:00.000Z",
+      "resolutionDueAt": "2026-10-20T06:00:00.000Z",
+      "isResponseOverdue": false,
+      "isResolutionOverdue": false
+    }
+  },
+  "meta": { "requestId": "83e5cbb8-91be-4251-bc80-c98f2fe8aef9" }
 }
 ```
 
 **Triage then assign** — after triage has returned version 2:
 
 ```json
-{"expectedVersion":2,"staffId":"670000000000000000000011","note":"Electrical team to inspect the fan capacitor."}
+{
+  "expectedVersion": 2,
+  "staffId": "670000000000000000000011",
+  "note": "Electrical team to inspect the fan capacitor."
+}
 ```
 
 Send this to `POST /api/v1/complaints/670000000000000000000501/assignment`. A 200 command response contains the updated complaint at version 3 plus:
 
 ```json
-{"id":"670000000000000000000601","complaintId":"670000000000000000000501","type":"ASSIGNED","actor":{"id":"670000000000000000000021","name":"Hostel A Admin","role":"ADMIN"},"occurredAt":"2026-10-18T06:10:00.000Z","previousStatus":"TRIAGED","newStatus":"ASSIGNED","note":"Electrical team to inspect the fan capacitor.","changes":{"previousAssigneeId":null,"assigneeId":"670000000000000000000011"}}
+{
+  "id": "670000000000000000000601",
+  "complaintId": "670000000000000000000501",
+  "type": "ASSIGNED",
+  "actor": {
+    "id": "670000000000000000000021",
+    "name": "Hostel A Admin",
+    "role": "ADMIN"
+  },
+  "occurredAt": "2026-10-18T06:10:00.000Z",
+  "previousStatus": "TRIAGED",
+  "newStatus": "ASSIGNED",
+  "note": "Electrical team to inspect the fan capacitor.",
+  "changes": {
+    "previousAssigneeId": null,
+    "assigneeId": "670000000000000000000011"
+  }
+}
 ```
 
 **Resolve** — after staff starts work and obtains version 4, send to the transitions endpoint:
 
 ```json
-{"expectedVersion":4,"toStatus":"RESOLVED","resolutionNote":"Replaced the faulty capacitor and tested the fan at all speed settings."}
+{
+  "expectedVersion": 4,
+  "toStatus": "RESOLVED",
+  "resolutionNote": "Replaced the faulty capacitor and tested the fan at all speed settings."
+}
 ```
 
 **Reopen** — owner sends `{"expectedVersion":5,"reason":"The fan stopped again after running for about ten minutes."}` to the reopen endpoint. Success returns version 6, status `REOPENED`, cycleNumber 2, no assignee, and a new SLA snapshot. A feedback action between these commands would have incremented the version, requiring a fresh value.
@@ -420,17 +473,31 @@ Send this to `POST /api/v1/complaints/670000000000000000000501/assignment`. A 20
 **Validation failure:**
 
 ```json
-{"error":{"code":"VALIDATION_ERROR","message":"Some fields need correction.","fields":[{"path":"description","message":"Use 20 to 4000 characters."}],"requestId":"6c1143fc-2a45-4116-9b67-0c3a278e35dc"}}
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Some fields need correction.",
+    "fields": [
+      { "path": "description", "message": "Use 20 to 4000 characters." }
+    ],
+    "requestId": "6c1143fc-2a45-4116-9b67-0c3a278e35dc"
+  }
+}
 ```
 
 **Version conflict:**
 
 ```json
-{"error":{"code":"VERSION_CONFLICT","message":"This complaint changed. Refresh it before retrying.","requestId":"bd8f8e38-ffae-4ed7-8740-69edc94cf2ba"}}
+{
+  "error": {
+    "code": "VERSION_CONFLICT",
+    "message": "This complaint changed. Refresh it before retrying.",
+    "requestId": "bd8f8e38-ffae-4ed7-8740-69edc94cf2ba"
+  }
+}
 ```
 
 **Paginated list envelope:**
-
 
 ## 10. Data models and relationships
 
@@ -438,22 +505,22 @@ All collections use Mongoose. Every document has `_id` (ObjectId, auto), `create
 
 ### 10.1 User
 
-| Field | Type | Constraints |
-|---|---|---|
-| name | String | required, trim, 2–80 |
-| email | String | required, trim, lowercase, unique index, max 254 |
-| passwordHash | String | required; never projected to API responses |
-| phone | String | nullable, E.164 `+` 8–15 digits |
-| role | String enum | `STUDENT`, `STAFF`, `ADMIN`; required, immutable after creation |
-| status | String enum | `ACTIVE`, `INACTIVE`; default `ACTIVE` |
-| mustChangePassword | Boolean | default false |
-| hostelId | ObjectId ref Hostel | required for STUDENT and STAFF; null for ADMIN |
-| blockId | ObjectId ref Block | required for STUDENT; null for STAFF/ADMIN |
-| roomId | ObjectId ref Room | required for STUDENT; null for STAFF/ADMIN |
-| adminHostelIds | [ObjectId] ref Hostel | non-empty for ADMIN only; empty array for others |
-| categoryIds | [ObjectId] ref Category | non-empty for STAFF only; empty array for others |
-| enrollmentCodeHash | String | nullable; used only at registration verification, never returned |
-| version | Number | default 1; incremented on every mutation |
+| Field              | Type                    | Constraints                                                      |
+| ------------------ | ----------------------- | ---------------------------------------------------------------- |
+| name               | String                  | required, trim, 2–80                                             |
+| email              | String                  | required, trim, lowercase, unique index, max 254                 |
+| passwordHash       | String                  | required; never projected to API responses                       |
+| phone              | String                  | nullable, E.164 `+` 8–15 digits                                  |
+| role               | String enum             | `STUDENT`, `STAFF`, `ADMIN`; required, immutable after creation  |
+| status             | String enum             | `ACTIVE`, `INACTIVE`; default `ACTIVE`                           |
+| mustChangePassword | Boolean                 | default false                                                    |
+| hostelId           | ObjectId ref Hostel     | required for STUDENT and STAFF; null for ADMIN                   |
+| blockId            | ObjectId ref Block      | required for STUDENT; null for STAFF/ADMIN                       |
+| roomId             | ObjectId ref Room       | required for STUDENT; null for STAFF/ADMIN                       |
+| adminHostelIds     | [ObjectId] ref Hostel   | non-empty for ADMIN only; empty array for others                 |
+| categoryIds        | [ObjectId] ref Category | non-empty for STAFF only; empty array for others                 |
+| enrollmentCodeHash | String                  | nullable; used only at registration verification, never returned |
+| version            | Number                  | default 1; incremented on every mutation                         |
 
 **Indexes:** `{ email: 1 }` unique. `{ hostelId: 1, role: 1, status: 1 }` for scoped staff/student queries. `{ role: 1, status: 1 }` for role-filtered lookups.
 
@@ -461,16 +528,16 @@ All collections use Mongoose. Every document has `_id` (ObjectId, auto), `create
 
 ### 10.2 Session
 
-| Field | Type | Constraints |
-|---|---|---|
-| userId | ObjectId ref User | required, indexed |
-| tokenFamily | String | required; UUID v4 identifying the refresh chain |
-| tokenHash | String | required; bcrypt hash of the current opaque refresh token |
-| isRevoked | Boolean | default false |
-| expiresAt | Date | required; absolute expiry of the refresh token |
-| lastRefreshedAt | Date | default createdAt |
-| userAgent | String | nullable; truncated to 256 chars |
-| ipAddress | String | nullable; stored for audit, not used for validation |
+| Field           | Type              | Constraints                                               |
+| --------------- | ----------------- | --------------------------------------------------------- |
+| userId          | ObjectId ref User | required, indexed                                         |
+| tokenFamily     | String            | required; UUID v4 identifying the refresh chain           |
+| tokenHash       | String            | required; bcrypt hash of the current opaque refresh token |
+| isRevoked       | Boolean           | default false                                             |
+| expiresAt       | Date              | required; absolute expiry of the refresh token            |
+| lastRefreshedAt | Date              | default createdAt                                         |
+| userAgent       | String            | nullable; truncated to 256 chars                          |
+| ipAddress       | String            | nullable; stored for audit, not used for validation       |
 
 **Indexes:** `{ userId: 1, isRevoked: 1 }` for session listing/revocation. `{ tokenFamily: 1 }` unique. `{ expiresAt: 1 }` with TTL index (expireAfterSeconds: 0) for automatic document cleanup.
 
@@ -478,13 +545,13 @@ All collections use Mongoose. Every document has `_id` (ObjectId, auto), `create
 
 ### 10.3 Hostel
 
-| Field | Type | Constraints |
-|---|---|---|
-| name | String | required, trim, 2–80 |
-| code | String | required, uppercase, immutable, unique, 2–20, `[A-Z0-9-]+` |
-| enrollmentCodeHash | String | required; bcrypt hash; never returned in any API response |
-| isActive | Boolean | default true |
-| version | Number | default 1 |
+| Field              | Type    | Constraints                                                |
+| ------------------ | ------- | ---------------------------------------------------------- |
+| name               | String  | required, trim, 2–80                                       |
+| code               | String  | required, uppercase, immutable, unique, 2–20, `[A-Z0-9-]+` |
+| enrollmentCodeHash | String  | required; bcrypt hash; never returned in any API response  |
+| isActive           | Boolean | default true                                               |
+| version            | Number  | default 1                                                  |
 
 **Indexes:** `{ code: 1 }` unique. `{ isActive: 1 }`.
 
@@ -498,81 +565,81 @@ version in the same transaction as the Block write. The Block's own version is
 also incremented. Creation/deactivation and reference-use guards follow §7.4;
 the maximum of 20 blocks is enforced while holding the parent write guard.
 
-| Field | Type | Constraints |
-|---|---|---|
-| hostelId | ObjectId ref Hostel | required |
-| name | String | required, trim, 2–80 |
-| code | String | required, uppercase, 1–12, `[A-Z0-9-]+` |
-| isActive | Boolean | default true |
-| version | Number | default 1 |
+| Field    | Type                | Constraints                             |
+| -------- | ------------------- | --------------------------------------- |
+| hostelId | ObjectId ref Hostel | required                                |
+| name     | String              | required, trim, 2–80                    |
+| code     | String              | required, uppercase, 1–12, `[A-Z0-9-]+` |
+| isActive | Boolean             | default true                            |
+| version  | Number              | default 1                               |
 
 **Indexes:** `{ hostelId: 1, code: 1 }` unique. `{ hostelId: 1, isActive: 1 }`.
 
 ### 10.5 Room
 
-| Field | Type | Constraints |
-|---|---|---|
-| hostelId | ObjectId ref Hostel | required |
-| blockId | ObjectId ref Block | required |
-| label | String | required, trim, uppercase, 1–12, `[A-Z0-9-]+` |
-| isActive | Boolean | default true |
-| version | Number | default 1 |
+| Field    | Type                | Constraints                                   |
+| -------- | ------------------- | --------------------------------------------- |
+| hostelId | ObjectId ref Hostel | required                                      |
+| blockId  | ObjectId ref Block  | required                                      |
+| label    | String              | required, trim, uppercase, 1–12, `[A-Z0-9-]+` |
+| isActive | Boolean             | default true                                  |
+| version  | Number              | default 1                                     |
 
 **Indexes:** `{ hostelId: 1, blockId: 1, label: 1 }` unique. `{ hostelId: 1, blockId: 1, isActive: 1 }`.
 
 ### 10.6 Category
 
-| Field | Type | Constraints |
-|---|---|---|
-| hostelId | ObjectId ref Hostel | required |
-| code | String | required, uppercase, immutable, 2–30, `[A-Z_]+` |
-| name | String | required, trim, 2–60 |
-| description | String | nullable, max 300 |
-| isActive | Boolean | default true |
-| version | Number | default 1 |
+| Field       | Type                | Constraints                                     |
+| ----------- | ------------------- | ----------------------------------------------- |
+| hostelId    | ObjectId ref Hostel | required                                        |
+| code        | String              | required, uppercase, immutable, 2–30, `[A-Z_]+` |
+| name        | String              | required, trim, 2–60                            |
+| description | String              | nullable, max 300                               |
+| isActive    | Boolean             | default true                                    |
+| version     | Number              | default 1                                       |
 
 **Indexes:** `{ hostelId: 1, code: 1 }` unique. `{ hostelId: 1, isActive: 1 }`.
 
 ### 10.7 Complaint
 
-| Field | Type | Constraints |
-|---|---|---|
-| reference | String | required, unique; generated server-side `HFX-YYYY-<10-char alphanumeric>` |
-| ownerId | ObjectId ref User | required, immutable |
-| hostelId | ObjectId ref Hostel | required, immutable |
-| title | String | required, trim, 8–120 |
-| description | String | required, trim, 20–4,000 |
-| categoryId | ObjectId ref Category | required |
-| location | Embedded | `{ type: enum ROOM|BLOCK_COMMON|HOSTEL_COMMON, hostelId, blockId?, roomId?, areaLabel? }` |
-| indicators | Embedded | `{ safetyRisk: Boolean, essentialServiceOutage: Boolean, affectsMultipleRooms: Boolean, functionalityLoss: Boolean }` |
-| status | String enum | `SUBMITTED`, `TRIAGED`, `ASSIGNED`, `IN_PROGRESS`, `RESOLVED`, `CLOSED`, `REOPENED`, `REJECTED`; default `SUBMITTED` |
-| priority | String enum | `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`; computed at creation |
-| suggestedPriority | String enum | same values; always rule-computed |
-| prioritySource | String enum | `RULE`, `ADMIN`; default `RULE` |
-| priorityExplanation | String | human-readable summary of the scoring reason |
-| assigneeId | ObjectId ref User | nullable; current assignee |
-| clientRequestId | String | required, UUID, indexed for idempotency |
-| clientRequestHash | String | required; SHA-256 of canonical validated input |
-| attachmentIds | [ObjectId] ref Attachment | 0–3 |
-| cycleNumber | Number | default 1; max 3 |
-| reopenCount | Number | default 0; max 2 |
-| slaPolicy | Embedded | snapshot of the hostel's SLA policy at cycle start |
-| responseDueAt | Date | computed from slaPolicy + cycle start |
-| resolutionDueAt | Date | computed from slaPolicy + cycle start |
-| firstRespondedAt | Date | nullable; set on first triage/assignment in current cycle |
-| resolvedAt | Date | nullable; set when status becomes RESOLVED |
-| closedAt | Date | nullable; set when status becomes CLOSED |
-| rejectedAt | Date | nullable; set when status becomes REJECTED |
-| reopenedAt | Date | nullable; set when status becomes REOPENED |
-| reopenUntil | Date | nullable; resolvedAt + 7 days |
-| resolutionNote | String | nullable; 20–2,000; set by resolver |
-| resolverId | ObjectId ref User | nullable |
-| workStartedAt | Date | nullable; set when IN_PROGRESS; reset on reassignment |
-| priorCycles | [Embedded] | `[{ cycleNumber, assigneeId, firstRespondedAt, resolvedAt, resolutionNote, resolverId, resolutionDurationMinutes, reopenedAt, reopenReason }]`; max 2 entries |
-| rejectionCode | String enum | `OUT_OF_SCOPE`, `INVALID_LOCATION`, `INSUFFICIENT_INFORMATION`; nullable |
-| duplicateOfId | ObjectId ref Complaint | nullable; P1 canonical link |
-| escalationLevel | Number | default 0; max 2; P1 |
-| version | Number | default 1 |
+| Field               | Type                      | Constraints                                                                                                                                                   |
+| ------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| reference           | String                    | required, unique; generated server-side `HFX-YYYY-<10-char alphanumeric>`                                                                                     |
+| ownerId             | ObjectId ref User         | required, immutable                                                                                                                                           |
+| hostelId            | ObjectId ref Hostel       | required, immutable                                                                                                                                           |
+| title               | String                    | required, trim, 8–120                                                                                                                                         |
+| description         | String                    | required, trim, 20–4,000                                                                                                                                      |
+| categoryId          | ObjectId ref Category     | required                                                                                                                                                      |
+| location            | Embedded                  | `{ type: enum ROOM                                                                                                                                            | BLOCK_COMMON | HOSTEL_COMMON, hostelId, blockId?, roomId?, areaLabel? }` |
+| indicators          | Embedded                  | `{ safetyRisk: Boolean, essentialServiceOutage: Boolean, affectsMultipleRooms: Boolean, functionalityLoss: Boolean }`                                         |
+| status              | String enum               | `SUBMITTED`, `TRIAGED`, `ASSIGNED`, `IN_PROGRESS`, `RESOLVED`, `CLOSED`, `REOPENED`, `REJECTED`; default `SUBMITTED`                                          |
+| priority            | String enum               | `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`; computed at creation                                                                                                     |
+| suggestedPriority   | String enum               | same values; always rule-computed                                                                                                                             |
+| prioritySource      | String enum               | `RULE`, `ADMIN`; default `RULE`                                                                                                                               |
+| priorityExplanation | String                    | human-readable summary of the scoring reason                                                                                                                  |
+| assigneeId          | ObjectId ref User         | nullable; current assignee                                                                                                                                    |
+| clientRequestId     | String                    | required, UUID, indexed for idempotency                                                                                                                       |
+| clientRequestHash   | String                    | required; SHA-256 of canonical validated input                                                                                                                |
+| attachmentIds       | [ObjectId] ref Attachment | 0–3                                                                                                                                                           |
+| cycleNumber         | Number                    | default 1; max 3                                                                                                                                              |
+| reopenCount         | Number                    | default 0; max 2                                                                                                                                              |
+| slaPolicy           | Embedded                  | snapshot of the hostel's SLA policy at cycle start                                                                                                            |
+| responseDueAt       | Date                      | computed from slaPolicy + cycle start                                                                                                                         |
+| resolutionDueAt     | Date                      | computed from slaPolicy + cycle start                                                                                                                         |
+| firstRespondedAt    | Date                      | nullable; set on first triage/assignment in current cycle                                                                                                     |
+| resolvedAt          | Date                      | nullable; set when status becomes RESOLVED                                                                                                                    |
+| closedAt            | Date                      | nullable; set when status becomes CLOSED                                                                                                                      |
+| rejectedAt          | Date                      | nullable; set when status becomes REJECTED                                                                                                                    |
+| reopenedAt          | Date                      | nullable; set when status becomes REOPENED                                                                                                                    |
+| reopenUntil         | Date                      | nullable; resolvedAt + 7 days                                                                                                                                 |
+| resolutionNote      | String                    | nullable; 20–2,000; set by resolver                                                                                                                           |
+| resolverId          | ObjectId ref User         | nullable                                                                                                                                                      |
+| workStartedAt       | Date                      | nullable; set when IN_PROGRESS; reset on reassignment                                                                                                         |
+| priorCycles         | [Embedded]                | `[{ cycleNumber, assigneeId, firstRespondedAt, resolvedAt, resolutionNote, resolverId, resolutionDurationMinutes, reopenedAt, reopenReason }]`; max 2 entries |
+| rejectionCode       | String enum               | `OUT_OF_SCOPE`, `INVALID_LOCATION`, `INSUFFICIENT_INFORMATION`; nullable                                                                                      |
+| duplicateOfId       | ObjectId ref Complaint    | nullable; P1 canonical link                                                                                                                                   |
+| escalationLevel     | Number                    | default 0; max 2; P1                                                                                                                                          |
+| version             | Number                    | default 1                                                                                                                                                     |
 
 **Indexes:** `{ reference: 1 }` unique. `{ ownerId: 1, status: 1, createdAt: -1 }` for student lists. `{ hostelId: 1, status: 1, createdAt: -1 }` for admin lists. `{ assigneeId: 1, status: 1 }` sparse, for staff queue. `{ ownerId: 1, clientRequestId: 1 }` unique, for idempotency. `{ hostelId: 1, responseDueAt: 1 }` and `{ hostelId: 1, resolutionDueAt: 1 }` for overdue queries. `{ hostelId: 1, categoryId: 1, status: 1 }` for reporting.
 
@@ -598,18 +665,18 @@ in §9.4. CMP-T15's timeline requirement refers to that combined detail view.
 
 ### 10.8 Activity
 
-| Field | Type | Constraints |
-|---|---|---|
-| complaintId | ObjectId ref Complaint | required |
-| type | String enum | `CREATED`, `CONTENT_UPDATED`, `TRIAGED`, `REJECTED`, `ASSIGNED`, `REASSIGNED`, `WORK_STARTED`, `RESOLVED`, `CLOSED`, `REOPENED`, `COMMENT_ADDED`, `PRIORITY_CHANGED`, `FEEDBACK_SUBMITTED`, `DUPLICATE_LINKED`, `DUPLICATE_UNLINKED`, `ESCALATED` |
-| actorId | ObjectId ref User | nullable (null = system) |
-| actorName | String | snapshot at event time |
-| actorRole | String enum | snapshot at event time |
-| occurredAt | Date | required; server timestamp |
-| previousStatus | String enum | nullable |
-| newStatus | String enum | nullable |
-| note | String | nullable; the command's note/reason |
-| changes | Mixed | nullable; structured change payload (e.g., `{previousAssigneeId, assigneeId}`, `{previousPriority, newPriority}`, `{rating, comment}`) |
+| Field          | Type                   | Constraints                                                                                                                                                                                                                                       |
+| -------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| complaintId    | ObjectId ref Complaint | required                                                                                                                                                                                                                                          |
+| type           | String enum            | `CREATED`, `CONTENT_UPDATED`, `TRIAGED`, `REJECTED`, `ASSIGNED`, `REASSIGNED`, `WORK_STARTED`, `RESOLVED`, `CLOSED`, `REOPENED`, `COMMENT_ADDED`, `PRIORITY_CHANGED`, `FEEDBACK_SUBMITTED`, `DUPLICATE_LINKED`, `DUPLICATE_UNLINKED`, `ESCALATED` |
+| actorId        | ObjectId ref User      | nullable (null = system)                                                                                                                                                                                                                          |
+| actorName      | String                 | snapshot at event time                                                                                                                                                                                                                            |
+| actorRole      | String enum            | snapshot at event time                                                                                                                                                                                                                            |
+| occurredAt     | Date                   | required; server timestamp                                                                                                                                                                                                                        |
+| previousStatus | String enum            | nullable                                                                                                                                                                                                                                          |
+| newStatus      | String enum            | nullable                                                                                                                                                                                                                                          |
+| note           | String                 | nullable; the command's note/reason                                                                                                                                                                                                               |
+| changes        | Mixed                  | nullable; structured change payload (e.g., `{previousAssigneeId, assigneeId}`, `{previousPriority, newPriority}`, `{rating, comment}`)                                                                                                            |
 
 **Indexes:** `{ complaintId: 1, occurredAt: 1, _id: 1 }` for timeline pagination. Activities are append-only and immutable after creation.
 
@@ -617,13 +684,13 @@ in §9.4. CMP-T15's timeline requirement refers to that combined detail view.
 
 ### 10.9 Comment
 
-| Field | Type | Constraints |
-|---|---|---|
-| complaintId | ObjectId ref Complaint | required |
-| authorId | ObjectId ref User | required |
-| authorName | String | snapshot at creation |
-| authorRole | String enum | snapshot at creation |
-| body | String | required, trim, 1–2,000 |
+| Field       | Type                   | Constraints             |
+| ----------- | ---------------------- | ----------------------- |
+| complaintId | ObjectId ref Complaint | required                |
+| authorId    | ObjectId ref User      | required                |
+| authorName  | String                 | snapshot at creation    |
+| authorRole  | String enum            | snapshot at creation    |
+| body        | String                 | required, trim, 1–2,000 |
 
 **Indexes:** `{ complaintId: 1, createdAt: 1 }` for pagination.
 
@@ -631,17 +698,17 @@ in §9.4. CMP-T15's timeline requirement refers to that combined detail view.
 
 ### 10.10 Attachment
 
-| Field | Type | Constraints |
-|---|---|---|
-| ownerId | ObjectId ref User | required; uploader |
-| complaintId | ObjectId ref Complaint | nullable; set when bound to a complaint |
-| originalName | String | required; sanitized filename |
-| mimeType | String enum | `image/jpeg`, `image/png`, `image/webp` |
-| sizeBytes | Number | required; ≤ 5 MiB |
-| width | Number | required; ≤ 6,000 |
-| height | Number | required; ≤ 6,000 |
-| storageKey | String | required; internal path; never exposed in API |
-| expiresAt | Date | nullable; TTL for unbound uploads (60 minutes); cleared when bound |
+| Field        | Type                   | Constraints                                                        |
+| ------------ | ---------------------- | ------------------------------------------------------------------ |
+| ownerId      | ObjectId ref User      | required; uploader                                                 |
+| complaintId  | ObjectId ref Complaint | nullable; set when bound to a complaint                            |
+| originalName | String                 | required; sanitized filename                                       |
+| mimeType     | String enum            | `image/jpeg`, `image/png`, `image/webp`                            |
+| sizeBytes    | Number                 | required; ≤ 5 MiB                                                  |
+| width        | Number                 | required; ≤ 6,000                                                  |
+| height       | Number                 | required; ≤ 6,000                                                  |
+| storageKey   | String                 | required; internal path; never exposed in API                      |
+| expiresAt    | Date                   | nullable; TTL for unbound uploads (60 minutes); cleared when bound |
 
 **Indexes:** `{ ownerId: 1, complaintId: 1 }`. `{ expiresAt: 1 }` TTL index (expireAfterSeconds: 0) on unbound uploads. `{ complaintId: 1 }` for complaint attachment lookup.
 
@@ -649,14 +716,14 @@ in §9.4. CMP-T15's timeline requirement refers to that combined detail view.
 
 ### 10.11 Feedback
 
-| Field | Type | Constraints |
-|---|---|---|
-| complaintId | ObjectId ref Complaint | required |
-| authorId | ObjectId ref User | required; must be complaint owner |
-| rating | Number | required; integer 1–5 |
-| comment | String | nullable; max 1,000 |
-| cycleNumber | Number | required; references the resolution cycle |
-| isCurrent | Boolean | default true; set false on reopen |
+| Field       | Type                   | Constraints                               |
+| ----------- | ---------------------- | ----------------------------------------- |
+| complaintId | ObjectId ref Complaint | required                                  |
+| authorId    | ObjectId ref User      | required; must be complaint owner         |
+| rating      | Number                 | required; integer 1–5                     |
+| comment     | String                 | nullable; max 1,000                       |
+| cycleNumber | Number                 | required; references the resolution cycle |
+| isCurrent   | Boolean                | default true; set false on reopen         |
 
 **Indexes:** `{ complaintId: 1, isCurrent: 1 }` for current feedback lookup. `{ complaintId: 1, cycleNumber: 1 }` unique, ensuring one feedback per cycle.
 
@@ -664,14 +731,14 @@ in §9.4. CMP-T15's timeline requirement refers to that combined detail view.
 
 ### 10.12 Notification (P1)
 
-| Field | Type | Constraints |
-|---|---|---|
-| userId | ObjectId ref User | required; recipient |
-| type | String enum | `STATUS_CHANGED`, `ASSIGNED`, `COMMENT_ADDED`, `FEEDBACK_RECEIVED`, `SLA_BREACH`, `ESCALATED`, `DUPLICATE_LINKED` |
-| title | String | required; ≤ 120 |
-| message | String | required; ≤ 500 |
-| complaintId | ObjectId ref Complaint | nullable |
-| readAt | Date | nullable; set on first read |
+| Field       | Type                   | Constraints                                                                                                       |
+| ----------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| userId      | ObjectId ref User      | required; recipient                                                                                               |
+| type        | String enum            | `STATUS_CHANGED`, `ASSIGNED`, `COMMENT_ADDED`, `FEEDBACK_RECEIVED`, `SLA_BREACH`, `ESCALATED`, `DUPLICATE_LINKED` |
+| title       | String                 | required; ≤ 120                                                                                                   |
+| message     | String                 | required; ≤ 500                                                                                                   |
+| complaintId | ObjectId ref Complaint | nullable                                                                                                          |
+| readAt      | Date                   | nullable; set on first read                                                                                       |
 
 **Indexes:** `{ userId: 1, readAt: 1, createdAt: -1 }` for inbox queries. `{ userId: 1, type: 1, complaintId: 1, createdAt: -1 }` for deduplication.
 
@@ -681,14 +748,14 @@ in §9.4. CMP-T15's timeline requirement refers to that combined detail view.
 
 SLA and priority configuration is stored as a separate collection keyed by hostelId for independent versioning.
 
-| Field | Type | Constraints |
-|---|---|---|
-| hostelId | ObjectId ref Hostel | required, unique index |
-| slaTargets | Embedded | `{ CRITICAL: { responseMinutes, resolutionMinutes }, HIGH: {...}, MEDIUM: {...}, LOW: {...} }` — all positive integers; responseMinutes ≤ resolutionMinutes; higher priority has equal or tighter targets |
-| priorityWeights | Embedded | `{ safetyRisk, essentialServiceOutage, affectsMultipleRooms, functionalityLoss }` — positive integers, used by the scoring algorithm in §14 |
-| priorityThresholds | Embedded | `{ CRITICAL: Number, HIGH: Number, MEDIUM: Number }` — descending score boundaries |
-| escalationConfig | Embedded | P1; `{ level1FractionOfResolution: 0.5, level2Minutes: 1440, autoEscalate: false }` |
-| policyVersion | Number | default 1; incremented on every edit |
+| Field              | Type                | Constraints                                                                                                                                                                                               |
+| ------------------ | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| hostelId           | ObjectId ref Hostel | required, unique index                                                                                                                                                                                    |
+| slaTargets         | Embedded            | `{ CRITICAL: { responseMinutes, resolutionMinutes }, HIGH: {...}, MEDIUM: {...}, LOW: {...} }` — all positive integers; responseMinutes ≤ resolutionMinutes; higher priority has equal or tighter targets |
+| priorityWeights    | Embedded            | `{ safetyRisk, essentialServiceOutage, affectsMultipleRooms, functionalityLoss }` — positive integers, used by the scoring algorithm in §14                                                               |
+| priorityThresholds | Embedded            | `{ CRITICAL: Number, HIGH: Number, MEDIUM: Number }` — descending score boundaries                                                                                                                        |
+| escalationConfig   | Embedded            | P1; `{ level1FractionOfResolution: 0.5, level2Minutes: 1440, autoEscalate: false }`                                                                                                                       |
+| policyVersion      | Number              | default 1; incremented on every edit                                                                                                                                                                      |
 
 **Indexes:** `{ hostelId: 1 }` unique.
 
@@ -932,39 +999,39 @@ requestId → rateLimiter → cors → bodyParser → csrfCheck (mutations) →
 
 ### 12.2 Public screens
 
-| Screen | Path | Description |
-|---|---|---|
-| Login | `/login` | Email + password form. Shows generic "Invalid credentials" on 401. Link to register. |
+| Screen   | Path        | Description                                                                                                                                                                                                                                        |
+| -------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Login    | `/login`    | Email + password form. Shows generic "Invalid credentials" on 401. Link to register.                                                                                                                                                               |
 | Register | `/register` | Multi-step or single form: hostel picker (from catalog API) → block → room → enrollment code → name/email/password/phone. Validates client-side and server-side. Success shows "Account created, please log in." with a link. Does not auto-login. |
 
 ### 12.3 Student screens
 
-| Screen | Path | Key elements |
-|---|---|---|
-| Dashboard | `/student/dashboard` | Status count cards (submitted, in-progress, resolved, closed), recent 5 complaints, latest 10 activity items. Overdue badge if any own complaint is overdue. |
-| My Complaints | `/student/complaints` | Paginated list with filters (status, category, date range). Search by reference or title substring. Sort controls. Each row: reference, title, status badge, priority badge, dates, assignee name or "Unassigned". Click navigates to detail. |
-| New Complaint | `/student/complaints/new` | Category picker, location defaulting to room, title, description textarea with char count, four indicator checkboxes with explanations, photo upload area (drag-drop or click, max 3, preview thumbnails, remove before submit). Client UUID generated on mount. Suggested priority shown after indicators selected. Submit button with loading state. |
+| Screen           | Path                       | Key elements                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ---------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Dashboard        | `/student/dashboard`       | Status count cards (submitted, in-progress, resolved, closed), recent 5 complaints, latest 10 activity items. Overdue badge if any own complaint is overdue.                                                                                                                                                                                                                                                      |
+| My Complaints    | `/student/complaints`      | Paginated list with filters (status, category, date range). Search by reference or title substring. Sort controls. Each row: reference, title, status badge, priority badge, dates, assignee name or "Unassigned". Click navigates to detail.                                                                                                                                                                     |
+| New Complaint    | `/student/complaints/new`  | Category picker, location defaulting to room, title, description textarea with char count, four indicator checkboxes with explanations, photo upload area (drag-drop or click, max 3, preview thumbnails, remove before submit). Client UUID generated on mount. Suggested priority shown after indicators selected. Submit button with loading state.                                                            |
 | Complaint Detail | `/student/complaints/[id]` | Header: reference, status, priority, assignee, dates. Description and photos (loaded as authenticated blobs). Allowed actions panel: edit (SUBMITTED), comment (nonterminal), close/reopen (RESOLVED), feedback (RESOLVED/CLOSED without current feedback). Activity timeline in chronological order. Comment form. Feedback form (1–5 stars + optional text). Version conflict: reload detail, show diff prompt. |
-| Profile | `/student/profile` | Name, email (read-only), phone, hostel/block/room (read-only). Edit name/phone. Change password section. |
+| Profile          | `/student/profile`         | Name, email (read-only), phone, hostel/block/room (read-only). Edit name/phone. Change password section.                                                                                                                                                                                                                                                                                                          |
 
 ### 12.4 Staff screens
 
-| Screen | Path | Key elements |
-|---|---|---|
-| Dashboard | `/staff/dashboard` | Assigned/pending count, in-progress count, overdue counts. Work queue (top 10) sorted per §6.3. |
-| Work Queue | `/staff/queue` | Full paginated list of assigned complaints. Sorted: overdue first, priority desc, createdAt asc. Filter by status (ASSIGNED, IN_PROGRESS). |
+| Screen           | Path                     | Key elements                                                                                                                                                                                                                             |
+| ---------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Dashboard        | `/staff/dashboard`       | Assigned/pending count, in-progress count, overdue counts. Work queue (top 10) sorted per §6.3.                                                                                                                                          |
+| Work Queue       | `/staff/queue`           | Full paginated list of assigned complaints. Sorted: overdue first, priority desc, createdAt asc. Filter by status (ASSIGNED, IN_PROGRESS).                                                                                               |
 | Complaint Detail | `/staff/complaints/[id]` | Same detail layout as student but scoped to assigned. Actions: Start Work (ASSIGNED → IN_PROGRESS), Resolve (IN_PROGRESS → RESOLVED with resolution note textarea 20–2,000 chars). Comment form. No triage/assign/close/reopen controls. |
-| Profile | `/staff/profile` | Same as student profile; categories shown read-only. |
+| Profile          | `/staff/profile`         | Same as student profile; categories shown read-only.                                                                                                                                                                                     |
 
 ### 12.5 Admin screens
 
-| Screen | Path | Key elements |
-|---|---|---|
-| Dashboard | `/admin/dashboard` | Hostel selector (if multi-hostel). Status counts, open/unassigned/overdue totals. Staff workload table (name, assigned count, in-progress count). Recent 5 complaints. |
-| All Complaints | `/admin/complaints` | Full filter panel: status (multi-select), category, priority, assignee, overdue type, unassigned toggle, date range, search. Paginated. |
+| Screen           | Path                     | Key elements                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ---------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Dashboard        | `/admin/dashboard`       | Hostel selector (if multi-hostel). Status counts, open/unassigned/overdue totals. Staff workload table (name, assigned count, in-progress count). Recent 5 complaints.                                                                                                                                                                                                                                                                       |
+| All Complaints   | `/admin/complaints`      | Full filter panel: status (multi-select), category, priority, assignee, overdue type, unassigned toggle, date range, search. Paginated.                                                                                                                                                                                                                                                                                                      |
 | Complaint Detail | `/admin/complaints/[id]` | Full detail. Action panel based on state: Triage (SUBMITTED), Reject with code + reason (SUBMITTED/TRIAGED), Assign with staff picker modal (TRIAGED/REOPENED), Reassign (ASSIGNED/IN_PROGRESS), Change Priority with reason, Close after window (RESOLVED). Staff picker shows eligible staff from `GET /api/v1/admin/staff?eligibleForComplaintId=X`. Activity timeline. Comment form. P1 actions (duplicate link, escalate) hidden in P0. |
-| Staff Management | `/admin/staff` | P1 screen. P0 uses the inline staff picker on complaint detail only. |
-| Profile | `/admin/profile` | Name, email, phone, managed hostels (read-only). |
+| Staff Management | `/admin/staff`           | P1 screen. P0 uses the inline staff picker on complaint detail only.                                                                                                                                                                                                                                                                                                                                                                         |
+| Profile          | `/admin/profile`         | Name, email, phone, managed hostels (read-only).                                                                                                                                                                                                                                                                                                                                                                                             |
 
 ### 12.6 P1 UI additions (designed, not built in P0)
 
@@ -1036,6 +1103,7 @@ revocation must commit before returning its 401 response.
 ### 13.5 Resource-level RBAC enforcement
 
 Enforcement is server-side in this order:
+
 1. **Rate limiting** — per-IP for public routes; per-user for authenticated routes.
 2. **Authentication** — verify JWT signature, expiry; load session from database; verify session `!isRevoked` and `expiresAt > now`; verify user `status === ACTIVE` (except forced-password-change endpoints).
 3. **Role gate** — middleware checks `req.user.role` against the route's allowed roles.
@@ -1050,14 +1118,14 @@ A resource outside the caller's scope always returns `404 NOT_FOUND`, never `403
 
 ### 13.6 Rate limiting
 
-| Scope | Window | Max requests | Notes |
-|---|---|---|---|
-| Public endpoints (login, register, catalog) | 15 min | 30 per IP | Includes failed attempts |
-| Auth refresh | 15 min | 20 per IP | |
-| Authenticated reads | 1 min | 120 per user | |
-| Authenticated writes | 1 min | 30 per user | |
-| File uploads | 1 min | 10 per user | |
-| Health probes | 1 min | 60 per IP | Separate limiter |
+| Scope                                       | Window | Max requests | Notes                    |
+| ------------------------------------------- | ------ | ------------ | ------------------------ |
+| Public endpoints (login, register, catalog) | 15 min | 30 per IP    | Includes failed attempts |
+| Auth refresh                                | 15 min | 20 per IP    |                          |
+| Authenticated reads                         | 1 min  | 120 per user |                          |
+| Authenticated writes                        | 1 min  | 30 per user  |                          |
+| File uploads                                | 1 min  | 10 per user  |                          |
+| Health probes                               | 1 min  | 60 per IP    | Separate limiter         |
 
 Use `express-rate-limit` with a memory store for P0. Return `429 RATE_LIMITED` with `Retry-After` header in seconds. Documented as a P1 upgrade to Redis-backed store for multi-process deployments.
 
@@ -1086,26 +1154,26 @@ Use `express-rate-limit` with a memory store for P0. Return `429 RATE_LIMITED` w
 
 ### 13.9 Environment variables
 
-| Variable | Required | Default | Purpose |
-|---|---|---|---|
-| `NODE_ENV` | No | `development` | Environment mode |
-| `PORT` | No | `5000` | Backend server port |
-| `MONGODB_URI` | Yes | — | MongoDB connection string (must include `?replicaSet=`) |
-| `JWT_SECRET` | Yes | — | ≥ 256-bit random secret for HS256 |
-| `CORS_ORIGIN` | Yes | — | Allowed frontend origin (e.g., `http://localhost:3000`) |
-| `UPLOAD_DIR` | Yes | — | Absolute path to persistent upload storage directory |
-| `COOKIE_DOMAIN` | No | (auto) | Domain for refresh cookie |
-| `COOKIE_SECURE` | No | `true` | Set `false` for localhost HTTP |
-| `ACCESS_TOKEN_EXPIRY` | No | `600` | Access JWT lifetime in seconds |
-| `REFRESH_TOKEN_EXPIRY` | No | `604800` | Refresh token lifetime in seconds |
-| `BCRYPT_ROUNDS` | No | `12` | bcrypt work factor |
-| `LOG_LEVEL` | No | `info` | pino log level |
+| Variable               | Required | Default       | Purpose                                                 |
+| ---------------------- | -------- | ------------- | ------------------------------------------------------- |
+| `NODE_ENV`             | No       | `development` | Environment mode                                        |
+| `PORT`                 | No       | `5000`        | Backend server port                                     |
+| `MONGODB_URI`          | Yes      | —             | MongoDB connection string (must include `?replicaSet=`) |
+| `JWT_SECRET`           | Yes      | —             | ≥ 256-bit random secret for HS256                       |
+| `CORS_ORIGIN`          | Yes      | —             | Allowed frontend origin (e.g., `http://localhost:3000`) |
+| `UPLOAD_DIR`           | Yes      | —             | Absolute path to persistent upload storage directory    |
+| `COOKIE_DOMAIN`        | No       | (auto)        | Domain for refresh cookie                               |
+| `COOKIE_SECURE`        | No       | `true`        | Set `false` for localhost HTTP                          |
+| `ACCESS_TOKEN_EXPIRY`  | No       | `600`         | Access JWT lifetime in seconds                          |
+| `REFRESH_TOKEN_EXPIRY` | No       | `604800`      | Refresh token lifetime in seconds                       |
+| `BCRYPT_ROUNDS`        | No       | `12`          | bcrypt work factor                                      |
+| `LOG_LEVEL`            | No       | `info`        | pino log level                                          |
 
 Frontend env (`.env.local`):
 
-| Variable | Required | Default | Purpose |
-|---|---|---|---|
-| `NEXT_PUBLIC_API_URL` | Yes | — | Backend API base URL (e.g., `http://localhost:5000/api/v1`) |
+| Variable              | Required | Default | Purpose                                                     |
+| --------------------- | -------- | ------- | ----------------------------------------------------------- |
+| `NEXT_PUBLIC_API_URL` | Yes      | —       | Backend API base URL (e.g., `http://localhost:5000/api/v1`) |
 
 ### 13.10 Deployment security
 
@@ -1137,13 +1205,14 @@ Where `W_safety`, `W_essential`, `W_multiple`, `W_functionality` are positive in
 **Priority thresholds** (from policy):
 
 | Priority | Condition (default thresholds) |
-|---|---|
-| CRITICAL | score ≥ 7 |
-| HIGH | score ≥ 4 and < 7 |
-| MEDIUM | score ≥ 1 and < 4 |
-| LOW | score = 0 |
+| -------- | ------------------------------ |
+| CRITICAL | score ≥ 7                      |
+| HIGH     | score ≥ 4 and < 7              |
+| MEDIUM   | score ≥ 1 and < 4              |
+| LOW      | score = 0                      |
 
 Examples:
+
 - `{safetyRisk: true, essentialServiceOutage: true, affectsMultipleRooms: false, functionalityLoss: false}` → score = 7 → CRITICAL
 - `{safetyRisk: false, essentialServiceOutage: false, affectsMultipleRooms: false, functionalityLoss: true}` → score = 1 → MEDIUM
 - All false → score = 0 → LOW
@@ -1157,6 +1226,7 @@ The `suggestedPriority` is always rule-computed. The `priority` field starts as 
 The hostel's SLA policy is **snapshotted** into the complaint's `slaPolicy` field at cycle start (creation or reopen). This ensures deadlines are stable even if the policy changes later.
 
 **Deadline calculation:**
+
 ```
 cycleStart = createdAt (cycle 1) or reopenedAt (cycles 2, 3)
 responseDueAt = cycleStart + slaPolicy[priority].responseMinutes × 60,000 ms
@@ -1164,12 +1234,14 @@ resolutionDueAt = cycleStart + slaPolicy[priority].resolutionMinutes × 60,000 m
 ```
 
 **First response definition:** The `firstRespondedAt` field in the current cycle is set by the first of these actions in that cycle:
+
 - Triage (SUBMITTED → TRIAGED)
 - Assignment (TRIAGED → ASSIGNED, or REOPENED → ASSIGNED)
 
 It is set once per cycle and not updated by subsequent actions. It is **not** set by comments, priority changes, or rejection.
 
 **Overdue computation** (query-time, no scheduler needed):
+
 ```
 isResponseOverdue = (firstRespondedAt IS NULL) AND (now > responseDueAt) AND (status IN OPEN_STATUSES)
 isResolutionOverdue = (resolvedAt IS NULL for current cycle) AND (now > resolutionDueAt) AND (status IN OPEN_STATUSES)
@@ -1178,6 +1250,7 @@ isResolutionOverdue = (resolvedAt IS NULL for current cycle) AND (now > resoluti
 `RESOLVED` is excluded from `OPEN_STATUSES`, so a resolved-but-not-closed complaint is not flagged overdue. `CLOSED` and `REJECTED` are never overdue.
 
 **Deadline adjustment on priority change or content edit:**
+
 ```
 candidateResponseDue = cycleStart + slaPolicy[newPriority].responseMinutes × 60,000
 candidateResolutionDue = cycleStart + slaPolicy[newPriority].resolutionMinutes × 60,000
@@ -1215,17 +1288,17 @@ This ensures deadlines can only tighten, never relax.
 
 ### 14.5 Notification events (P1)
 
-| Event | Recipients | Title template |
-|---|---|---|
-| Complaint created | Scoped admins | "New complaint: {reference}" |
-| Status changed | Owner + assignee (if any) | "Complaint {reference} is now {status}" |
-| Assigned/reassigned | New assignee | "You were assigned {reference}" |
-| Comment added | Owner + assignee + scoped admins (excluding author) | "New comment on {reference}" |
-| Feedback submitted | Assignee (resolver) | "Feedback received for {reference}" |
-| SLA response breach | Scoped admins | "Response overdue: {reference}" |
-| SLA resolution breach | Scoped admins + assignee | "Resolution overdue: {reference}" |
-| Escalated | Scoped admins | "Escalation level {level} on {reference}" |
-| Duplicate linked | Owner of source complaint | "Your complaint {reference} was linked as a duplicate" |
+| Event                 | Recipients                                          | Title template                                         |
+| --------------------- | --------------------------------------------------- | ------------------------------------------------------ |
+| Complaint created     | Scoped admins                                       | "New complaint: {reference}"                           |
+| Status changed        | Owner + assignee (if any)                           | "Complaint {reference} is now {status}"                |
+| Assigned/reassigned   | New assignee                                        | "You were assigned {reference}"                        |
+| Comment added         | Owner + assignee + scoped admins (excluding author) | "New comment on {reference}"                           |
+| Feedback submitted    | Assignee (resolver)                                 | "Feedback received for {reference}"                    |
+| SLA response breach   | Scoped admins                                       | "Response overdue: {reference}"                        |
+| SLA resolution breach | Scoped admins + assignee                            | "Resolution overdue: {reference}"                      |
+| Escalated             | Scoped admins                                       | "Escalation level {level} on {reference}"              |
+| Duplicate linked      | Owner of source complaint                           | "Your complaint {reference} was linked as a duplicate" |
 
 **Deduplication:** For each (userId, type, complaintId) combination, do not create a new notification if one with the same tuple exists and was created within the last 60 minutes.
 
@@ -1237,17 +1310,17 @@ This ensures deadlines can only tighten, never relax.
 
 Status counts used by dashboards and reports follow these rules consistently:
 
-| Metric | Definition |
-|---|---|
-| `total` | All complaints matching the scope and date filter |
-| `open` | Status in `OPEN_STATUSES` = `[SUBMITTED, TRIAGED, ASSIGNED, IN_PROGRESS, REOPENED]` |
-| `resolved` | Status = `RESOLVED` (awaiting confirmation; work is done) |
-| `closed` | Status = `CLOSED` |
-| `rejected` | Status = `REJECTED` |
-| `unassigned` | Status in `[SUBMITTED, TRIAGED, REOPENED]` AND `assigneeId` is null |
-| `overdueResponse` | `isResponseOverdue` = true (computed at query time per §14.2) |
-| `overdueResolution` | `isResolutionOverdue` = true (computed at query time per §14.2) |
-| `overdueAny` | Either `isResponseOverdue` or `isResolutionOverdue` is true |
+| Metric              | Definition                                                                          |
+| ------------------- | ----------------------------------------------------------------------------------- |
+| `total`             | All complaints matching the scope and date filter                                   |
+| `open`              | Status in `OPEN_STATUSES` = `[SUBMITTED, TRIAGED, ASSIGNED, IN_PROGRESS, REOPENED]` |
+| `resolved`          | Status = `RESOLVED` (awaiting confirmation; work is done)                           |
+| `closed`            | Status = `CLOSED`                                                                   |
+| `rejected`          | Status = `REJECTED`                                                                 |
+| `unassigned`        | Status in `[SUBMITTED, TRIAGED, REOPENED]` AND `assigneeId` is null                 |
+| `overdueResponse`   | `isResponseOverdue` = true (computed at query time per §14.2)                       |
+| `overdueResolution` | `isResolutionOverdue` = true (computed at query time per §14.2)                     |
+| `overdueAny`        | Either `isResponseOverdue` or `isResolutionOverdue` is true                         |
 
 **Invariant:** `total = open + resolved + closed + rejected`. Reports and dashboards must produce consistent counts using the same scope predicates.
 
@@ -1260,21 +1333,22 @@ Status counts used by dashboards and reports follow these rules consistently:
 
 ### 15.3 Metric formulas (P1 reports)
 
-| Metric | Formula |
-|---|---|
+| Metric                     | Formula                                                                                                                                                             |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `averageResolutionMinutes` | Mean of `(resolvedAt - cycleStart)` in minutes, across complaints with at least one resolution in the date cohort. Only the final resolution per complaint is used. |
-| `resolutionSampleSize` | Count of complaints contributing to the average |
-| `statusDistribution` | `{ SUBMITTED: n, TRIAGED: n, ASSIGNED: n, IN_PROGRESS: n, RESOLVED: n, CLOSED: n, REOPENED: n, REJECTED: n }` for the cohort |
-| `categoryDistribution` | `[{ categoryId, categoryName, count }]` sorted by count desc |
-| `priorityDistribution` | `{ LOW: n, MEDIUM: n, HIGH: n, CRITICAL: n }` |
-| `trend` | Array of `{ bucket: "YYYY-MM-DD", created: n, resolved: n, closed: n }` per day/week |
-| `staffWorkload` | `[{ staffId, name, assigned: n, resolved: n, averageResolutionMinutes }]` for staff with activity in the cohort |
-| `feedback.averageRating` | Mean of `rating` from `isCurrent=true` feedback where the complaint's `createdAt` falls in the cohort |
-| `feedback.sampleSize` | Count of those feedback records |
+| `resolutionSampleSize`     | Count of complaints contributing to the average                                                                                                                     |
+| `statusDistribution`       | `{ SUBMITTED: n, TRIAGED: n, ASSIGNED: n, IN_PROGRESS: n, RESOLVED: n, CLOSED: n, REOPENED: n, REJECTED: n }` for the cohort                                        |
+| `categoryDistribution`     | `[{ categoryId, categoryName, count }]` sorted by count desc                                                                                                        |
+| `priorityDistribution`     | `{ LOW: n, MEDIUM: n, HIGH: n, CRITICAL: n }`                                                                                                                       |
+| `trend`                    | Array of `{ bucket: "YYYY-MM-DD", created: n, resolved: n, closed: n }` per day/week                                                                                |
+| `staffWorkload`            | `[{ staffId, name, assigned: n, resolved: n, averageResolutionMinutes }]` for staff with activity in the cohort                                                     |
+| `feedback.averageRating`   | Mean of `rating` from `isCurrent=true` feedback where the complaint's `createdAt` falls in the cohort                                                               |
+| `feedback.sampleSize`      | Count of those feedback records                                                                                                                                     |
 
 ### 15.4 Work queue ordering (staff)
 
 Staff work queue is sorted by:
+
 1. Overdue complaints first (any overdue flag true before false)
 2. Priority rank descending (CRITICAL > HIGH > MEDIUM > LOW, mapped to integers 4 > 3 > 2 > 1)
 3. `createdAt` ascending (oldest first)
@@ -1305,39 +1379,39 @@ The minimum viable demo must complete this end-to-end workflow:
 
 **P0 features:**
 
-| Area | P0 scope |
-|---|---|
-| Auth | Registration, login, JWT access token, refresh token rotation, logout, password change, forced password change for seeded staff |
-| Profiles | Read self, update name/phone, change password |
-| Catalog | Public hostel/block/room listing for registration; authenticated category listing |
-| Uploads | Stage photo (JPEG/PNG/WebP, ≤5 MiB), bind to complaint, authenticated streaming, expiry of unbound uploads |
-| Complaints | Create with idempotency, scoped list with filters/pagination/search, detail with timeline |
-| Workflow | Full state machine: triage, reject, assign, reassign, start work, resolve, close, reopen (max 2), feedback |
-| Content edit | Student edits own complaint in SUBMITTED only |
-| Comments | Append-only public comments on nonterminal complaints |
-| Activity | Immutable chronological timeline |
-| SLA | Policy snapshot, deadline computation, overdue flags (query-time, no scheduler) |
-| Priority | Deterministic scoring from indicators; admin override with reason |
-| Dashboards | Student/staff/admin dashboards with status counts and work queues |
-| Validation | Zod schemas, centralized error responses, request IDs |
-| Security | bcrypt, JWT, refresh rotation, reuse detection, CSRF, CORS, upload validation, scope enforcement |
-| Seeds | Reproducible seed script with three role accounts, hostels, blocks, rooms, categories, policy, sample complaints |
-| Tests | Integration tests covering auth, complaint CRUD, workflow transitions, authorization scoping; one Playwright E2E |
-| Deployment | Frontend (Vercel or static) + backend (Render/Railway/VM) + MongoDB Atlas replica set + persistent upload storage |
-| Health | Liveness and readiness endpoints |
+| Area         | P0 scope                                                                                                                        |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| Auth         | Registration, login, JWT access token, refresh token rotation, logout, password change, forced password change for seeded staff |
+| Profiles     | Read self, update name/phone, change password                                                                                   |
+| Catalog      | Public hostel/block/room listing for registration; authenticated category listing                                               |
+| Uploads      | Stage photo (JPEG/PNG/WebP, ≤5 MiB), bind to complaint, authenticated streaming, expiry of unbound uploads                      |
+| Complaints   | Create with idempotency, scoped list with filters/pagination/search, detail with timeline                                       |
+| Workflow     | Full state machine: triage, reject, assign, reassign, start work, resolve, close, reopen (max 2), feedback                      |
+| Content edit | Student edits own complaint in SUBMITTED only                                                                                   |
+| Comments     | Append-only public comments on nonterminal complaints                                                                           |
+| Activity     | Immutable chronological timeline                                                                                                |
+| SLA          | Policy snapshot, deadline computation, overdue flags (query-time, no scheduler)                                                 |
+| Priority     | Deterministic scoring from indicators; admin override with reason                                                               |
+| Dashboards   | Student/staff/admin dashboards with status counts and work queues                                                               |
+| Validation   | Zod schemas, centralized error responses, request IDs                                                                           |
+| Security     | bcrypt, JWT, refresh rotation, reuse detection, CSRF, CORS, upload validation, scope enforcement                                |
+| Seeds        | Reproducible seed script with three role accounts, hostels, blocks, rooms, categories, policy, sample complaints                |
+| Tests        | Integration tests covering auth, complaint CRUD, workflow transitions, authorization scoping; one Playwright E2E                |
+| Deployment   | Frontend (Vercel or static) + backend (Render/Railway/VM) + MongoDB Atlas replica set + persistent upload storage               |
+| Health       | Liveness and readiness endpoints                                                                                                |
 
 ### 16.3 P1 — Post-demo enhancements (designed, deferred)
 
-| Feature | Dependencies |
-|---|---|
-| Duplicate suggestions and linking | Duplicate detection algorithm, link/unlink endpoints, admin UI panel |
-| In-app notifications | Notification model, notification endpoints, bell badge UI |
-| Escalation processing | Escalation config, manual/auto escalation endpoints, admin escalation view |
-| Detailed analytics | Report endpoint, chart UI, date bucketing |
-| Staff management | Create/update staff endpoints, staff management table UI |
-| Student account management | Status change endpoint, student management table UI |
-| Category/location management | CRUD endpoints for categories, blocks, rooms |
-| Policy editing | Policy CRUD endpoint, policy editor UI |
+| Feature                           | Dependencies                                                               |
+| --------------------------------- | -------------------------------------------------------------------------- |
+| Duplicate suggestions and linking | Duplicate detection algorithm, link/unlink endpoints, admin UI panel       |
+| In-app notifications              | Notification model, notification endpoints, bell badge UI                  |
+| Escalation processing             | Escalation config, manual/auto escalation endpoints, admin escalation view |
+| Detailed analytics                | Report endpoint, chart UI, date bucketing                                  |
+| Staff management                  | Create/update staff endpoints, staff management table UI                   |
+| Student account management        | Status change endpoint, student management table UI                        |
+| Category/location management      | CRUD endpoints for categories, blocks, rooms                               |
+| Policy editing                    | Policy CRUD endpoint, policy editor UI                                     |
 
 ### 16.4 P2 — Excluded from design contracts
 
@@ -1345,13 +1419,13 @@ Email/SMS/push notifications, SSO, email password recovery, WebSockets, offline 
 
 ### 16.5 Risk-adjusted scope decisions
 
-| Decision | Rationale |
-|---|---|
-| P0 uses memory-store rate limiting | Acceptable for single-process demo; documented as a P1 upgrade to Redis |
+| Decision                                        | Rationale                                                                                                                    |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| P0 uses memory-store rate limiting              | Acceptable for single-process demo; documented as a P1 upgrade to Redis                                                      |
 | P0 stores uploads on local persistent directory | Persistent volume mounted on the deploy host; not ephemeral container storage. Cloud object storage (S3/GCS) is a P1 upgrade |
-| P0 skips the escalation worker | Overdue filters surface delays without a scheduler. Manual escalation is P1 |
-| P0 hides all P1 admin management UI | No nonfunctional buttons; features simply absent from navigation |
-| Staff accounts are seeded, not created via UI | The admin staff picker and seed script cover the demo; admin staff CRUD is P1 |
+| P0 skips the escalation worker                  | Overdue filters surface delays without a scheduler. Manual escalation is P1                                                  |
+| P0 hides all P1 admin management UI             | No nonfunctional buttons; features simply absent from navigation                                                             |
+| Staff accounts are seeded, not created via UI   | The admin staff picker and seed script cover the demo; admin staff CRUD is P1                                                |
 
 ---
 
@@ -1359,126 +1433,126 @@ Email/SMS/push notifications, SSO, email password recovery, WebSockets, offline 
 
 ### 17.1 Auth tests (integration — Supertest + Vitest)
 
-| ID | Scenario | Expected |
-|---|---|---|
-| AUTH-T01 | Register with valid data | 201; user created; no tokens returned; can login after |
-| AUTH-T02 | Register with duplicate email | 409 `EMAIL_IN_USE` |
-| AUTH-T03 | Register with invalid enrollment code | 422 `ENROLLMENT_INVALID`; no hint about which check failed |
-| AUTH-T04 | Register with inactive hostel/block/room | 422 `ENROLLMENT_INVALID` |
-| AUTH-T05 | Register with role/status fields in body | 422 or fields ignored; role is always STUDENT |
-| AUTH-T06 | Login with valid credentials | 200; access token + refresh cookie set |
-| AUTH-T07 | Login with wrong password | 401 `INVALID_CREDENTIALS` |
-| AUTH-T08 | Login with inactive account | 403 `ACCOUNT_INACTIVE` |
-| AUTH-T09 | Refresh with valid cookie | 200; new access token + rotated cookie |
-| AUTH-T10 | Refresh with reused (old) token | 401 `REFRESH_REUSE_DETECTED`; entire family revoked |
-| AUTH-T11 | Refresh with expired session | 401 `SESSION_INVALID` |
-| AUTH-T12 | Logout with valid session | 204; session revoked; cookie cleared |
-| AUTH-T13 | Logout with already-revoked session | 204 (idempotent) |
-| AUTH-T14 | Access protected route without token | 401 `AUTH_REQUIRED` |
-| AUTH-T15 | Access protected route with expired token | 401 `TOKEN_EXPIRED` |
-| AUTH-T16 | Password change revokes all sessions | 204; all other sessions for user are revoked |
-| AUTH-T17 | Password change with same password | 422 `PASSWORD_UNCHANGED` |
-| AUTH-T18 | Forced password change blocks other routes | 403 `PASSWORD_CHANGE_REQUIRED` on complaint routes |
-| AUTH-T19 | CSRF header missing on mutation | 403 `CSRF_INVALID` |
+| ID       | Scenario                                   | Expected                                                   |
+| -------- | ------------------------------------------ | ---------------------------------------------------------- |
+| AUTH-T01 | Register with valid data                   | 201; user created; no tokens returned; can login after     |
+| AUTH-T02 | Register with duplicate email              | 409 `EMAIL_IN_USE`                                         |
+| AUTH-T03 | Register with invalid enrollment code      | 422 `ENROLLMENT_INVALID`; no hint about which check failed |
+| AUTH-T04 | Register with inactive hostel/block/room   | 422 `ENROLLMENT_INVALID`                                   |
+| AUTH-T05 | Register with role/status fields in body   | 422 or fields ignored; role is always STUDENT              |
+| AUTH-T06 | Login with valid credentials               | 200; access token + refresh cookie set                     |
+| AUTH-T07 | Login with wrong password                  | 401 `INVALID_CREDENTIALS`                                  |
+| AUTH-T08 | Login with inactive account                | 403 `ACCOUNT_INACTIVE`                                     |
+| AUTH-T09 | Refresh with valid cookie                  | 200; new access token + rotated cookie                     |
+| AUTH-T10 | Refresh with reused (old) token            | 401 `REFRESH_REUSE_DETECTED`; entire family revoked        |
+| AUTH-T11 | Refresh with expired session               | 401 `SESSION_INVALID`                                      |
+| AUTH-T12 | Logout with valid session                  | 204; session revoked; cookie cleared                       |
+| AUTH-T13 | Logout with already-revoked session        | 204 (idempotent)                                           |
+| AUTH-T14 | Access protected route without token       | 401 `AUTH_REQUIRED`                                        |
+| AUTH-T15 | Access protected route with expired token  | 401 `TOKEN_EXPIRED`                                        |
+| AUTH-T16 | Password change revokes all sessions       | 204; all other sessions for user are revoked               |
+| AUTH-T17 | Password change with same password         | 422 `PASSWORD_UNCHANGED`                                   |
+| AUTH-T18 | Forced password change blocks other routes | 403 `PASSWORD_CHANGE_REQUIRED` on complaint routes         |
+| AUTH-T19 | CSRF header missing on mutation            | 403 `CSRF_INVALID`                                         |
 
 ### 17.2 Complaint CRUD tests
 
-| ID | Scenario | Expected |
-|---|---|---|
-| CMP-T01 | Create complaint with valid data | 201; status SUBMITTED; priority computed; SLA deadlines set; CREATED activity |
-| CMP-T02 | Create with same clientRequestId + same payload | 200 with `meta.idempotentReplay=true`; same complaint returned |
-| CMP-T03 | Create with same clientRequestId + different payload | 409 `IDEMPOTENCY_CONFLICT` |
-| CMP-T04 | Create with inactive category | 409 `REFERENCE_INACTIVE` |
-| CMP-T05 | Create with unauthorized location (wrong hostel) | 422 `INVALID_REFERENCE` |
-| CMP-T06 | Create with > 3 attachments | 422 validation error |
-| CMP-T07 | Create with already-bound attachment | 409 `ATTACHMENT_ALREADY_BOUND` |
-| CMP-T08 | Student edits own SUBMITTED complaint | 200; version incremented; CONTENT_UPDATED activity |
-| CMP-T09 | Student edits TRIAGED complaint | 409 `EDIT_WINDOW_CLOSED` |
-| CMP-T10 | List complaints with pagination | 200; correct page/limit/total/totalPages |
-| CMP-T11 | List with status filter | 200; only matching statuses returned |
-| CMP-T12 | List with date range filter | 200; only complaints in range |
-| CMP-T13 | Search by reference (exact) | 200; matching complaint returned |
-| CMP-T14 | Search by title substring | 200; matching complaints returned |
-| CMP-T15 | Detail shows full projection including timeline | 200; all expected fields present |
+| ID      | Scenario                                             | Expected                                                                      |
+| ------- | ---------------------------------------------------- | ----------------------------------------------------------------------------- |
+| CMP-T01 | Create complaint with valid data                     | 201; status SUBMITTED; priority computed; SLA deadlines set; CREATED activity |
+| CMP-T02 | Create with same clientRequestId + same payload      | 200 with `meta.idempotentReplay=true`; same complaint returned                |
+| CMP-T03 | Create with same clientRequestId + different payload | 409 `IDEMPOTENCY_CONFLICT`                                                    |
+| CMP-T04 | Create with inactive category                        | 409 `REFERENCE_INACTIVE`                                                      |
+| CMP-T05 | Create with unauthorized location (wrong hostel)     | 422 `INVALID_REFERENCE`                                                       |
+| CMP-T06 | Create with > 3 attachments                          | 422 validation error                                                          |
+| CMP-T07 | Create with already-bound attachment                 | 409 `ATTACHMENT_ALREADY_BOUND`                                                |
+| CMP-T08 | Student edits own SUBMITTED complaint                | 200; version incremented; CONTENT_UPDATED activity                            |
+| CMP-T09 | Student edits TRIAGED complaint                      | 409 `EDIT_WINDOW_CLOSED`                                                      |
+| CMP-T10 | List complaints with pagination                      | 200; correct page/limit/total/totalPages                                      |
+| CMP-T11 | List with status filter                              | 200; only matching statuses returned                                          |
+| CMP-T12 | List with date range filter                          | 200; only complaints in range                                                 |
+| CMP-T13 | Search by reference (exact)                          | 200; matching complaint returned                                              |
+| CMP-T14 | Search by title substring                            | 200; matching complaints returned                                             |
+| CMP-T15 | Detail shows full projection including timeline      | 200; all expected fields present                                              |
 
 ### 17.3 Authorization and scoping tests
 
-| ID | Scenario | Expected |
-|---|---|---|
-| AZ-T01 | Student reads own complaint | 200 |
-| AZ-T02 | Student reads other student's complaint | 404 (not 403) |
-| AZ-T03 | Staff reads assigned complaint | 200 |
-| AZ-T04 | Staff reads unassigned complaint in same hostel | 404 |
-| AZ-T05 | Admin reads complaint in scoped hostel | 200 |
-| AZ-T06 | Admin reads complaint in non-scoped hostel | 404 |
-| AZ-T07 | Student attempts to triage | 403 `FORBIDDEN` |
-| AZ-T08 | Staff attempts to assign | 403 `FORBIDDEN` |
-| AZ-T09 | Staff attempts to reject | 403 `FORBIDDEN` |
-| AZ-T10 | Admin attempts to resolve | 403 `FORBIDDEN` |
-| AZ-T11 | Non-owner student attempts to close | 404 (different owner's complaint) |
-| AZ-T12 | Student attempts staff-only filter (assigneeId) | 422 |
-| AZ-T13 | Admin lists complaints — scope enforced in aggregation | Correct counts per hostel |
-| AZ-T14 | Inactive account access attempt after deactivation | 403 `ACCOUNT_INACTIVE` or 401 (session revoked) |
+| ID     | Scenario                                               | Expected                                        |
+| ------ | ------------------------------------------------------ | ----------------------------------------------- |
+| AZ-T01 | Student reads own complaint                            | 200                                             |
+| AZ-T02 | Student reads other student's complaint                | 404 (not 403)                                   |
+| AZ-T03 | Staff reads assigned complaint                         | 200                                             |
+| AZ-T04 | Staff reads unassigned complaint in same hostel        | 404                                             |
+| AZ-T05 | Admin reads complaint in scoped hostel                 | 200                                             |
+| AZ-T06 | Admin reads complaint in non-scoped hostel             | 404                                             |
+| AZ-T07 | Student attempts to triage                             | 403 `FORBIDDEN`                                 |
+| AZ-T08 | Staff attempts to assign                               | 403 `FORBIDDEN`                                 |
+| AZ-T09 | Staff attempts to reject                               | 403 `FORBIDDEN`                                 |
+| AZ-T10 | Admin attempts to resolve                              | 403 `FORBIDDEN`                                 |
+| AZ-T11 | Non-owner student attempts to close                    | 404 (different owner's complaint)               |
+| AZ-T12 | Student attempts staff-only filter (assigneeId)        | 422                                             |
+| AZ-T13 | Admin lists complaints — scope enforced in aggregation | Correct counts per hostel                       |
+| AZ-T14 | Inactive account access attempt after deactivation     | 403 `ACCOUNT_INACTIVE` or 401 (session revoked) |
 
 ### 17.4 Workflow transition tests
 
-| ID | Scenario | Expected |
-|---|---|---|
-| WF-T01 | SUBMITTED → TRIAGED by scoped admin | 200; status changed; TRIAGED activity; firstRespondedAt set |
-| WF-T02 | SUBMITTED → REJECTED by scoped admin | 200; status REJECTED; rejection code recorded |
-| WF-T03 | TRIAGED → ASSIGNED by scoped admin | 200; assignee set; ASSIGNED activity |
-| WF-T04 | ASSIGNED → IN_PROGRESS by assigned staff | 200; workStartedAt set; WORK_STARTED activity |
-| WF-T05 | IN_PROGRESS → RESOLVED by assigned staff | 200; resolvedAt set; resolutionNote recorded; RESOLVED activity |
-| WF-T06 | RESOLVED → CLOSED by owner | 200; closedAt set; CLOSED activity |
-| WF-T07 | RESOLVED → REOPENED by owner within 7 days | 200; cycleNumber incremented; assignee null; new SLA snapshot |
-| WF-T08 | RESOLVED → CLOSED by admin before 7 days | 409 `CLOSE_WINDOW_NOT_ELAPSED` |
-| WF-T09 | RESOLVED → CLOSED by admin after 7 days | 200 |
-| WF-T10 | Reopen after max reopens (2) | 409 `REOPEN_LIMIT_REACHED` |
-| WF-T11 | Reopen after window expired | 409 `REOPEN_WINDOW_EXPIRED` |
-| WF-T12 | Invalid transition (e.g., SUBMITTED → RESOLVED) | 409 `INVALID_TRANSITION` |
-| WF-T13 | Transition by wrong actor (staff tries to triage) | 403 `FORBIDDEN` |
-| WF-T14 | CLOSED complaint — attempt any transition | 409 `INVALID_TRANSITION` |
-| WF-T15 | REJECTED complaint — attempt reopen | 409 `INVALID_TRANSITION` |
+| ID     | Scenario                                          | Expected                                                        |
+| ------ | ------------------------------------------------- | --------------------------------------------------------------- |
+| WF-T01 | SUBMITTED → TRIAGED by scoped admin               | 200; status changed; TRIAGED activity; firstRespondedAt set     |
+| WF-T02 | SUBMITTED → REJECTED by scoped admin              | 200; status REJECTED; rejection code recorded                   |
+| WF-T03 | TRIAGED → ASSIGNED by scoped admin                | 200; assignee set; ASSIGNED activity                            |
+| WF-T04 | ASSIGNED → IN_PROGRESS by assigned staff          | 200; workStartedAt set; WORK_STARTED activity                   |
+| WF-T05 | IN_PROGRESS → RESOLVED by assigned staff          | 200; resolvedAt set; resolutionNote recorded; RESOLVED activity |
+| WF-T06 | RESOLVED → CLOSED by owner                        | 200; closedAt set; CLOSED activity                              |
+| WF-T07 | RESOLVED → REOPENED by owner within 7 days        | 200; cycleNumber incremented; assignee null; new SLA snapshot   |
+| WF-T08 | RESOLVED → CLOSED by admin before 7 days          | 409 `CLOSE_WINDOW_NOT_ELAPSED`                                  |
+| WF-T09 | RESOLVED → CLOSED by admin after 7 days           | 200                                                             |
+| WF-T10 | Reopen after max reopens (2)                      | 409 `REOPEN_LIMIT_REACHED`                                      |
+| WF-T11 | Reopen after window expired                       | 409 `REOPEN_WINDOW_EXPIRED`                                     |
+| WF-T12 | Invalid transition (e.g., SUBMITTED → RESOLVED)   | 409 `INVALID_TRANSITION`                                        |
+| WF-T13 | Transition by wrong actor (staff tries to triage) | 403 `FORBIDDEN`                                                 |
+| WF-T14 | CLOSED complaint — attempt any transition         | 409 `INVALID_TRANSITION`                                        |
+| WF-T15 | REJECTED complaint — attempt reopen               | 409 `INVALID_TRANSITION`                                        |
 
 ### 17.5 Concurrency and idempotency tests
 
-| ID | Scenario | Expected |
-|---|---|---|
+| ID     | Scenario                                             | Expected                                        |
+| ------ | ---------------------------------------------------- | ----------------------------------------------- |
 | CC-T01 | Two concurrent transitions with same expectedVersion | One succeeds, other gets 409 `VERSION_CONFLICT` |
-| CC-T02 | Comment with stale version | 409 `VERSION_CONFLICT` |
-| CC-T03 | Assign to staff being deactivated concurrently | One operation wins; the other gets 409 |
-| CC-T04 | Duplicate complaint creation (same clientRequestId) | First 201, second 200 (idempotent replay) |
-| CC-T05 | Feedback on same cycle twice | First 201, second 409 `FEEDBACK_EXISTS` |
+| CC-T02 | Comment with stale version                           | 409 `VERSION_CONFLICT`                          |
+| CC-T03 | Assign to staff being deactivated concurrently       | One operation wins; the other gets 409          |
+| CC-T04 | Duplicate complaint creation (same clientRequestId)  | First 201, second 200 (idempotent replay)       |
+| CC-T05 | Feedback on same cycle twice                         | First 201, second 409 `FEEDBACK_EXISTS`         |
 
 ### 17.6 Upload tests
 
-| ID | Scenario | Expected |
-|---|---|---|
-| UP-T01 | Upload valid JPEG ≤ 5 MiB | 201; attachment metadata returned |
-| UP-T02 | Upload non-image file with fake MIME | 415 `UNSUPPORTED_MEDIA_TYPE` (magic byte check) |
-| UP-T03 | Upload > 5 MiB file | 413 `FILE_TOO_LARGE` |
-| UP-T04 | Upload 11th unattached file (quota exceeded) | 409 `UPLOAD_QUOTA_EXCEEDED` |
-| UP-T05 | Stream attachment as authorized reader | 200; correct MIME; security headers |
-| UP-T06 | Stream attachment as unauthorized user | 404 |
-| UP-T07 | Delete unattached upload by owner | 204 |
-| UP-T08 | Delete bound upload | 409 `ATTACHMENT_ALREADY_BOUND` |
+| ID     | Scenario                                     | Expected                                        |
+| ------ | -------------------------------------------- | ----------------------------------------------- |
+| UP-T01 | Upload valid JPEG ≤ 5 MiB                    | 201; attachment metadata returned               |
+| UP-T02 | Upload non-image file with fake MIME         | 415 `UNSUPPORTED_MEDIA_TYPE` (magic byte check) |
+| UP-T03 | Upload > 5 MiB file                          | 413 `FILE_TOO_LARGE`                            |
+| UP-T04 | Upload 11th unattached file (quota exceeded) | 409 `UPLOAD_QUOTA_EXCEEDED`                     |
+| UP-T05 | Stream attachment as authorized reader       | 200; correct MIME; security headers             |
+| UP-T06 | Stream attachment as unauthorized user       | 404                                             |
+| UP-T07 | Delete unattached upload by owner            | 204                                             |
+| UP-T08 | Delete bound upload                          | 409 `ATTACHMENT_ALREADY_BOUND`                  |
 
 ### 17.7 Session and refresh tests
 
-| ID | Scenario | Expected |
-|---|---|---|
-| SR-T01 | Normal refresh flow within expiry | 200; new access token; rotated cookie |
-| SR-T02 | Refresh after all sessions revoked (password change) | 401 `SESSION_INVALID` |
-| SR-T03 | Concurrent refresh on same token | One succeeds; second triggers reuse detection, revoking family |
+| ID     | Scenario                                             | Expected                                                       |
+| ------ | ---------------------------------------------------- | -------------------------------------------------------------- |
+| SR-T01 | Normal refresh flow within expiry                    | 200; new access token; rotated cookie                          |
+| SR-T02 | Refresh after all sessions revoked (password change) | 401 `SESSION_INVALID`                                          |
+| SR-T03 | Concurrent refresh on same token                     | One succeeds; second triggers reuse detection, revoking family |
 
 ### 17.8 Dashboard tests
 
-| ID | Scenario | Expected |
-|---|---|---|
-| DB-T01 | Student dashboard returns own status counts | Counts match expected |
-| DB-T02 | Staff dashboard returns assigned work queue | Queue sorted correctly |
+| ID     | Scenario                                     | Expected                                 |
+| ------ | -------------------------------------------- | ---------------------------------------- |
+| DB-T01 | Student dashboard returns own status counts  | Counts match expected                    |
+| DB-T02 | Staff dashboard returns assigned work queue  | Queue sorted correctly                   |
 | DB-T03 | Admin dashboard returns scoped hostel counts | Counts do not include non-scoped hostels |
-| DB-T04 | Dashboard with date filters | Counts reflect filtered range |
+| DB-T04 | Dashboard with date filters                  | Counts reflect filtered range            |
 
 ### 17.9 End-to-end browser test (Playwright)
 
@@ -1522,28 +1596,30 @@ Both commands are idempotent: `npm run seed` uses upserts keyed on unique fields
 
 ### 18.2 Seeded accounts
 
-| Role | Name | Email | Password | Hostel | Notes |
-|---|---|---|---|---|---|
-| STUDENT | Asha Student | student.a@hostelfix.demo | DemoStudent@2026 | Hostel A | Room A-101, Block Alpha |
-| STAFF | Ravi Technician | staff.r@hostelfix.demo | DemoStaff@2026! | Hostel A | Categories: ELECTRICAL, PLUMBING; mustChangePassword: true |
-| ADMIN | Priya Warden | admin.p@hostelfix.demo | DemoAdmin@2026! | — | adminHostelIds: [Hostel A]; mustChangePassword: false |
+| Role    | Name            | Email                    | Password         | Hostel   | Notes                                                      |
+| ------- | --------------- | ------------------------ | ---------------- | -------- | ---------------------------------------------------------- |
+| STUDENT | Asha Student    | student.a@hostelfix.demo | DemoStudent@2026 | Hostel A | Room A-101, Block Alpha                                    |
+| STAFF   | Ravi Technician | staff.r@hostelfix.demo   | DemoStaff@2026!  | Hostel A | Categories: ELECTRICAL, PLUMBING; mustChangePassword: true |
+| ADMIN   | Priya Warden    | admin.p@hostelfix.demo   | DemoAdmin@2026!  | —        | adminHostelIds: [Hostel A]; mustChangePassword: false      |
 
 **Note:** Staff has `mustChangePassword: true` to demonstrate the forced password change flow. The demo script includes changing the staff password first.
 
 ### 18.3 Seeded infrastructure
 
 **Hostel A** (code: `HOSTEL-A`, enrollment code: `ENROLL-HOSTEL-A-2026`):
+
 - Block Alpha (code: `ALPHA`): Rooms A-101, A-102, A-103
 - Block Beta (code: `BETA`): Rooms B-201, B-202
 
 **Categories** (Hostel A):
-| Code | Name | Description |
-|---|---|---|
-| ELECTRICAL | Electrical | Fans, lights, switches, wiring |
-| PLUMBING | Plumbing | Water supply, drainage, leaks |
-| FURNITURE | Furniture | Beds, desks, chairs, wardrobes |
-| CIVIL | Civil & Structural | Walls, floors, ceilings, doors, windows |
-| CLEANING | Cleaning & Hygiene | Room/corridor cleaning, pest control |
+
+| Code       | Name               | Description                             |
+| ---------- | ------------------ | --------------------------------------- |
+| ELECTRICAL | Electrical         | Fans, lights, switches, wiring          |
+| PLUMBING   | Plumbing           | Water supply, drainage, leaks           |
+| FURNITURE  | Furniture          | Beds, desks, chairs, wardrobes          |
+| CIVIL      | Civil & Structural | Walls, floors, ceilings, doors, windows |
+| CLEANING   | Cleaning & Hygiene | Room/corridor cleaning, pest control    |
 
 **SLA Policy:** Default policy from §10.13.
 
@@ -1551,11 +1627,11 @@ Both commands are idempotent: `npm run seed` uses upserts keyed on unique fields
 
 Three pre-existing complaints to populate dashboards:
 
-| # | Owner | Title | Category | Status | Priority | Assignee | Cycle |
-|---|---|---|---|---|---|---|---|
-| 1 | Asha | Broken ceiling fan in A-101 | ELECTRICAL | ASSIGNED | MEDIUM | Ravi | 1 |
-| 2 | Asha | Water leak under bathroom sink | PLUMBING | SUBMITTED | HIGH | — | 1 |
-| 3 | Asha | Desk drawer handle broken | FURNITURE | CLOSED | LOW | Ravi | 1 |
+| #   | Owner | Title                          | Category   | Status    | Priority | Assignee | Cycle |
+| --- | ----- | ------------------------------ | ---------- | --------- | -------- | -------- | ----- |
+| 1   | Asha  | Broken ceiling fan in A-101    | ELECTRICAL | ASSIGNED  | MEDIUM   | Ravi     | 1     |
+| 2   | Asha  | Water leak under bathroom sink | PLUMBING   | SUBMITTED | HIGH     | —        | 1     |
+| 3   | Asha  | Desk drawer handle broken      | FURNITURE  | CLOSED    | LOW      | Ravi     | 1     |
 
 Each complaint includes realistic activity events matching its current status.
 
@@ -1651,15 +1727,15 @@ Each complaint includes realistic activity events matching its current status.
 
 Set all variables from §13.9 on the deployment platform. Critical production values:
 
-| Variable | Production value |
-|---|---|
-| `NODE_ENV` | `production` |
-| `MONGODB_URI` | Atlas connection string with credentials |
-| `JWT_SECRET` | Cryptographically random ≥ 32 bytes, hex or base64 |
-| `CORS_ORIGIN` | Deployed frontend URL (e.g., `https://hostelfix-demo.vercel.app`) |
-| `UPLOAD_DIR` | Path to persistent volume |
-| `COOKIE_SECURE` | `true` |
-| `LOG_LEVEL` | `warn` or `info` |
+| Variable        | Production value                                                  |
+| --------------- | ----------------------------------------------------------------- |
+| `NODE_ENV`      | `production`                                                      |
+| `MONGODB_URI`   | Atlas connection string with credentials                          |
+| `JWT_SECRET`    | Cryptographically random ≥ 32 bytes, hex or base64                |
+| `CORS_ORIGIN`   | Deployed frontend URL (e.g., `https://hostelfix-demo.vercel.app`) |
+| `UPLOAD_DIR`    | Path to persistent volume                                         |
+| `COOKIE_SECURE` | `true`                                                            |
+| `LOG_LEVEL`     | `warn` or `info`                                                  |
 
 ### 19.6 Database migrations and index creation
 
@@ -1699,44 +1775,44 @@ Set all variables from §13.9 on the deployment platform. Critical production va
 
 ### 20.1 Implementation risks
 
-| Risk | Impact | Mitigation |
-|---|---|---|
-| Three-day timeline for full P0 | Features cut or bugs at demo | Strict P0 scope; pre-built seed data; test the critical path first |
-| MongoDB replica set requirement | Cannot use simplest local setup | Use Atlas free tier for deployment; `mongodb-memory-server` for tests |
-| Image upload persistence on free-tier hosting | Uploads lost on redeploy | Use Render persistent disk or a VM with stable storage; verify before demo |
-| Concurrent version conflicts confuse demo presenters | Demo stalls on 409 errors | Rehearse with seed data; use single-user-per-role demo flow |
-| JWT secret or cookie misconfiguration in production | Auth breaks entirely | Document exact env vars; test login/refresh in deployed environment early |
-| Rate limiting with memory store loses state on restart | Brief window of no rate limiting | Acceptable for demo; document Redis upgrade path for P1 |
+| Risk                                                   | Impact                           | Mitigation                                                                 |
+| ------------------------------------------------------ | -------------------------------- | -------------------------------------------------------------------------- |
+| Three-day timeline for full P0                         | Features cut or bugs at demo     | Strict P0 scope; pre-built seed data; test the critical path first         |
+| MongoDB replica set requirement                        | Cannot use simplest local setup  | Use Atlas free tier for deployment; `mongodb-memory-server` for tests      |
+| Image upload persistence on free-tier hosting          | Uploads lost on redeploy         | Use Render persistent disk or a VM with stable storage; verify before demo |
+| Concurrent version conflicts confuse demo presenters   | Demo stalls on 409 errors        | Rehearse with seed data; use single-user-per-role demo flow                |
+| JWT secret or cookie misconfiguration in production    | Auth breaks entirely             | Document exact env vars; test login/refresh in deployed environment early  |
+| Rate limiting with memory store loses state on restart | Brief window of no rate limiting | Acceptable for demo; document Redis upgrade path for P1                    |
 
 ### 20.2 Unresolved decisions
 
-| Decision | Current assumption | Needs validation |
-|---|---|---|
-| Hackathon allows pre-built seed data | Yes; the demo uses seeded accounts and data | Verify against official rules if available |
-| Hackathon allows external services (MongoDB Atlas, Vercel) | Yes; standard cloud services are assumed acceptable | Verify against official rules |
-| October 22–23 feature challenge scope | Treated as potential; P1 features prepared but not committed | Wait for official announcement |
-| Enrollment code distribution | Out-of-band (given in demo script); no in-app enrollment flow | Acceptable for hackathon; real deployment needs institutional integration |
-| Staff account provisioning | Seed script only in P0; no admin UI | Admin staff CRUD is P1 |
-| Multiple admin hostel scopes | Supported in data model; demo uses single hostel | Multi-hostel admin tested only via integration tests |
+| Decision                                                   | Current assumption                                            | Needs validation                                                          |
+| ---------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Hackathon allows pre-built seed data                       | Yes; the demo uses seeded accounts and data                   | Verify against official rules if available                                |
+| Hackathon allows external services (MongoDB Atlas, Vercel) | Yes; standard cloud services are assumed acceptable           | Verify against official rules                                             |
+| October 22–23 feature challenge scope                      | Treated as potential; P1 features prepared but not committed  | Wait for official announcement                                            |
+| Enrollment code distribution                               | Out-of-band (given in demo script); no in-app enrollment flow | Acceptable for hackathon; real deployment needs institutional integration |
+| Staff account provisioning                                 | Seed script only in P0; no admin UI                           | Admin staff CRUD is P1                                                    |
+| Multiple admin hostel scopes                               | Supported in data model; demo uses single hostel              | Multi-hostel admin tested only via integration tests                      |
 
 ### 20.3 Deferred features (post-hackathon)
 
-| Feature | Priority | Notes |
-|---|---|---|
-| Email-based password recovery | P2 | Requires email service integration; explicitly excluded |
-| Push/email/SMS notification delivery | P2 | P1 builds in-app notifications; delivery channels deferred |
-| WebSocket real-time updates | P2 | Polling or manual refresh is acceptable for MVP |
-| Cloud object storage (S3/GCS) | P1 | Replace local file storage; upload service abstracts this |
-| Redis-backed rate limiting and session store | P1 | Replace memory stores for multi-process deployment |
-| Automatic SLA escalation worker | P1 | Cron-based processor; overdue filters work without it |
-| Staff/student account management UI | P1 | Admin CRUD endpoints designed; UI deferred |
-| Category/location management UI | P1 | Endpoints designed; UI deferred |
-| Policy editor UI | P1 | Endpoint designed; UI deferred |
-| Detailed analytics with charts | P1 | Report endpoint designed; chart UI deferred |
-| Duplicate suggestion UI | P1 | Algorithm designed; UI panels deferred |
-| Multi-institution tenancy | P2 | Data model supports single institution only |
-| Offline mode / PWA | P2 | Not architecturally blocked but not designed |
-| Complaint deletion or bulk merge | P2 | Deliberately excluded for audit integrity |
+| Feature                                      | Priority | Notes                                                      |
+| -------------------------------------------- | -------- | ---------------------------------------------------------- |
+| Email-based password recovery                | P2       | Requires email service integration; explicitly excluded    |
+| Push/email/SMS notification delivery         | P2       | P1 builds in-app notifications; delivery channels deferred |
+| WebSocket real-time updates                  | P2       | Polling or manual refresh is acceptable for MVP            |
+| Cloud object storage (S3/GCS)                | P1       | Replace local file storage; upload service abstracts this  |
+| Redis-backed rate limiting and session store | P1       | Replace memory stores for multi-process deployment         |
+| Automatic SLA escalation worker              | P1       | Cron-based processor; overdue filters work without it      |
+| Staff/student account management UI          | P1       | Admin CRUD endpoints designed; UI deferred                 |
+| Category/location management UI              | P1       | Endpoints designed; UI deferred                            |
+| Policy editor UI                             | P1       | Endpoint designed; UI deferred                             |
+| Detailed analytics with charts               | P1       | Report endpoint designed; chart UI deferred                |
+| Duplicate suggestion UI                      | P1       | Algorithm designed; UI panels deferred                     |
+| Multi-institution tenancy                    | P2       | Data model supports single institution only                |
+| Offline mode / PWA                           | P2       | Not architecturally blocked but not designed               |
+| Complaint deletion or bulk merge             | P2       | Deliberately excluded for audit integrity                  |
 
 ### 20.4 Explicit assumptions
 
@@ -1750,5 +1826,3 @@ Set all variables from §13.9 on the deployment platform. Critical production va
 8. The three-account demo (student, staff, admin) is sufficient for the presentation. The system supports multiple concurrent users but the demo does not stress-test concurrency.
 9. The `session recovery` term used in earlier sections refers exclusively to the silent JWT refresh flow (§13.3), not to email-based password recovery (which is a P2 exclusion).
 10. The priority algorithm is deterministic and reproducible: given the same indicators and policy weights, the same priority is always computed. No randomness or ML is involved.
-
-

@@ -23,7 +23,9 @@ function createCatalogController(getServices) {
 
     getHostelBlocks: async (req, res) => {
       const services = getServices();
-      const result = await services.catalog.getHostelBlocks(req.params.hostelId);
+      const result = await services.catalog.getHostelBlocks(
+        req.params.hostelId
+      );
       return sendData(req, res, result.data);
     },
 

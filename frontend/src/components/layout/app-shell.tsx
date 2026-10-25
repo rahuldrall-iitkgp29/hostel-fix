@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useState, useEffect, type ReactNode } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useState, useEffect, type ReactNode } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   ClipboardList,
@@ -13,13 +13,13 @@ import {
   Menu,
   X,
   Building2,
-} from "lucide-react";
-import { Brand } from "./brand";
-import { Container } from "./container";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils/cn";
+} from 'lucide-react';
+import { Brand } from './brand';
+import { Container } from './container';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils/cn';
 
-export type Role = "STUDENT" | "STAFF" | "ADMIN";
+export type Role = 'STUDENT' | 'STAFF' | 'ADMIN';
 
 export type AppUserSummary = {
   name: string;
@@ -37,33 +37,37 @@ export type NavItem = {
 
 export const roleNavigation: Record<Role, NavItem[]> = {
   STUDENT: [
-    { label: "Dashboard", href: "/student/dashboard", icon: LayoutDashboard },
-    { label: "My Complaints", href: "/student/complaints", icon: ClipboardList },
-    { label: "Profile", href: "/profile", icon: User },
+    { label: 'Dashboard', href: '/student/dashboard', icon: LayoutDashboard },
+    {
+      label: 'My Complaints',
+      href: '/student/complaints',
+      icon: ClipboardList,
+    },
+    { label: 'Profile', href: '/profile', icon: User },
   ],
   STAFF: [
-    { label: "Dashboard", href: "/staff/dashboard", icon: LayoutDashboard },
-    { label: "Assigned Work", href: "/staff/queue", icon: Wrench },
-    { label: "Profile", href: "/profile", icon: User },
+    { label: 'Dashboard', href: '/staff/dashboard', icon: LayoutDashboard },
+    { label: 'Assigned Work', href: '/staff/queue', icon: Wrench },
+    { label: 'Profile', href: '/profile', icon: User },
   ],
   ADMIN: [
-    { label: "Overview", href: "/admin/dashboard", icon: LayoutDashboard },
-    { label: "Triage & Review", href: "/admin/triage", icon: ClipboardList },
-    { label: "Assignments", href: "/admin/assignment", icon: ShieldCheck },
-    { label: "Profile", href: "/profile", icon: User },
+    { label: 'Overview', href: '/admin/dashboard', icon: LayoutDashboard },
+    { label: 'Triage & Review', href: '/admin/triage', icon: ClipboardList },
+    { label: 'Assignments', href: '/admin/assignment', icon: ShieldCheck },
+    { label: 'Profile', href: '/profile', icon: User },
   ],
 };
 
 const roleLabels: Record<Role, string> = {
-  STUDENT: "Student",
-  STAFF: "Maintenance Staff",
-  ADMIN: "Hostel Admin",
+  STUDENT: 'Student',
+  STAFF: 'Maintenance Staff',
+  ADMIN: 'Hostel Admin',
 };
 
-const roleTones: Record<Role, "neutral" | "success" | "warning"> = {
-  STUDENT: "neutral",
-  STAFF: "warning",
-  ADMIN: "success",
+const roleTones: Record<Role, 'neutral' | 'success' | 'warning'> = {
+  STUDENT: 'neutral',
+  STAFF: 'warning',
+  ADMIN: 'success',
 };
 
 export type AppShellProps = {
@@ -87,10 +91,10 @@ export function AppShell({ user, children, onLogout }: AppShellProps) {
   useEffect(() => {
     if (!mobileMenuOpen) return;
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setMobileMenuOpen(false);
+      if (e.key === 'Escape') setMobileMenuOpen(false);
     }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [mobileMenuOpen]);
 
   return (
@@ -112,10 +116,14 @@ export function AppShell({ user, children, onLogout }: AppShellProps) {
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-line text-muted transition-colors hover:bg-canvas hover:text-ink lg:hidden"
-              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={mobileMenuOpen}
             >
-              {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+              {mobileMenuOpen ? (
+                <X className="size-5" />
+              ) : (
+                <Menu className="size-5" />
+              )}
             </button>
             <Brand />
             <span className="hidden sm:inline-block">
@@ -173,12 +181,12 @@ export function AppShell({ user, children, onLogout }: AppShellProps) {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex min-h-11 items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors",
+                    'flex min-h-11 items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors',
                     isActive
-                      ? "bg-brand text-white font-semibold shadow-xs"
-                      : "text-muted hover:bg-brand-soft hover:text-brand"
+                      ? 'bg-brand text-white font-semibold shadow-xs'
+                      : 'text-muted hover:bg-brand-soft hover:text-brand'
                   )}
-                  aria-current={isActive ? "page" : undefined}
+                  aria-current={isActive ? 'page' : undefined}
                 >
                   <Icon className="size-4.5 shrink-0" aria-hidden="true" />
                   <span>{item.label}</span>
@@ -200,8 +208,8 @@ export function AppShell({ user, children, onLogout }: AppShellProps) {
         {/* Mobile drawer */}
         <div
           className={cn(
-            "fixed inset-y-0 left-0 z-50 w-72 border-r border-line bg-surface p-4 shadow-xl transition-transform duration-200 ease-in-out lg:hidden",
-            mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+            'fixed inset-y-0 left-0 z-50 w-72 border-r border-line bg-surface p-4 shadow-xl transition-transform duration-200 ease-in-out lg:hidden',
+            mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
           )}
           role="dialog"
           aria-modal="true"
@@ -228,12 +236,12 @@ export function AppShell({ user, children, onLogout }: AppShellProps) {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex min-h-11 items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors",
+                    'flex min-h-11 items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors',
                     isActive
-                      ? "bg-brand text-white font-semibold"
-                      : "text-muted hover:bg-brand-soft hover:text-brand"
+                      ? 'bg-brand text-white font-semibold'
+                      : 'text-muted hover:bg-brand-soft hover:text-brand'
                   )}
-                  aria-current={isActive ? "page" : undefined}
+                  aria-current={isActive ? 'page' : undefined}
                 >
                   <Icon className="size-4.5 shrink-0" aria-hidden="true" />
                   <span>{item.label}</span>
@@ -247,7 +255,9 @@ export function AppShell({ user, children, onLogout }: AppShellProps) {
               <p className="text-xs font-semibold text-ink">{user.name}</p>
               <p className="truncate text-xs text-muted">{user.email}</p>
               <div className="mt-2">
-                <Badge tone={roleTones[user.role]}>{roleLabels[user.role]}</Badge>
+                <Badge tone={roleTones[user.role]}>
+                  {roleLabels[user.role]}
+                </Badge>
               </div>
             </div>
 
@@ -265,7 +275,11 @@ export function AppShell({ user, children, onLogout }: AppShellProps) {
         </div>
 
         {/* Content area */}
-        <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8"
+        >
           {children}
         </main>
       </div>

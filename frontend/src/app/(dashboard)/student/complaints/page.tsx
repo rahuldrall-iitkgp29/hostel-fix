@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { AuthGuard } from "@/features/auth/components/auth-guard";
-import { useAuth } from "@/features/auth/context/auth-context";
-import { AppShell } from "@/components/layout/app-shell";
-import { PageHeader } from "@/components/layout/page-header";
-import { ButtonLink } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
-import { ComplaintList } from "@/features/complaints/components/complaint-list";
+import { AuthGuard } from '@/features/auth/components/auth-guard';
+import { useAuth } from '@/features/auth/context/auth-context';
+import { AppShell } from '@/components/layout/app-shell';
+import { PageHeader } from '@/components/layout/page-header';
+import { ButtonLink } from '@/components/ui/button';
+import { PlusCircle } from 'lucide-react';
+import { ComplaintList } from '@/features/complaints/components/complaint-list';
 
 function StudentComplaintsContent() {
   const { user, logout } = useAuth();
@@ -17,7 +17,7 @@ function StudentComplaintsContent() {
       user={{
         name: user.name,
         email: user.email,
-        role: "STUDENT",
+        role: 'STUDENT',
         roomLabel: user.roomId ?? undefined,
       }}
       onLogout={logout}
@@ -29,12 +29,13 @@ function StudentComplaintsContent() {
           description="View, search, and track all maintenance requests submitted for your room and common areas."
           actions={
             <ButtonLink href="/student/complaints/new" variant="primary">
-              <PlusCircle className="size-4" aria-hidden="true" /> Report an issue
+              <PlusCircle className="size-4" aria-hidden="true" /> Report an
+              issue
             </ButtonLink>
           }
           breadcrumbs={[
-            { label: "Dashboard", href: "/student/dashboard" },
-            { label: "My Complaints" },
+            { label: 'Dashboard', href: '/student/dashboard' },
+            { label: 'My Complaints' },
           ]}
         />
 
@@ -46,7 +47,7 @@ function StudentComplaintsContent() {
 
 export default function StudentComplaintsPage() {
   return (
-    <AuthGuard allowedRoles={["STUDENT"]}>
+    <AuthGuard allowedRoles={['STUDENT']}>
       <StudentComplaintsContent />
     </AuthGuard>
   );

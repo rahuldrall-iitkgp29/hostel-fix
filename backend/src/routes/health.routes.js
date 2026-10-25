@@ -7,7 +7,12 @@ function createHealthRouter({ checkReady } = {}) {
   const router = Router({ caseSensitive: true, strict: true });
   const limiter = createIpLimiter('health');
   router.get('/health', limiter, validateHealthRequest, liveness);
-  router.get('/health/ready', limiter, validateHealthRequest, readiness(checkReady));
+  router.get(
+    '/health/ready',
+    limiter,
+    validateHealthRequest,
+    readiness(checkReady)
+  );
   return router;
 }
 

@@ -1,28 +1,23 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import {
   Building2,
-  Calendar,
-  Clock,
   AlertTriangle,
-  User,
   MessageSquare,
   Activity as ActivityIcon,
   CheckCircle2,
   RotateCcw,
-  ShieldAlert,
   Send,
   Star,
   UserCheck,
   Wrench,
   XCircle,
-  FileText,
   FileImage,
-} from "lucide-react";
-import { useAuth } from "@/features/auth/context/auth-context";
+} from 'lucide-react';
+import { useAuth } from '@/features/auth/context/auth-context';
 import {
   getComplaintDetail,
   listComments,
@@ -34,7 +29,7 @@ import {
   reopenComplaint,
   submitFeedback,
   getAdminStaff,
-} from "@/lib/api/complaints";
+} from '@/lib/api/complaints';
 import type {
   ComplaintDetail,
   CommentItem,
@@ -42,22 +37,21 @@ import type {
   AdminStaffItem,
   Priority,
   RejectionCode,
-} from "../types";
-import { StatusBadge } from "./status-badge";
-import { PriorityBadge } from "./priority-badge";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Dialog } from "@/components/ui/dialog";
-import { TextField } from "@/components/ui/text-field";
-import { TextareaField } from "@/components/ui/textarea-field";
-import { SelectField } from "@/components/ui/select-field";
-import { Skeleton } from "@/components/ui/skeleton";
-import { StatePanel } from "@/components/feedback/state-panel";
-import { ApiError } from "@/lib/api/errors";
+} from '../types';
+import { StatusBadge } from './status-badge';
+import { PriorityBadge } from './priority-badge';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Dialog } from '@/components/ui/dialog';
+import { TextareaField } from '@/components/ui/textarea-field';
+import { SelectField } from '@/components/ui/select-field';
+import { Skeleton } from '@/components/ui/skeleton';
+import { StatePanel } from '@/components/feedback/state-panel';
+import { ApiError } from '@/lib/api/errors';
 
 export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
   const router = useRouter();
-  const { user, apiClient } = useAuth();
+  const { apiClient } = useAuth();
 
   const [complaint, setComplaint] = useState<ComplaintDetail | null>(null);
   const [comments, setComments] = useState<CommentItem[]>([]);
@@ -66,20 +60,30 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
   const [error, setError] = useState<string | null>(null);
 
   // New comment
-  const [commentText, setCommentText] = useState("");
+  const [commentText, setCommentText] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
 
   // Dialog modals
   const [activeDialog, setActiveDialog] = useState<
-    "triage" | "reject" | "startWork" | "resolve" | "close" | "assign" | "priority" | "reopen" | "feedback" | null
+    | 'triage'
+    | 'reject'
+    | 'startWork'
+    | 'resolve'
+    | 'close'
+    | 'assign'
+    | 'priority'
+    | 'reopen'
+    | 'feedback'
+    | null
   >(null);
 
   // Action states
-  const [actionNote, setActionNote] = useState("");
-  const [rejectionCode, setRejectionCode] = useState<RejectionCode>("OUT_OF_SCOPE");
-  const [selectedStaffId, setSelectedStaffId] = useState("");
+  const [actionNote, setActionNote] = useState('');
+  const [rejectionCode, setRejectionCode] =
+    useState<RejectionCode>('OUT_OF_SCOPE');
+  const [selectedStaffId, setSelectedStaffId] = useState('');
   const [eligibleStaff, setEligibleStaff] = useState<AdminStaffItem[]>([]);
-  const [newPriority, setNewPriority] = useState<Priority>("HIGH");
+  const [newPriority, setNewPriority] = useState<Priority>('HIGH');
   const [feedbackRating, setFeedbackRating] = useState<number>(5);
   const [submittingAction, setSubmittingAction] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -107,7 +111,9 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
       })
       .catch(() => {
         if (active) {
-          setError("Unable to load complaint details. Please check your connection.");
+          setError(
+            'Unable to load complaint details. Please check your connection.'
+          );
           setLoading(false);
         }
       });
@@ -119,9 +125,9 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
   // Load eligible staff if admin opens assign dialog
   const openAssignModal = async () => {
     if (!complaint) return;
-    setActiveDialog("assign");
+    setActiveDialog('assign');
     setActionError(null);
-    setActionNote("");
+    setActionNote('');
     try {
       const staffList = await getAdminStaff(apiClient, {
         hostelId: complaint.location.hostelId,
@@ -147,16 +153,16 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
         body: commentText.trim(),
       });
       setComments([newC, ...comments]);
-      setCommentText("");
+      setCommentText('');
       // Increment version locally
       setComplaint({ ...complaint, version: complaint.version + 1 });
-      toast.success("Comment posted");
+      toast.success('Comment posted');
     } catch (err: unknown) {
       if (err instanceof ApiError && err.status === 409) {
-        toast.error("Complaint was modified elsewhere. Reloading...");
+        toast.error('Complaint was modified elsewhere. Reloading...');
         reloadData();
       } else {
-        toast.error("Failed to post comment.");
+        toast.error('Failed to post comment.');
       }
     } finally {
       setSubmittingComment(false);
@@ -171,61 +177,63 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
     try {
       let updated: ComplaintDetail;
 
-      if (activeDialog === "triage") {
+      if (activeDialog === 'triage') {
         updated = await transitionComplaint(apiClient, complaint.id, {
           expectedVersion: complaint.version,
-          toStatus: "TRIAGED",
+          toStatus: 'TRIAGED',
           note: actionNote.trim(),
         });
-      } else if (activeDialog === "reject") {
+      } else if (activeDialog === 'reject') {
         updated = await transitionComplaint(apiClient, complaint.id, {
           expectedVersion: complaint.version,
-          toStatus: "REJECTED",
+          toStatus: 'REJECTED',
           rejectionCode,
           note: actionNote.trim(),
         });
-      } else if (activeDialog === "startWork") {
+      } else if (activeDialog === 'startWork') {
         updated = await transitionComplaint(apiClient, complaint.id, {
           expectedVersion: complaint.version,
-          toStatus: "IN_PROGRESS",
-          note: actionNote.trim() || "Maintenance technician began on-site repair work.",
+          toStatus: 'IN_PROGRESS',
+          note:
+            actionNote.trim() ||
+            'Maintenance technician began on-site repair work.',
         });
-      } else if (activeDialog === "resolve") {
+      } else if (activeDialog === 'resolve') {
         updated = await transitionComplaint(apiClient, complaint.id, {
           expectedVersion: complaint.version,
-          toStatus: "RESOLVED",
+          toStatus: 'RESOLVED',
           resolutionNote: actionNote.trim(),
         });
-      } else if (activeDialog === "close") {
+      } else if (activeDialog === 'close') {
         updated = await transitionComplaint(apiClient, complaint.id, {
           expectedVersion: complaint.version,
-          toStatus: "CLOSED",
-          note: actionNote.trim() || "Confirmed and closed.",
+          toStatus: 'CLOSED',
+          note: actionNote.trim() || 'Confirmed and closed.',
         });
-      } else if (activeDialog === "assign") {
+      } else if (activeDialog === 'assign') {
         updated = await assignComplaint(apiClient, complaint.id, {
           expectedVersion: complaint.version,
           staffId: selectedStaffId,
-          note: actionNote.trim() || "Assigned by hostel administration.",
+          note: actionNote.trim() || 'Assigned by hostel administration.',
         });
-      } else if (activeDialog === "priority") {
+      } else if (activeDialog === 'priority') {
         updated = await overridePriority(apiClient, complaint.id, {
           expectedVersion: complaint.version,
           priority: newPriority,
           reason: actionNote.trim(),
         });
-      } else if (activeDialog === "reopen") {
+      } else if (activeDialog === 'reopen') {
         updated = await reopenComplaint(apiClient, complaint.id, {
           expectedVersion: complaint.version,
           reason: actionNote.trim(),
         });
-      } else if (activeDialog === "feedback") {
+      } else if (activeDialog === 'feedback') {
         await submitFeedback(apiClient, complaint.id, {
           expectedVersion: complaint.version,
           rating: feedbackRating,
           comment: actionNote.trim() || undefined,
         });
-        toast.success("Thank you for your feedback!");
+        toast.success('Thank you for your feedback!');
         setActiveDialog(null);
         reloadData();
         return;
@@ -234,19 +242,23 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
       }
 
       setComplaint(updated);
-      toast.success("Action completed successfully");
+      toast.success('Action completed successfully');
       setActiveDialog(null);
       reloadData();
     } catch (err: unknown) {
       if (err instanceof ApiError) {
         if (err.status === 409) {
-          setActionError("Complaint was modified in another session. Please reload and review the latest state.");
+          setActionError(
+            'Complaint was modified in another session. Please reload and review the latest state.'
+          );
           reloadData();
         } else {
           setActionError(err.message);
         }
       } else {
-        setActionError("Failed to complete action. Please check your connection.");
+        setActionError(
+          'Failed to complete action. Please check your connection.'
+        );
       }
     } finally {
       setSubmittingAction(false);
@@ -266,8 +278,15 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
   if (error || !complaint) {
     return (
       <StatePanel kind="error" title="Complaint not found">
-        <p>{error || "This complaint may have been deleted or is outside your access scope."}</p>
-        <Button variant="secondary" onClick={() => router.back()} className="mt-4">
+        <p>
+          {error ||
+            'This complaint may have been deleted or is outside your access scope.'}
+        </p>
+        <Button
+          variant="secondary"
+          onClick={() => router.back()}
+          className="mt-4"
+        >
           Go back
         </Button>
       </StatePanel>
@@ -275,13 +294,13 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
   }
 
   const formatLocation = (c: ComplaintDetail) => {
-    if (c.location.type === "ROOM") {
-      return `Room ${c.location.roomLabel || "Assigned"} (${c.location.hostelName || "Hostel"})`;
+    if (c.location.type === 'ROOM') {
+      return `Room ${c.location.roomLabel || 'Assigned'} (${c.location.hostelName || 'Hostel'})`;
     }
-    if (c.location.type === "BLOCK_COMMON") {
-      return `${c.location.blockName || "Block"}: ${c.location.areaLabel}`;
+    if (c.location.type === 'BLOCK_COMMON') {
+      return `${c.location.blockName || 'Block'}: ${c.location.areaLabel}`;
     }
-    return `${c.location.hostelName || "Hostel"}: ${c.location.areaLabel || "Common Area"}`;
+    return `${c.location.hostelName || 'Hostel'}: ${c.location.areaLabel || 'Common Area'}`;
   };
 
   const allowedActions = complaint.allowedActions || [];
@@ -315,12 +334,12 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
 
           {/* Action buttons matching backend allowedActions */}
           <div className="flex flex-wrap items-center gap-2 pt-2 md:pt-0">
-            {allowedActions.includes("TRIAGE") && (
+            {allowedActions.includes('TRIAGE') && (
               <Button
                 variant="primary"
                 onClick={() => {
-                  setActiveDialog("triage");
-                  setActionNote("");
+                  setActiveDialog('triage');
+                  setActionNote('');
                   setActionError(null);
                 }}
               >
@@ -328,12 +347,12 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
               </Button>
             )}
 
-            {allowedActions.includes("REJECT") && (
+            {allowedActions.includes('REJECT') && (
               <Button
                 variant="secondary"
                 onClick={() => {
-                  setActiveDialog("reject");
-                  setActionNote("");
+                  setActiveDialog('reject');
+                  setActionNote('');
                   setActionError(null);
                 }}
               >
@@ -341,19 +360,22 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
               </Button>
             )}
 
-            {(allowedActions.includes("ASSIGN") || allowedActions.includes("REASSIGN")) && (
+            {(allowedActions.includes('ASSIGN') ||
+              allowedActions.includes('REASSIGN')) && (
               <Button variant="primary" onClick={openAssignModal}>
                 <UserCheck className="size-4" />
-                {allowedActions.includes("REASSIGN") ? "Reassign Staff" : "Assign Staff"}
+                {allowedActions.includes('REASSIGN')
+                  ? 'Reassign Staff'
+                  : 'Assign Staff'}
               </Button>
             )}
 
-            {allowedActions.includes("PRIORITY_OVERRIDE") && (
+            {allowedActions.includes('PRIORITY_OVERRIDE') && (
               <Button
                 variant="secondary"
                 onClick={() => {
-                  setActiveDialog("priority");
-                  setActionNote("");
+                  setActiveDialog('priority');
+                  setActionNote('');
                   setActionError(null);
                 }}
               >
@@ -361,12 +383,12 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
               </Button>
             )}
 
-            {allowedActions.includes("START_WORK") && (
+            {allowedActions.includes('START_WORK') && (
               <Button
                 variant="primary"
                 onClick={() => {
-                  setActiveDialog("startWork");
-                  setActionNote("");
+                  setActiveDialog('startWork');
+                  setActionNote('');
                   setActionError(null);
                 }}
               >
@@ -374,12 +396,12 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
               </Button>
             )}
 
-            {allowedActions.includes("RESOLVE") && (
+            {allowedActions.includes('RESOLVE') && (
               <Button
                 variant="primary"
                 onClick={() => {
-                  setActiveDialog("resolve");
-                  setActionNote("");
+                  setActiveDialog('resolve');
+                  setActionNote('');
                   setActionError(null);
                 }}
               >
@@ -387,12 +409,12 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
               </Button>
             )}
 
-            {allowedActions.includes("CLOSE") && (
+            {allowedActions.includes('CLOSE') && (
               <Button
                 variant="primary"
                 onClick={() => {
-                  setActiveDialog("close");
-                  setActionNote("");
+                  setActiveDialog('close');
+                  setActionNote('');
                   setActionError(null);
                 }}
               >
@@ -400,12 +422,12 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
               </Button>
             )}
 
-            {allowedActions.includes("REOPEN") && (
+            {allowedActions.includes('REOPEN') && (
               <Button
                 variant="secondary"
                 onClick={() => {
-                  setActiveDialog("reopen");
-                  setActionNote("");
+                  setActiveDialog('reopen');
+                  setActionNote('');
                   setActionError(null);
                 }}
               >
@@ -413,12 +435,12 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
               </Button>
             )}
 
-            {allowedActions.includes("FEEDBACK") && (
+            {allowedActions.includes('FEEDBACK') && (
               <Button
                 variant="secondary"
                 onClick={() => {
-                  setActiveDialog("feedback");
-                  setActionNote("");
+                  setActiveDialog('feedback');
+                  setActionNote('');
                   setActionError(null);
                 }}
               >
@@ -433,13 +455,13 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
           <div>
             <span className="block text-muted">Category</span>
             <span className="font-semibold text-ink">
-              {complaint.category?.name || "Uncategorized"}
+              {complaint.category?.name || 'Uncategorized'}
             </span>
           </div>
           <div>
             <span className="block text-muted">Assignee</span>
             <span className="font-semibold text-ink">
-              {complaint.assignee?.name || "Unassigned"}
+              {complaint.assignee?.name || 'Unassigned'}
             </span>
           </div>
           <div>
@@ -463,7 +485,9 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
         <div className="space-y-6 lg:col-span-2">
           {/* Issue Description */}
           <Card className="space-y-4">
-            <h2 className="text-base font-semibold text-ink">Report description</h2>
+            <h2 className="text-base font-semibold text-ink">
+              Report description
+            </h2>
             <p className="whitespace-pre-line text-sm leading-7 text-ink">
               {complaint.description}
             </p>
@@ -495,7 +519,9 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
                   </span>
                 )}
                 {!Object.values(complaint.indicators).some(Boolean) && (
-                  <span className="text-xs text-muted">Standard routine issue</span>
+                  <span className="text-xs text-muted">
+                    Standard routine issue
+                  </span>
                 )}
               </div>
             </div>
@@ -506,10 +532,13 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
                 <p className="text-xs font-semibold text-brand uppercase tracking-wider">
                   Resolution Note
                 </p>
-                <p className="mt-1 text-sm text-ink">{complaint.resolutionNote}</p>
+                <p className="mt-1 text-sm text-ink">
+                  {complaint.resolutionNote}
+                </p>
                 {complaint.resolvedAt && (
                   <p className="mt-2 text-[11px] text-muted">
-                    Resolved on {new Date(complaint.resolvedAt).toLocaleString()}
+                    Resolved on{' '}
+                    {new Date(complaint.resolvedAt).toLocaleString()}
                   </p>
                 )}
               </div>
@@ -520,7 +549,8 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
           {complaint.attachments && complaint.attachments.length > 0 && (
             <Card className="space-y-4">
               <h2 className="text-base font-semibold text-ink flex items-center gap-2">
-                <FileImage className="size-4 text-brand" /> Attached Photos ({complaint.attachments.length})
+                <FileImage className="size-4 text-brand" /> Attached Photos (
+                {complaint.attachments.length})
               </h2>
               <div className="grid gap-4 sm:grid-cols-3">
                 {complaint.attachments.map((att) => (
@@ -561,7 +591,8 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
           {/* Public Comments Thread */}
           <Card className="space-y-6">
             <h2 className="text-base font-semibold text-ink flex items-center gap-2">
-              <MessageSquare className="size-4 text-brand" /> Public Comments ({comments.length})
+              <MessageSquare className="size-4 text-brand" /> Public Comments (
+              {comments.length})
             </h2>
 
             {/* Comment Form */}
@@ -599,7 +630,7 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-ink">
-                          {cm.author.name || "User"}
+                          {cm.author.name || 'User'}
                         </span>
                         <span className="rounded-full bg-canvas px-2 py-0.5 text-[10px] text-muted font-medium border border-line">
                           {cm.author.role}
@@ -609,7 +640,9 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
                         {new Date(cm.createdAt).toLocaleString()}
                       </span>
                     </div>
-                    <p className="text-sm text-ink whitespace-pre-line">{cm.body}</p>
+                    <p className="text-sm text-ink whitespace-pre-line">
+                      {cm.body}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -632,7 +665,7 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
                   <div key={act.id} className="relative">
                     <span className="absolute -left-[21px] top-1 size-2 rounded-full bg-brand" />
                     <p className="font-semibold text-ink">
-                      {act.type.replace(/_/g, " ")}
+                      {act.type.replace(/_/g, ' ')}
                     </p>
                     {act.actor && (
                       <p className="text-muted text-[11px]">
@@ -660,25 +693,25 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
         open={activeDialog !== null}
         onClose={() => setActiveDialog(null)}
         title={
-          activeDialog === "triage"
-            ? "Triage Complaint"
-            : activeDialog === "reject"
-            ? "Reject Complaint"
-            : activeDialog === "startWork"
-            ? "Start Work on Repair"
-            : activeDialog === "resolve"
-            ? "Record Repair Resolution"
-            : activeDialog === "close"
-            ? "Confirm and Close Report"
-            : activeDialog === "assign"
-            ? "Assign Maintenance Staff"
-            : activeDialog === "priority"
-            ? "Override Priority"
-            : activeDialog === "reopen"
-            ? "Reopen Complaint"
-            : activeDialog === "feedback"
-            ? "Rate Repair Experience"
-            : ""
+          activeDialog === 'triage'
+            ? 'Triage Complaint'
+            : activeDialog === 'reject'
+              ? 'Reject Complaint'
+              : activeDialog === 'startWork'
+                ? 'Start Work on Repair'
+                : activeDialog === 'resolve'
+                  ? 'Record Repair Resolution'
+                  : activeDialog === 'close'
+                    ? 'Confirm and Close Report'
+                    : activeDialog === 'assign'
+                      ? 'Assign Maintenance Staff'
+                      : activeDialog === 'priority'
+                        ? 'Override Priority'
+                        : activeDialog === 'reopen'
+                          ? 'Reopen Complaint'
+                          : activeDialog === 'feedback'
+                            ? 'Rate Repair Experience'
+                            : ''
         }
       >
         <div className="space-y-4">
@@ -692,42 +725,57 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
             </div>
           )}
 
-          {activeDialog === "reject" && (
+          {activeDialog === 'reject' && (
             <SelectField
               id="rejection-code"
               label="Rejection Reason"
               value={rejectionCode}
-              onChange={(e) => setRejectionCode(e.target.value as RejectionCode)}
+              onChange={(e) =>
+                setRejectionCode(e.target.value as RejectionCode)
+              }
               options={[
-                { value: "OUT_OF_SCOPE", label: "Out of scope / non-hostel responsibility" },
-                { value: "INVALID_LOCATION", label: "Invalid room or area location" },
-                { value: "INSUFFICIENT_INFORMATION", label: "Insufficient details provided" },
+                {
+                  value: 'OUT_OF_SCOPE',
+                  label: 'Out of scope / non-hostel responsibility',
+                },
+                {
+                  value: 'INVALID_LOCATION',
+                  label: 'Invalid room or area location',
+                },
+                {
+                  value: 'INSUFFICIENT_INFORMATION',
+                  label: 'Insufficient details provided',
+                },
               ]}
             />
           )}
 
-          {activeDialog === "priority" && (
+          {activeDialog === 'priority' && (
             <SelectField
               id="override-priority"
               label="New Priority"
               value={newPriority}
               onChange={(e) => setNewPriority(e.target.value as Priority)}
               options={[
-                { value: "CRITICAL", label: "Critical" },
-                { value: "HIGH", label: "High" },
-                { value: "MEDIUM", label: "Medium" },
-                { value: "LOW", label: "Low" },
+                { value: 'CRITICAL', label: 'Critical' },
+                { value: 'HIGH', label: 'High' },
+                { value: 'MEDIUM', label: 'Medium' },
+                { value: 'LOW', label: 'Low' },
               ]}
             />
           )}
 
-          {activeDialog === "assign" && (
+          {activeDialog === 'assign' && (
             <SelectField
               id="assignee-select"
               label="Select Eligible Staff"
               value={selectedStaffId}
               onChange={(e) => setSelectedStaffId(e.target.value)}
-              placeholder={eligibleStaff.length === 0 ? "No eligible staff found" : undefined}
+              placeholder={
+                eligibleStaff.length === 0
+                  ? 'No eligible staff found'
+                  : undefined
+              }
               options={eligibleStaff.map((s) => ({
                 value: s.id,
                 label: `${s.name} (${s.openAssignedCount} active tasks)`,
@@ -735,7 +783,7 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
             />
           )}
 
-          {activeDialog === "feedback" ? (
+          {activeDialog === 'feedback' ? (
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-ink mb-1">
@@ -753,8 +801,8 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
                       <Star
                         className={`size-6 ${
                           star <= feedbackRating
-                            ? "text-warning fill-warning"
-                            : "text-muted"
+                            ? 'text-warning fill-warning'
+                            : 'text-muted'
                         }`}
                       />
                     </button>
@@ -775,19 +823,19 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
             <TextareaField
               id="action-note"
               label={
-                activeDialog === "resolve"
-                  ? "Resolution note (min 20 characters)"
-                  : activeDialog === "reopen"
-                  ? "Reason for reopening (min 20 characters)"
-                  : "Note / Explanation (min 10 characters)"
+                activeDialog === 'resolve'
+                  ? 'Resolution note (min 20 characters)'
+                  : activeDialog === 'reopen'
+                    ? 'Reason for reopening (min 20 characters)'
+                    : 'Note / Explanation (min 10 characters)'
               }
               rows={3}
               placeholder={
-                activeDialog === "resolve"
-                  ? "Replaced ceiling fan capacitor and verified normal speed..."
-                  : activeDialog === "reopen"
-                  ? "The fan stopped working again after 2 hours..."
-                  : "Add notes explaining this decision..."
+                activeDialog === 'resolve'
+                  ? 'Replaced ceiling fan capacitor and verified normal speed...'
+                  : activeDialog === 'reopen'
+                    ? 'The fan stopped working again after 2 hours...'
+                    : 'Add notes explaining this decision...'
               }
               value={actionNote}
               onChange={(e) => setActionNote(e.target.value)}

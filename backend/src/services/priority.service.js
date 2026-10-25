@@ -39,10 +39,19 @@ function computePriority(indicators = {}, policy = {}) {
   const thresholds = policy.priorityThresholds || DEFAULT_THRESHOLDS;
 
   const score =
-    (indicators.safetyRisk ? (weights.safetyRisk ?? DEFAULT_WEIGHTS.safetyRisk) : 0) +
-    (indicators.essentialServiceOutage ? (weights.essentialServiceOutage ?? DEFAULT_WEIGHTS.essentialServiceOutage) : 0) +
-    (indicators.affectsMultipleRooms ? (weights.affectsMultipleRooms ?? DEFAULT_WEIGHTS.affectsMultipleRooms) : 0) +
-    (indicators.functionalityLoss ? (weights.functionalityLoss ?? DEFAULT_WEIGHTS.functionalityLoss) : 0);
+    (indicators.safetyRisk
+      ? (weights.safetyRisk ?? DEFAULT_WEIGHTS.safetyRisk)
+      : 0) +
+    (indicators.essentialServiceOutage
+      ? (weights.essentialServiceOutage ??
+        DEFAULT_WEIGHTS.essentialServiceOutage)
+      : 0) +
+    (indicators.affectsMultipleRooms
+      ? (weights.affectsMultipleRooms ?? DEFAULT_WEIGHTS.affectsMultipleRooms)
+      : 0) +
+    (indicators.functionalityLoss
+      ? (weights.functionalityLoss ?? DEFAULT_WEIGHTS.functionalityLoss)
+      : 0);
 
   let suggestedPriority = 'LOW';
   if (score >= (thresholds.CRITICAL ?? DEFAULT_THRESHOLDS.CRITICAL)) {
@@ -54,8 +63,16 @@ function computePriority(indicators = {}, policy = {}) {
   }
 
   // Active indicators in weight-descending order
-  const indicatorOrder = ['safetyRisk', 'essentialServiceOutage', 'affectsMultipleRooms', 'functionalityLoss'];
-  indicatorOrder.sort((a, b) => (weights[b] ?? DEFAULT_WEIGHTS[b]) - (weights[a] ?? DEFAULT_WEIGHTS[a]));
+  const indicatorOrder = [
+    'safetyRisk',
+    'essentialServiceOutage',
+    'affectsMultipleRooms',
+    'functionalityLoss',
+  ];
+  indicatorOrder.sort(
+    (a, b) =>
+      (weights[b] ?? DEFAULT_WEIGHTS[b]) - (weights[a] ?? DEFAULT_WEIGHTS[a])
+  );
 
   const activePhrases = [];
   for (const key of indicatorOrder) {

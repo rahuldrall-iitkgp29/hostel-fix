@@ -1,6 +1,11 @@
 const request = require('supertest');
 const { openAuthDatabase } = require('../helpers/auth.helper');
-const { hostelInput, blockInput, roomInput, categoryInput } = require('../helpers/models.helper');
+const {
+  hostelInput,
+  blockInput,
+  roomInput,
+  categoryInput,
+} = require('../helpers/models.helper');
 
 describe('catalog and admin staff integration tests', () => {
   let authDb;
@@ -59,7 +64,9 @@ describe('catalog and admin staff integration tests', () => {
 
     test('GET /api/v1/catalog/rooms lists rooms for matching active parent references', async () => {
       const res = await request(app)
-        .get(`/api/v1/catalog/rooms?hostelId=${authDb.hostel._id}&blockId=${authDb.block._id}`)
+        .get(
+          `/api/v1/catalog/rooms?hostelId=${authDb.hostel._id}&blockId=${authDb.block._id}`
+        )
         .expect(200);
 
       expect(res.body.data).toBeInstanceOf(Array);
@@ -75,7 +82,9 @@ describe('catalog and admin staff integration tests', () => {
 
       // 404 for mismatched or missing parent block
       await request(app)
-        .get(`/api/v1/catalog/rooms?hostelId=${authDb.hostel._id}&blockId=670000000000000000000999`)
+        .get(
+          `/api/v1/catalog/rooms?hostelId=${authDb.hostel._id}&blockId=670000000000000000000999`
+        )
         .expect(404);
     });
   });
@@ -97,7 +106,9 @@ describe('catalog and admin staff integration tests', () => {
         .expect(200);
 
       expect(res.body.data).toBeInstanceOf(Array);
-      expect(res.body.data.some((c) => c.id === String(authDb.category._id))).toBe(true);
+      expect(
+        res.body.data.some((c) => c.id === String(authDb.category._id))
+      ).toBe(true);
 
       // Student reading another hostel gets 404
       await request(app)
@@ -111,17 +122,24 @@ describe('catalog and admin staff integration tests', () => {
       const { token } = await authDb.login(app, student);
 
       await request(app)
-        .get(`/api/v1/categories?hostelId=${authDb.hostel._id}&includeInactive=true`)
+        .get(
+          `/api/v1/categories?hostelId=${authDb.hostel._id}&includeInactive=true`
+        )
         .set('Authorization', `Bearer ${token}`)
         .expect(403);
     });
 
     test('admin can read categories in scoped hostel and include inactive categories', async () => {
-      const admin = await authDb.user({ role: 'ADMIN', adminHostelIds: [authDb.hostel._id] });
+      const admin = await authDb.user({
+        role: 'ADMIN',
+        adminHostelIds: [authDb.hostel._id],
+      });
       const { token: adminToken } = await authDb.login(app, admin);
 
       const res = await request(app)
-        .get(`/api/v1/categories?hostelId=${authDb.hostel._id}&includeInactive=true`)
+        .get(
+          `/api/v1/categories?hostelId=${authDb.hostel._id}&includeInactive=true`
+        )
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
@@ -155,8 +173,14 @@ describe('catalog and admin staff integration tests', () => {
     });
 
     test('admin lists staff in scoped hostel with openAssignedCount and email', async () => {
-      const admin = await authDb.user({ role: 'ADMIN', adminHostelIds: [authDb.hostel._id] });
-      const staffUser = await authDb.user({ role: 'STAFF', categoryIds: [authDb.category._id] });
+      const admin = await authDb.user({
+        role: 'ADMIN',
+        adminHostelIds: [authDb.hostel._id],
+      });
+      const staffUser = await authDb.user({
+        role: 'STAFF',
+        categoryIds: [authDb.category._id],
+      });
       const { token } = await authDb.login(app, admin);
 
       const res = await request(app)

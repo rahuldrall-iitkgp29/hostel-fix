@@ -1,5 +1,5 @@
-import { z } from "zod";
-import type { ApiClient } from "./client";
+import { z } from 'zod';
+import type { ApiClient } from './client';
 
 export const catalogHostelSchema = z.object({
   id: z.string(),
@@ -24,9 +24,13 @@ export const catalogRoomSchema = z.object({
 export type CatalogRoom = z.infer<typeof catalogRoomSchema>;
 
 export async function getHostels(client: ApiClient) {
-  const response = await client.request("/catalog/hostels", z.array(catalogHostelSchema), {
-    query: { limit: 100 },
-  });
+  const response = await client.request(
+    '/catalog/hostels',
+    z.array(catalogHostelSchema),
+    {
+      query: { limit: 100 },
+    }
+  );
   return response.data;
 }
 
@@ -38,9 +42,17 @@ export async function getHostelBlocks(client: ApiClient, hostelId: string) {
   return response.data;
 }
 
-export async function getRooms(client: ApiClient, hostelId: string, blockId: string) {
-  const response = await client.request("/catalog/rooms", z.array(catalogRoomSchema), {
-    query: { hostelId, blockId, limit: 100 },
-  });
+export async function getRooms(
+  client: ApiClient,
+  hostelId: string,
+  blockId: string
+) {
+  const response = await client.request(
+    '/catalog/rooms',
+    z.array(catalogRoomSchema),
+    {
+      query: { hostelId, blockId, limit: 100 },
+    }
+  );
   return response.data;
 }

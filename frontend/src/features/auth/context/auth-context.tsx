@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   createContext,
@@ -8,13 +8,13 @@ import {
   useCallback,
   useMemo,
   type ReactNode,
-} from "react";
-import { useRouter } from "next/navigation";
-import { createApiClient, type ApiClient } from "@/lib/api/client";
-import { validateApiBaseUrl } from "@/lib/api/url";
-import { loginUser, logoutUser, refreshSession } from "@/lib/api/auth";
-import type { UserSelf, AuthResponse } from "../types";
-import type { LoginFormData } from "../schemas";
+} from 'react';
+import { useRouter } from 'next/navigation';
+import { createApiClient, type ApiClient } from '@/lib/api/client';
+import { validateApiBaseUrl } from '@/lib/api/url';
+import { loginUser, logoutUser, refreshSession } from '@/lib/api/auth';
+import type { UserSelf, AuthResponse } from '../types';
+import type { LoginFormData } from '../schemas';
 
 type AuthContextValue = {
   user: UserSelf | null;
@@ -42,7 +42,7 @@ function clearRefreshTimer() {
 
 function getBaseUrl(): string {
   return validateApiBaseUrl(
-    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api/v1"
+    process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1'
   );
 }
 
@@ -61,7 +61,10 @@ async function executeRefresh(): Promise<string | null> {
       const authData = await refreshSession(unauthClient);
       inMemoryAccessToken = authData.accessToken;
       clearRefreshTimer();
-      const delaySeconds = Math.max(authData.expiresIn - 60, authData.expiresIn / 2);
+      const delaySeconds = Math.max(
+        authData.expiresIn - 60,
+        authData.expiresIn / 2
+      );
       refreshTimer = setTimeout(() => {
         void executeRefresh();
       }, delaySeconds * 1000);
@@ -105,7 +108,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAccessToken(authData.accessToken);
       setUser(authData.user);
       clearRefreshTimer();
-      const delaySeconds = Math.max(authData.expiresIn - 60, authData.expiresIn / 2);
+      const delaySeconds = Math.max(
+        authData.expiresIn - 60,
+        authData.expiresIn / 2
+      );
       refreshTimer = setTimeout(() => {
         void executeRefresh();
       }, delaySeconds * 1000);
@@ -124,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setAccessToken(null);
       setUser(null);
-      router.push("/login");
+      router.push('/login');
     }
   }, [apiClient, router]);
 
@@ -142,7 +148,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAccessToken(authData.accessToken);
         setUser(authData.user);
         clearRefreshTimer();
-        const delaySeconds = Math.max(authData.expiresIn - 60, authData.expiresIn / 2);
+        const delaySeconds = Math.max(
+          authData.expiresIn - 60,
+          authData.expiresIn / 2
+        );
         refreshTimer = setTimeout(() => {
           void executeRefresh();
         }, delaySeconds * 1000);
@@ -173,16 +182,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updateUser,
       apiClient,
     }),
-    [user, accessToken, isLoading, login, logout, refresh, updateUser, apiClient]
+    [
+      user,
+      accessToken,
+      isLoading,
+      login,
+      logout,
+      refresh,
+      updateUser,
+      apiClient,
+    ]
   );
 
-  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
+  );
 }
 
 export function useAuth(): AuthContextValue {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 }

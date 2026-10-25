@@ -12,7 +12,9 @@ function guardResetTarget(config) {
   }
   const uri = databaseUri(config);
   if (uri !== LOCAL_TEST_URI && uri !== LOCAL_DEV_URI) {
-    throw new Error(`Reset is strictly restricted to local development or test databases (${LOCAL_DEV_URI} or ${LOCAL_TEST_URI}). Refusing target: ${uri}`);
+    throw new Error(
+      `Reset is strictly restricted to local development or test databases (${LOCAL_DEV_URI} or ${LOCAL_TEST_URI}). Refusing target: ${uri}`
+    );
   }
   return uri;
 }
@@ -28,10 +30,17 @@ async function resetDatabase({ config, database: providedDb }) {
   try {
     const models = createModels(database.connection);
     // Drop all model collections safely
-    const collections = await database.connection.db.listCollections().toArray();
-    const collectionNames = collections.map((c) => c.name).filter((name) => !name.startsWith('system.'));
+    const collections = await database.connection.db
+      .listCollections()
+      .toArray();
+    const collectionNames = collections
+      .map((c) => c.name)
+      .filter((name) => !name.startsWith('system.'));
     for (const name of collectionNames) {
-      await database.connection.db.collection(name).drop().catch(() => {});
+      await database.connection.db
+        .collection(name)
+        .drop()
+        .catch(() => {});
     }
     await ensureIndexes(models);
     return await seedDatabase({ config, database, models });

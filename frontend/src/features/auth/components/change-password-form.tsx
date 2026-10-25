@@ -1,22 +1,18 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "sonner";
-import { ArrowRight, CircleAlert, KeyRound } from "lucide-react";
-import { TextField } from "@/components/ui/text-field";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "../context/auth-context";
-import { changePasswordSchema, type ChangePasswordFormData } from "../schemas";
-import { changePassword } from "@/lib/api/user";
-import { ApiError } from "@/lib/api/errors";
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
+import { ArrowRight, CircleAlert, KeyRound } from 'lucide-react';
+import { TextField } from '@/components/ui/text-field';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '../context/auth-context';
+import { changePasswordSchema, type ChangePasswordFormData } from '../schemas';
+import { changePassword } from '@/lib/api/user';
+import { ApiError } from '@/lib/api/errors';
 
-export function ChangePasswordForm({
-  onSuccess,
-}: {
-  onSuccess?: () => void;
-}) {
+export function ChangePasswordForm({ onSuccess }: { onSuccess?: () => void }) {
   const { apiClient, logout } = useAuth();
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -29,9 +25,9 @@ export function ChangePasswordForm({
   } = useForm<ChangePasswordFormData>({
     resolver: zodResolver(changePasswordSchema),
     defaultValues: {
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
     },
   });
 
@@ -39,8 +35,8 @@ export function ChangePasswordForm({
     setServerError(null);
     try {
       await changePassword(apiClient, data);
-      toast.success("Password changed successfully", {
-        description: "Please sign in with your new password.",
+      toast.success('Password changed successfully', {
+        description: 'Please sign in with your new password.',
       });
       reset();
       if (onSuccess) {
@@ -60,7 +56,9 @@ export function ChangePasswordForm({
         }
         setServerError(err.message);
       } else {
-        setServerError("Failed to change password. Please check your connection and try again.");
+        setServerError(
+          'Failed to change password. Please check your connection and try again.'
+        );
       }
     }
   };
@@ -84,7 +82,7 @@ export function ChangePasswordForm({
         autoComplete="current-password"
         error={errors.currentPassword?.message}
         disabled={isSubmitting}
-        {...register("currentPassword")}
+        {...register('currentPassword')}
       />
 
       <TextField
@@ -95,7 +93,7 @@ export function ChangePasswordForm({
         hint="Must be at least 12 characters and different from your current password"
         error={errors.newPassword?.message}
         disabled={isSubmitting}
-        {...register("newPassword")}
+        {...register('newPassword')}
       />
 
       <TextField
@@ -105,7 +103,7 @@ export function ChangePasswordForm({
         autoComplete="new-password"
         error={errors.confirmPassword?.message}
         disabled={isSubmitting}
-        {...register("confirmPassword")}
+        {...register('confirmPassword')}
       />
 
       <Button

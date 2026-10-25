@@ -8,8 +8,13 @@ function sessionSchema() {
     isRevoked: { type: Boolean, default: false, required: true },
     expiresAt: { type: Date, required: true },
     lastRefreshedAt: { type: Date },
-    userAgent: { type: String, default: null, maxlength: 256, select: false,
-      set: (value) => typeof value === 'string' ? value.slice(0, 256) : value },
+    userAgent: {
+      type: String,
+      default: null,
+      maxlength: 256,
+      select: false,
+      set: (value) => (typeof value === 'string' ? value.slice(0, 256) : value),
+    },
     ipAddress: { type: String, default: null, select: false },
   });
   schema.pre('validate', function () {

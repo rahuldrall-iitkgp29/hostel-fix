@@ -5,22 +5,35 @@ const { hashRefreshToken, verifyRefreshToken } = require('../utils/hashUtils');
 
 const assertActive = (user) => {
   if (!user) throw invalidSession();
-  if (user.status !== 'ACTIVE') throw new AppError(403, 'ACCOUNT_INACTIVE', 'Account is inactive.');
+  if (user.status !== 'ACTIVE')
+    throw new AppError(403, 'ACCOUNT_INACTIVE', 'Account is inactive.');
 };
 const assertSession = (record) => {
-  if (!record || record.isRevoked || record.expiresAt <= new Date()) throw invalidSession();
+  if (!record || record.isRevoked || record.expiresAt <= new Date())
+    throw invalidSession();
 };
 
 function createSessionService({ connection, models }) {
   const { User, Session } = models;
 
-  async function loadAccount(claims, transaction, { allowPasswordChange = false } = {}) {
-    const record = await Session.findOne({ _id: claims.sid, userId: claims.sub }).session(transaction ?? null);
+  async function loadAccount(
+    claims,
+    transaction,
+    { allowPasswordChange = false } = {}
+  ) {
+    const record = await Session.findOne({
+      _id: claims.sid,
+      userId: claims.sub,
+    }).session(transaction ?? null);
     assertSession(record);
     const user = await User.findById(claims.sub).session(transaction ?? null);
     assertActive(user);
     if (user.mustChangePassword && !allowPasswordChange) {
-      throw new AppError(403, 'PASSWORD_CHANGE_REQUIRED', 'Change your password before continuing.');
+      throw new AppError(
+        403,
+        'PASSWORD_CHANGE_REQUIRED',
+        'Change your password before continuing.'
+      );
     }
     // Never derive current permissions from possibly stale JWT role/scope claims.
     return { user, record };
@@ -29,7 +42,9 @@ function createSessionService({ connection, models }) {
   async function revokeForUser(userId, transaction) {
     // Login/refresh/password changes take the same User write guard, preventing
     // a concurrent session from escaping the snapshot used for revocation.
-    for await (const record of Session.find({ userId, isRevoked: false }).session(transaction).cursor()) {
+    for await (const record of Session.find({ userId, isRevoked: false })
+      .session(transaction)
+      .cursor()) {
       record.isRevoked = true;
       await record.save({ session: transaction });
     }
@@ -40,11 +55,13 @@ function createSessionService({ connection, models }) {
     const replacement = newRefreshToken(cookie.family);
     const tokenHash = await hashRefreshToken(replacement.secret);
     const result = await runTransaction(connection, async (transaction) => {
-      const record = await Session.findOne({ tokenFamily: cookie.family }).select('+tokenHash').session(transaction);
+      const record = await Session.findOne({ tokenFamily: cookie.family })
+        .select('+tokenHash')
+        .session(transaction);
       assertSession(record);
       const user = await User.findById(record.userId).session(transaction);
       assertActive(user);
-      if (!await verifyRefreshToken(cookie.secret, record.tokenHash)) {
+      if (!(await verifyRefreshToken(cookie.secret, record.tokenHash))) {
         // Unique tokenFamily means this record represents the complete family.
         record.isRevoked = true;
         await record.save({ session: transaction });
@@ -56,7 +73,12 @@ function createSessionService({ connection, models }) {
       await record.save({ session: transaction });
       return { user, record };
     });
-    if (result.reused) throw new AppError(401, 'REFRESH_REUSE_DETECTED', 'Session reuse detected. Please log in again.');
+    if (result.reused)
+      throw new AppError(
+        401,
+        'REFRESH_REUSE_DETECTED',
+        'Session reuse detected. Please log in again.'
+      );
     return { ...result, cookie: replacement.cookie };
   }
 
@@ -66,13 +88,24 @@ function createSessionService({ connection, models }) {
       // credentials are supplied, without trusting a family locator alone.
       const records = new Map();
       if (cookie) {
-        const record = await Session.findOne({ tokenFamily: cookie.family }).select('+tokenHash').session(transaction);
-        if (record && !record.isRevoked && record.expiresAt > new Date()
-          && await verifyRefreshToken(cookie.secret, record.tokenHash)) records.set(String(record._id), record);
+        const record = await Session.findOne({ tokenFamily: cookie.family })
+          .select('+tokenHash')
+          .session(transaction);
+        if (
+          record &&
+          !record.isRevoked &&
+          record.expiresAt > new Date() &&
+          (await verifyRefreshToken(cookie.secret, record.tokenHash))
+        )
+          records.set(String(record._id), record);
       }
       if (claims) {
-        const record = await Session.findOne({ _id: claims.sid, userId: claims.sub }).session(transaction);
-        if (record && !record.isRevoked) records.set(String(record._id), record);
+        const record = await Session.findOne({
+          _id: claims.sid,
+          userId: claims.sub,
+        }).session(transaction);
+        if (record && !record.isRevoked)
+          records.set(String(record._id), record);
       }
       for (const record of records.values()) {
         record.isRevoked = true;

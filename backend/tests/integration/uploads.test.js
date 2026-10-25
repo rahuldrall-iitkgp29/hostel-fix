@@ -2,8 +2,14 @@ const request = require('supertest');
 const { openAuthDatabase } = require('../helpers/auth.helper');
 const { attachmentInput, objectId } = require('../helpers/models.helper');
 
-const validPng = Buffer.from('89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000a49444154789c63000100000500010d0a2db40000000049454e44ae426082', 'hex');
-const validJpeg = Buffer.from('ffd8ffe000104a46494600010101004800480000ffdb004300080606070605080707070909080a0c140d0c0b0b0c1912130f141d1a1f1e1d1a1c1c20242e2720222c231c1c2837292c30313434341f27393d38323c2e333432ffc0000b080001000101011100ffc4001f0000010501010101010100000000000000000102030405060708090a0bffda0008010100003f007f00ffd9', 'hex');
+const validPng = Buffer.from(
+  '89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000a49444154789c63000100000500010d0a2db40000000049454e44ae426082',
+  'hex'
+);
+const validJpeg = Buffer.from(
+  'ffd8ffe000104a46494600010101004800480000ffdb004300080606070605080707070909080a0c140d0c0b0b0c1912130f141d1a1f1e1d1a1c1c20242e2720222c231c1c2837292c30313434341f27393d38323c2e333432ffc0000b080001000101011100ffc4001f0000010501010101010100000000000000000102030405060708090a0bffda0008010100003f007f00ffd9',
+  'hex'
+);
 
 describe('uploads and attachment authorization integration tests', () => {
   let authDb;
@@ -53,7 +59,9 @@ describe('uploads and attachment authorization integration tests', () => {
         sizeBytes: validPng.length,
         width: 1,
         height: 1,
-        url: expect.stringMatching(/^\/api\/v1\/uploads\/[a-f\d]{24}\/content$/),
+        url: expect.stringMatching(
+          /^\/api\/v1\/uploads\/[a-f\d]{24}\/content$/
+        ),
       },
       expiresAt: expect.any(String),
     });
@@ -99,7 +107,10 @@ describe('uploads and attachment authorization integration tests', () => {
       .set('Authorization', `Bearer ${studentToken}`)
       .set('Origin', authDb.config.CORS_ORIGIN)
       .set('X-CSRF-Protection', '1')
-      .attach('file', fakeFile, { filename: 'test.jpg', contentType: 'image/jpeg' })
+      .attach('file', fakeFile, {
+        filename: 'test.jpg',
+        contentType: 'image/jpeg',
+      })
       .expect(415);
 
     expect(res.body.error.code).toBe('UNSUPPORTED_MEDIA_TYPE');
@@ -134,7 +145,10 @@ describe('uploads and attachment authorization integration tests', () => {
 
     // Seed 10 unattached attachments directly into database
     for (let i = 0; i < 10; i++) {
-      await authDb.create('Attachment', attachmentInput({ ownerId: quotaStudent._id, complaintId: null }));
+      await authDb.create(
+        'Attachment',
+        attachmentInput({ ownerId: quotaStudent._id, complaintId: null })
+      );
     }
 
     // 11th upload attempt via HTTP must fail with 409 UPLOAD_QUOTA_EXCEEDED
@@ -154,11 +168,14 @@ describe('uploads and attachment authorization integration tests', () => {
     const { token: boundToken } = await authDb.login(app, boundStudent);
     const fakeComplaintId = objectId();
 
-    const boundAttachment = await authDb.create('Attachment', attachmentInput({
-      ownerId: boundStudent._id,
-      complaintId: fakeComplaintId,
-      expiresAt: null,
-    }));
+    const boundAttachment = await authDb.create(
+      'Attachment',
+      attachmentInput({
+        ownerId: boundStudent._id,
+        complaintId: fakeComplaintId,
+        expiresAt: null,
+      })
+    );
 
     const res = await request(app)
       .delete(`/api/v1/uploads/${boundAttachment._id}`)

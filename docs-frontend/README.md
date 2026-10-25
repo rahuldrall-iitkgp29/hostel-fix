@@ -38,17 +38,17 @@ Do not add this package to the root workspace or alter its lockfile. Use
 
 Run from `frontend/`:
 
-| Command | Purpose |
-| --- | --- |
-| `npm.cmd ci --workspaces=false` | Reproduce dependencies from frontend/package-lock.json |
-| `npm.cmd run dev` | Local development, default port 3000 |
-| `npm.cmd run lint` | Next Core Web Vitals + TS ESLint, zero warnings allowed |
-| `npm.cmd run typecheck` | Generate route types, then strict TypeScript check |
-| `npm.cmd test` | Vitest API transport/URL tests, no database writes |
-| `npm.cmd run build` | Optimized production build |
-| `npm.cmd start` | Serve the already-built application on port 3000 |
-| `npm.cmd audit --omit=dev` | Audit production dependency tree |
-| `npm.cmd audit` | Include development tooling advisories |
+| Command                         | Purpose                                                 |
+| ------------------------------- | ------------------------------------------------------- |
+| `npm.cmd ci --workspaces=false` | Reproduce dependencies from frontend/package-lock.json  |
+| `npm.cmd run dev`               | Local development, default port 3000                    |
+| `npm.cmd run lint`              | Next Core Web Vitals + TS ESLint, zero warnings allowed |
+| `npm.cmd run typecheck`         | Generate route types, then strict TypeScript check      |
+| `npm.cmd test`                  | Vitest API transport/URL tests, no database writes      |
+| `npm.cmd run build`             | Optimized production build                              |
+| `npm.cmd start`                 | Serve the already-built application on port 3000        |
+| `npm.cmd audit --omit=dev`      | Audit production dependency tree                        |
+| `npm.cmd audit`                 | Include development tooling advisories                  |
 
 `typecheck` runs `next typegen` so it works on a clean checkout before a build.
 The generated `next-env.d.ts`, `.next/`, node_modules and TS build cache are ignored.
@@ -74,6 +74,7 @@ resource paths under that namespace and rejects redirects to prevent credential 
 Feature modules should call centralized API methods; do not scatter raw fetch in components.
 
 Confirmed transport uses:
+
 - `{data,meta:{requestId,...}}` on JSON success and explicit 204 handling.
 - `{error:{code,message,fields?,requestId}}` on failure; field errors are path/message pairs.
 - `credentials: "include"`; `X-CSRF-Protection: 1` on mutations.
@@ -93,15 +94,15 @@ See root/backend docs for backend setup; this frontend does not manage its datab
 
 ## Routes and current behavior
 
-| Route | Implemented behavior |
-| --- | --- |
-| / | Responsive landing page, complaint journey illustration, role explanations, real navigation |
-| /login | Sign-in entry shell explaining that account access is not available in this build |
-| /register | Student registration entry shell, enrollment context; no role selector/credential collection |
-| /student/dashboard | Fixed redirect to /login?returnTo=%2Fstudent%2Fdashboard |
-| /staff/dashboard | Fixed redirect to /login?returnTo=%2Fstaff%2Fdashboard |
-| /admin/dashboard | Fixed redirect to /login?returnTo=%2Fadmin%2Fdashboard |
-| Unknown routes | Custom 404, actual HTTP 404 status |
+| Route              | Implemented behavior                                                                         |
+| ------------------ | -------------------------------------------------------------------------------------------- |
+| /                  | Responsive landing page, complaint journey illustration, role explanations, real navigation  |
+| /login             | Sign-in entry shell explaining that account access is not available in this build            |
+| /register          | Student registration entry shell, enrollment context; no role selector/credential collection |
+| /student/dashboard | Fixed redirect to /login?returnTo=%2Fstudent%2Fdashboard                                     |
+| /staff/dashboard   | Fixed redirect to /login?returnTo=%2Fstaff%2Fdashboard                                       |
+| /admin/dashboard   | Fixed redirect to /login?returnTo=%2Fadmin%2Fdashboard                                       |
+| Unknown routes     | Custom 404, actual HTTP 404 status                                                           |
 
 Dashboard redirects are temporary route shells, not an authentication implementation.
 No protected data is rendered, and no role dashboard or complaint workflow is falsely
@@ -161,6 +162,7 @@ Reassess these constraints in Session 12.
 ## Verification and current limits
 
 Verified after a successful clean lockfile install:
+
 - Lint: PASS, no errors or warnings.
 - Strict typecheck: PASS.
 - API tests: **31 passed**, 1 file, none failed/skipped.
@@ -210,4 +212,3 @@ Follow the forwarding files to the canonical docs in this directory.
 - Missing/incompatible API URL: check the frontend env example and /api/v1 suffix.
 - Auth still unavailable: expected in this foundation; do not add mock sessions or assume
   a healthy backend means all features are integrated.
-

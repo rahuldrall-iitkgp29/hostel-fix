@@ -28,30 +28,52 @@ describe('catalog and admin staff validator unit tests', () => {
     const parsed = hostelBlocksParams.parse({ hostelId: validId });
     expect(parsed.hostelId).toBe(validId);
 
-    expect(() => hostelBlocksParams.parse({ hostelId: 'invalid-id' })).toThrow();
+    expect(() =>
+      hostelBlocksParams.parse({ hostelId: 'invalid-id' })
+    ).toThrow();
     expect(() => hostelBlocksParams.parse({})).toThrow();
   });
 
   test('roomsQuery requires hostelId and blockId', () => {
     const parsed = roomsQuery.parse({ hostelId: validId, blockId: anotherId });
-    expect(parsed).toEqual({ hostelId: validId, blockId: anotherId, page: 1, limit: 20 });
+    expect(parsed).toEqual({
+      hostelId: validId,
+      blockId: anotherId,
+      page: 1,
+      limit: 20,
+    });
 
     expect(() => roomsQuery.parse({ hostelId: validId })).toThrow();
     expect(() => roomsQuery.parse({ blockId: anotherId })).toThrow();
-    expect(() => roomsQuery.parse({ hostelId: validId, blockId: anotherId, extra: 1 })).toThrow();
+    expect(() =>
+      roomsQuery.parse({ hostelId: validId, blockId: anotherId, extra: 1 })
+    ).toThrow();
   });
 
   test('categoriesQuery parses includeInactive boolean and defaults to false', () => {
     const defaultParsed = categoriesQuery.parse({ hostelId: validId });
-    expect(defaultParsed).toEqual({ hostelId: validId, includeInactive: false, page: 1, limit: 20 });
+    expect(defaultParsed).toEqual({
+      hostelId: validId,
+      includeInactive: false,
+      page: 1,
+      limit: 20,
+    });
 
-    const trueParsed = categoriesQuery.parse({ hostelId: validId, includeInactive: 'true' });
+    const trueParsed = categoriesQuery.parse({
+      hostelId: validId,
+      includeInactive: 'true',
+    });
     expect(trueParsed.includeInactive).toBe(true);
 
-    const falseParsed = categoriesQuery.parse({ hostelId: validId, includeInactive: 'false' });
+    const falseParsed = categoriesQuery.parse({
+      hostelId: validId,
+      includeInactive: 'false',
+    });
     expect(falseParsed.includeInactive).toBe(false);
 
-    expect(() => categoriesQuery.parse({ hostelId: validId, includeInactive: 'yes' })).toThrow();
+    expect(() =>
+      categoriesQuery.parse({ hostelId: validId, includeInactive: 'yes' })
+    ).toThrow();
   });
 
   test('adminStaffQuery parses optional filters and rejects unknown keys', () => {
@@ -70,40 +92,55 @@ describe('catalog and admin staff validator unit tests', () => {
     expect(full.categoryId).toBe(anotherId);
     expect(full.eligibleForComplaintId).toBe('670000000000000000000501');
 
-    expect(() => adminStaffQuery.parse({ hostelId: validId, status: 'UNKNOWN' })).toThrow();
-    expect(() => adminStaffQuery.parse({ hostelId: validId, unknown: true })).toThrow();
+    expect(() =>
+      adminStaffQuery.parse({ hostelId: validId, status: 'UNKNOWN' })
+    ).toThrow();
+    expect(() =>
+      adminStaffQuery.parse({ hostelId: validId, unknown: true })
+    ).toThrow();
   });
 });
 
 describe('seed reset safety guard unit tests', () => {
   test('rejects reset in production environment', () => {
-    expect(() => guardResetTarget({
-      NODE_ENV: 'production',
-      MONGODB_URI: LOCAL_DEV_URI,
-    })).toThrow(/strictly forbidden in production/);
+    expect(() =>
+      guardResetTarget({
+        NODE_ENV: 'production',
+        MONGODB_URI: LOCAL_DEV_URI,
+      })
+    ).toThrow(/strictly forbidden in production/);
   });
 
   test('rejects remote or non-local URIs', () => {
-    expect(() => guardResetTarget({
-      NODE_ENV: 'development',
-      MONGODB_URI: 'mongodb+srv://admin:pass@cluster.mongodb.net/hostelfix',
-    })).toThrow(/strictly restricted to local development or test/);
+    expect(() =>
+      guardResetTarget({
+        NODE_ENV: 'development',
+        MONGODB_URI: 'mongodb+srv://admin:pass@cluster.mongodb.net/hostelfix',
+      })
+    ).toThrow(/strictly restricted to local development or test/);
 
-    expect(() => guardResetTarget({
-      NODE_ENV: 'test',
-      TEST_MONGODB_URI: 'mongodb://10.0.0.1:27017/hostelfix_test?replicaSet=rs0',
-    })).toThrow(/TEST_MONGODB_URI/);
+    expect(() =>
+      guardResetTarget({
+        NODE_ENV: 'test',
+        TEST_MONGODB_URI:
+          'mongodb://10.0.0.1:27017/hostelfix_test?replicaSet=rs0',
+      })
+    ).toThrow(/TEST_MONGODB_URI/);
   });
 
   test('accepts verified local test and dev URIs', () => {
-    expect(guardResetTarget({
-      NODE_ENV: 'test',
-      TEST_MONGODB_URI: LOCAL_TEST_URI,
-    })).toBe(LOCAL_TEST_URI);
+    expect(
+      guardResetTarget({
+        NODE_ENV: 'test',
+        TEST_MONGODB_URI: LOCAL_TEST_URI,
+      })
+    ).toBe(LOCAL_TEST_URI);
 
-    expect(guardResetTarget({
-      NODE_ENV: 'development',
-      MONGODB_URI: LOCAL_DEV_URI,
-    })).toBe(LOCAL_DEV_URI);
+    expect(
+      guardResetTarget({
+        NODE_ENV: 'development',
+        MONGODB_URI: LOCAL_DEV_URI,
+      })
+    ).toBe(LOCAL_DEV_URI);
   });
 });

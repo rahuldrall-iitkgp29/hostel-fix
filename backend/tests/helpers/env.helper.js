@@ -4,8 +4,10 @@ const { LOCAL_TEST_URI } = require('../../src/config/testDatabase');
 function testEnv(overrides = {}) {
   return {
     NODE_ENV: 'test',
-    MONGODB_URI: overrides.NODE_ENV === 'production'
-      ? 'mongodb://fixture:fixture@example.invalid/hostelfix?replicaSet=rs0' : LOCAL_TEST_URI,
+    MONGODB_URI:
+      overrides.NODE_ENV === 'production'
+        ? 'mongodb://fixture:fixture@example.invalid/hostelfix?replicaSet=rs0'
+        : LOCAL_TEST_URI,
     TEST_MONGODB_URI: LOCAL_TEST_URI,
     JWT_SECRET: 'fixture-only-not-a-real-secret-32-bytes',
     CORS_ORIGIN: 'http://localhost:3000',

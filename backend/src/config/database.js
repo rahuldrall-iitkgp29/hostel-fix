@@ -6,18 +6,26 @@ const { withTimeout } = require('../utils/withTimeout');
 
 function databaseUri(config) {
   if (config.NODE_ENV === 'test') {
-    if (!isTestDatabaseUri(config.TEST_MONGODB_URI)) throw new ConfigurationError(['TEST_MONGODB_URI']);
+    if (!isTestDatabaseUri(config.TEST_MONGODB_URI))
+      throw new ConfigurationError(['TEST_MONGODB_URI']);
     return config.TEST_MONGODB_URI;
   }
   return config.MONGODB_URI;
 }
 
-function createDatabase(config, { logger, connection = mongoose.createConnection(), timeoutMs = 5000 } = {}) {
+function createDatabase(
+  config,
+  { logger, connection = mongoose.createConnection(), timeoutMs = 5000 } = {}
+) {
   const uri = databaseUri(config);
   let connecting;
   let closing = false;
-  connection.on('error', () => logger?.error({ event: 'database_error' }, 'Database unavailable.'));
-  connection.on('disconnected', () => logger?.warn({ event: 'database_disconnected' }, 'Database disconnected.'));
+  connection.on('error', () =>
+    logger?.error({ event: 'database_error' }, 'Database unavailable.')
+  );
+  connection.on('disconnected', () =>
+    logger?.warn({ event: 'database_disconnected' }, 'Database disconnected.')
+  );
 
   async function connect() {
     if (connecting) return connecting;
@@ -26,11 +34,21 @@ function createDatabase(config, { logger, connection = mongoose.createConnection
     connecting = (async () => {
       try {
         await connection.openUri(uri, {
-          autoIndex: config.NODE_ENV !== 'production', bufferCommands: false,
-          serverSelectionTimeoutMS: timeoutMs, connectTimeoutMS: timeoutMs, timeoutMS: timeoutMs,
+          autoIndex: config.NODE_ENV !== 'production',
+          bufferCommands: false,
+          serverSelectionTimeoutMS: timeoutMs,
+          connectTimeoutMS: timeoutMs,
+          timeoutMS: timeoutMs,
         });
-        const hello = await connection.db.admin().command({ hello: 1 }, { timeoutMS: timeoutMs });
-        if (!hello.setName || !hello.isWritablePrimary || hello.logicalSessionTimeoutMinutes == null || hello.maxWireVersion < 7) {
+        const hello = await connection.db
+          .admin()
+          .command({ hello: 1 }, { timeoutMS: timeoutMs });
+        if (
+          !hello.setName ||
+          !hello.isWritablePrimary ||
+          hello.logicalSessionTimeoutMinutes == null ||
+          hello.maxWireVersion < 7
+        ) {
           throw unavailable();
         }
         logger?.info({ event: 'database_connected' }, 'Database connected.');
@@ -48,7 +66,10 @@ function createDatabase(config, { logger, connection = mongoose.createConnection
   async function check() {
     if (closing || connection.readyState !== 1) throw unavailable();
     try {
-      await withTimeout(() => connection.db.command({ ping: 1 }, { timeoutMS: 1000 }), 1000);
+      await withTimeout(
+        () => connection.db.command({ ping: 1 }, { timeoutMS: 1000 }),
+        1000
+      );
     } catch {
       throw unavailable();
     }

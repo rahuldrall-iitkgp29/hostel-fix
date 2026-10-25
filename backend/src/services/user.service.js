@@ -7,7 +7,9 @@ function createUserService({ connection, models, sessions }) {
     const user = await runTransaction(connection, async (transaction) => {
       const { record } = await sessions.loadAccount(claims, transaction);
       const updated = await updateWithVersion(models.User, {
-        filter: { _id: claims.sub }, expectedVersion: input.expectedVersion, session: transaction,
+        filter: { _id: claims.sub },
+        expectedVersion: input.expectedVersion,
+        session: transaction,
         mutate: (doc) => {
           if (input.name !== undefined) doc.name = input.name;
           if (input.phone !== undefined) doc.phone = input.phone;

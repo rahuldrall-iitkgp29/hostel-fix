@@ -89,29 +89,29 @@ by this frontend work; no root application configuration change is required.
 
 Actual install/check command record (from frontend unless noted):
 
-| Command/action | Observed result |
-| --- | --- |
-| npm.cmd view next/react/tailwindcss/eslint-config-next/eslint/typescript versions and peers | Sandbox ENOTCACHED; approved network rerun with --offline=false returned stable versions |
-| npm.cmd view typescript-eslint, @typescript-eslint/parser, TS6/ESLint9 releases, resolver/sonner/React lint peers | Peer ranges inspected; React lint query first failed sandbox proxy ECONNREFUSED, approved rerun succeeded |
-| npm.cmd install next@16.4.2 react@19.3.1 react-dom@19.3.1 lucide-react react-hook-form zod @hookform/resolvers sonner --save-exact --workspaces=false --offline=false | ERESOLVE; resolver 6 optional peer conflict, no success claimed |
-| Same runtime install with @hookform/resolvers@5 | PASS; 29 added, zero audit vulnerabilities at that stage |
-| npm.cmd install --save-dev --save-exact typescript@6.0.3 @types/node@24 @types/react@19 @types/react-dom@19 tailwindcss@4.3.3 @tailwindcss/postcss@4.3.3 eslint@9.39.5 eslint-config-next@16.4.2 vitest --workspaces=false --offline=false | PASS; 370 added, five dev-only audit entries; ESLint9 upstream deprecation warning |
-| npm.cmd run lint | First run: one anonymous-default-export warning in PostCSS config, zero errors; corrected config. Later lint PASS, zero warnings |
-| npm.cmd run typecheck | PASS; route type generation and strict tsc |
-| npm.cmd test | First run: sandbox spawn EPERM loading Vitest config, no tests. Approved rerun: 31 PASS. Added type=module to remove future native-config warning; rerun 31 PASS without warning |
-| npm.cmd run build | First compiled successfully but sandbox spawn EPERM at TS worker. Approved rerun PASS, all routes generated |
-| npm.cmd audit --json --offline=false | Five high dev-tool entries, all through braces advisory; nonzero audit status correctly retained |
-| npm.cmd view braces version --offline=false | 3.0.3, no patched release available |
-| npm.cmd audit --omit=dev --offline=false | PASS, zero production vulnerabilities |
-| npm.cmd ls --depth=0 | Expected direct versions, optional native/WASM packages initially listed extraneous; later clean npm ci succeeded |
-| npm.cmd run start -- --hostname localhost | PASS, served localhost:3000; stopped this task's server with Ctrl+C before final reinstall |
-| Invoke-WebRequest route/asset smoke | /, /login, /register 200; role routes reach fixed login returnTo; missing route 404; icon and all 10 JS/CSS assets 200; no input elements in account shells |
-| cua.createBrowserTab('iab', localhost URL), cua.getState() | Browser unavailable; inventory apps=[], browsers=[]; no screenshot/visual/a11y pass claimed |
-| npm.cmd ci --workspaces=false --offline=false | First approved run failed EPERM unlink on native Next binary in use by preview server. Stopped own preview, retried: PASS, 399 installed from lockfile |
-| npm.cmd run lint; npm.cmd run typecheck after clean ci | Both PASS, lint zero warnings |
-| npm.cmd test after clean ci | PASS: 31 tests, 1 file, 0 failed/skipped, 518 ms reported |
-| npm.cmd run build after clean ci | PASS: Next 16.4.2, all nine generated static entries, expected route table |
-| Get-FileHash baseline comparison of existing backend/root/scripts/docs | Detected parallel backend changes; not a preservation-pass claim. See update below |
+| Command/action                                                                                                                                                                                                                             | Observed result                                                                                                                                                                  |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| npm.cmd view next/react/tailwindcss/eslint-config-next/eslint/typescript versions and peers                                                                                                                                                | Sandbox ENOTCACHED; approved network rerun with --offline=false returned stable versions                                                                                         |
+| npm.cmd view typescript-eslint, @typescript-eslint/parser, TS6/ESLint9 releases, resolver/sonner/React lint peers                                                                                                                          | Peer ranges inspected; React lint query first failed sandbox proxy ECONNREFUSED, approved rerun succeeded                                                                        |
+| npm.cmd install next@16.4.2 react@19.3.1 react-dom@19.3.1 lucide-react react-hook-form zod @hookform/resolvers sonner --save-exact --workspaces=false --offline=false                                                                      | ERESOLVE; resolver 6 optional peer conflict, no success claimed                                                                                                                  |
+| Same runtime install with @hookform/resolvers@5                                                                                                                                                                                            | PASS; 29 added, zero audit vulnerabilities at that stage                                                                                                                         |
+| npm.cmd install --save-dev --save-exact typescript@6.0.3 @types/node@24 @types/react@19 @types/react-dom@19 tailwindcss@4.3.3 @tailwindcss/postcss@4.3.3 eslint@9.39.5 eslint-config-next@16.4.2 vitest --workspaces=false --offline=false | PASS; 370 added, five dev-only audit entries; ESLint9 upstream deprecation warning                                                                                               |
+| npm.cmd run lint                                                                                                                                                                                                                           | First run: one anonymous-default-export warning in PostCSS config, zero errors; corrected config. Later lint PASS, zero warnings                                                 |
+| npm.cmd run typecheck                                                                                                                                                                                                                      | PASS; route type generation and strict tsc                                                                                                                                       |
+| npm.cmd test                                                                                                                                                                                                                               | First run: sandbox spawn EPERM loading Vitest config, no tests. Approved rerun: 31 PASS. Added type=module to remove future native-config warning; rerun 31 PASS without warning |
+| npm.cmd run build                                                                                                                                                                                                                          | First compiled successfully but sandbox spawn EPERM at TS worker. Approved rerun PASS, all routes generated                                                                      |
+| npm.cmd audit --json --offline=false                                                                                                                                                                                                       | Five high dev-tool entries, all through braces advisory; nonzero audit status correctly retained                                                                                 |
+| npm.cmd view braces version --offline=false                                                                                                                                                                                                | 3.0.3, no patched release available                                                                                                                                              |
+| npm.cmd audit --omit=dev --offline=false                                                                                                                                                                                                   | PASS, zero production vulnerabilities                                                                                                                                            |
+| npm.cmd ls --depth=0                                                                                                                                                                                                                       | Expected direct versions, optional native/WASM packages initially listed extraneous; later clean npm ci succeeded                                                                |
+| npm.cmd run start -- --hostname localhost                                                                                                                                                                                                  | PASS, served localhost:3000; stopped this task's server with Ctrl+C before final reinstall                                                                                       |
+| Invoke-WebRequest route/asset smoke                                                                                                                                                                                                        | /, /login, /register 200; role routes reach fixed login returnTo; missing route 404; icon and all 10 JS/CSS assets 200; no input elements in account shells                      |
+| cua.createBrowserTab('iab', localhost URL), cua.getState()                                                                                                                                                                                 | Browser unavailable; inventory apps=[], browsers=[]; no screenshot/visual/a11y pass claimed                                                                                      |
+| npm.cmd ci --workspaces=false --offline=false                                                                                                                                                                                              | First approved run failed EPERM unlink on native Next binary in use by preview server. Stopped own preview, retried: PASS, 399 installed from lockfile                           |
+| npm.cmd run lint; npm.cmd run typecheck after clean ci                                                                                                                                                                                     | Both PASS, lint zero warnings                                                                                                                                                    |
+| npm.cmd test after clean ci                                                                                                                                                                                                                | PASS: 31 tests, 1 file, 0 failed/skipped, 518 ms reported                                                                                                                        |
+| npm.cmd run build after clean ci                                                                                                                                                                                                           | PASS: Next 16.4.2, all nine generated static entries, expected route table                                                                                                       |
+| Get-FileHash baseline comparison of existing backend/root/scripts/docs                                                                                                                                                                     | Detected parallel backend changes; not a preservation-pass claim. See update below                                                                                               |
 
 - **Test scope:** URL injection/unsafe config, encoded queries, credentials and CSRF, read
   success/readiness, 204 semantics, structured/HTML errors, unauthorized no-retry, lost
@@ -219,4 +219,88 @@ Actual install/check command record (from frontend unless noted):
   - Server process stopped cleanly at handoff; no stray background listeners.
 - **Next pending session:** Session 5 — Student dashboard and complaint list.
 
+### 2026-10-20 — Sessions 5, 6, 7, 8: P0 Complaints Workflow, Role Portals, and Live E2E Integration
 
+- **Scope:** Completed Session 5 (Student dashboard & complaint list), Session 6 (Complaint creation & detail view),
+  Session 7 (Staff dashboard & work order execution), and Session 8 (Admin operational management & triage/assignment)
+  strictly per PRD v1.0 contracts. Connected the Next.js frontend to the live Express/MongoDB backend, seeded database,
+  and verified the full P0 complaint lifecycle end-to-end.
+- **Session 5 Delivered (Student Dashboard & Complaint Exploration):**
+  - Domain Types (`features/complaints/types.ts`): Complete type definitions for complaint entities, allowed actions,
+    lifecycle statuses (`SUBMITTED`, `TRIAGED`, `ASSIGNED`, `IN_PROGRESS`, `RESOLVED`, `CLOSED`, `REJECTED`),
+    location types (`ROOM`, `BLOCK_COMMON`, `HOSTEL_COMMON`), priority indicators, priority levels (`P1_CRITICAL`,
+    `P2_HIGH`, `P3_MEDIUM`, `P4_LOW`), SLA deadlines, comments, feedback, and audit timeline entries.
+  - Complaints API Client (`lib/api/complaints.ts`): Envelope-unwrapping client (`unwrapComplaint`, `unwrapComment`,
+    `unwrapFeedback`) providing typed wrappers for listing, filtering, pagination, creation, status transitions,
+    staff assignments, priority overrides, feedback submissions, reopenings, and public comments.
+  - UI Primitives:
+    - `StatusBadge` (`features/complaints/components/status-badge.tsx`): Semantic badges matching institutional design tokens.
+    - `PriorityBadge` (`features/complaints/components/priority-badge.tsx`): Visual indicator for urgency and priority levels.
+    - `ComplaintList` (`features/complaints/components/complaint-list.tsx`): Filterable, searchable, paginated complaints table
+      with debounced query input, status selector, priority filter, responsive cards on mobile, and loading skeletons.
+  - Route Pages:
+    - `/student/dashboard` (`app/(dashboard)/student/dashboard/page.tsx`): Overview metrics (active, in progress, resolved),
+      urgent alerts banner, quick action link to file complaints, and recent complaints table.
+    - `/student/complaints` (`app/(dashboard)/student/complaints/page.tsx`): Dedicated view with comprehensive search, filters,
+      and pagination for student complaints.
+- **Session 6 Delivered (Creation, Detail, Public Comments, and Resolution Lifecycle):**
+  - Validation Schemas (`features/complaints/schemas.ts`): Zod schemas for complaint creation (title 5-100 chars, description
+    10-1000 chars, location type validation with conditional room/block selection, priority indicators, max 3 photos),
+    status transitions, priority override, public comments, feedback (1-5 rating + note), and reopening reason.
+  - `CreateComplaintForm` (`features/complaints/components/create-complaint-form.tsx`): Cascading location controls, category
+    selection, priority indicator toggles with live rule-based priority calculator, client-side idempotency UUID
+    (`clientRequestId`), staged photo upload with size/type validation, and submission safeguards.
+  - `ComplaintDetailView` (`features/complaints/components/complaint-detail-view.tsx`): Comprehensive single-ticket view
+    displaying metadata, location details, priority reasoning, SLA countdown with overdue indicators, staged photos gallery,
+    public comments thread with submission form, complete chronological audit activity trail, and role-conditioned action panels.
+  - Student Follow-Up: 5-star feedback rating submission on resolved complaints, ticket closure transition with note,
+    and ticket reopening with mandatory recurrence explanation.
+  - Route Pages:
+    - `/student/complaints/new` (`app/(dashboard)/student/complaints/new/page.tsx`): Complaint creation page with breadcrumbs.
+    - `/complaints/[id]` (`app/(dashboard)/complaints/[id]/page.tsx`): Shared detail route accessible by Student, Staff, and Admin.
+- **Session 7 Delivered (Staff Dashboard & Work Order Handling):**
+  - Route Pages:
+    - `/staff/dashboard` (`app/(dashboard)/staff/dashboard/page.tsx`): Operational summary for technicians showing assigned pending,
+      in progress, resolved total, and overdue count tiles with quick access to the work order queue.
+    - `/staff/queue` (`app/(dashboard)/staff/queue/page.tsx`): Filtered list of complaints assigned to the logged-in staff member,
+      sorted by urgency and target resolution deadlines.
+  - Staff Actions inside `ComplaintDetailView`:
+    - "Start Work" button initiating `IN_PROGRESS` transition with work notes.
+    - "Public Progress Update" adding technician comments visible to student and administration.
+    - "Resolve Ticket" workflow with mandatory resolution notes and verification confirmation checklist.
+    - Strict role enforcement ensuring staff cannot triage, reassign, reject, close, or reopen tickets.
+- **Session 8 Delivered (Admin Operations & Operational Management):**
+  - Route Pages:
+    - `/admin/dashboard` (`app/(dashboard)/admin/dashboard/page.tsx`): Campus-wide operational metrics (needs triage, active,
+      resolved total, overdue count) and quick shortcuts to triage and assignment queues.
+    - `/admin/triage` (`app/(dashboard)/admin/triage/page.tsx`): Dedicated portal for unreviewed `SUBMITTED` complaints with
+      rejection dialog (requiring rejection reason) and priority override controls.
+    - `/admin/assignment` (`app/(dashboard)/admin/assignment/page.tsx`): Triaged ticket queue with integrated eligible staff picker
+      calling `GET /admin/staff?eligibleForComplaintId`, displaying workload counts and specialty match for clean assignment.
+  - User Lifecycle & Security: Tested forced password change for newly seeded staff members (`POST /users/me/password`),
+    user profile updates (`PATCH /users/me`), and concurrent token refresh timers.
+- **Backend Connection & Database Seeding:**
+  - Seeded database: Ran `node seeds/index.js` in `backend/` against MongoDB replicaSet `rs0`, successfully populating
+    Hostel A, Blocks Alpha/Beta, Rooms A-101/A-102/B-201, 5 categories (Electrical, Plumbing, Carpentry, Masonry, Appliance),
+    default SLA policy, and seeded test accounts (`student.a@hostelfix.demo`, `staff.r@hostelfix.demo`, `admin.p@hostelfix.demo`).
+  - Backend running at `http://localhost:5000/api/v1` with credentialed CORS and HttpOnly cookies.
+  - Frontend running at `http://localhost:3000` connected to backend APIs.
+- **Verification Results:**
+  - `npm.cmd test`: PASS — 68 tests passed across 5 test suites (`api-client.test.ts`, `auth-lifecycle.test.ts`,
+    `catalog-api.test.ts`, `complaints-workflow.test.ts`, `ui-components.test.ts`).
+  - `npm.cmd run typecheck`: PASS — 0 errors, strict TypeScript mode with full route types generated.
+  - `npm.cmd run lint`: PASS — 0 errors, 0 warnings (with `--max-warnings=0`).
+  - `npm.cmd run build`: PASS — Next.js 16.4.2 compiled all 16 static/dynamic routes cleanly without errors.
+  - Automated Live E2E Integration Test (`tests/e2e-live-lifecycle.mjs`): PASS — Verified all 6 lifecycle stages live against MongoDB:
+    1. Student authentication and dashboard metric check.
+    2. Complaint creation with location variants and rule-based priority calculation.
+    3. Admin authentication, operational dashboard inspection, triage, and eligible staff assignment.
+    4. Staff authentication, initial forced password change, work order queue check, start work transition, progress comment, and resolution.
+    5. Student 5-star rating submission and ticket closure.
+    6. Complete 8-event audit activity trail verification (`CREATED` -> `TRIAGED` -> `ASSIGNED` -> `WORK_STARTED` -> `COMMENT_ADDED` -> `RESOLVED` -> `FEEDBACK_SUBMITTED` -> `CLOSED`).
+  - Browser Subagent UI Tour: PASS — Navigated real browser across all three role portals, inspected responsive layouts,
+    interactive dialogs, form validation states, and captured artifacts for Student, Staff, and Admin dashboards.
+- **Preservation & Boundaries:**
+  - Zero backend source files, configuration files, seed scripts, or backend task/history docs were modified.
+  - All frontend additions were strictly confined to `frontend/` and documentation in `docs-frontend/`.
+- **Next pending session:** Session 9 — P1 features (In-app notifications, duplicate suggestions/linking, escalations, reports/analytics, and administration).

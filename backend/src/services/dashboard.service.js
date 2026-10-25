@@ -9,7 +9,11 @@ function createDashboardService(context) {
   return {
     getStudentDashboard: async (user, filters = {}) => {
       if (user.role !== 'STUDENT') {
-        throw new AppError(403, 'FORBIDDEN', 'Only students can access the student dashboard.');
+        throw new AppError(
+          403,
+          'FORBIDDEN',
+          'Only students can access the student dashboard.'
+        );
       }
 
       const predicate = {
@@ -17,12 +21,15 @@ function createDashboardService(context) {
         hostelId: user.hostelId,
       };
 
-      if (filters.categoryId) predicate.categoryId = new mongoose.Types.ObjectId(filters.categoryId);
+      if (filters.categoryId)
+        predicate.categoryId = new mongoose.Types.ObjectId(filters.categoryId);
       if (filters.priority) predicate.priority = filters.priority;
       if (filters.createdFrom || filters.createdTo) {
         predicate.createdAt = {};
-        if (filters.createdFrom) predicate.createdAt.$gte = new Date(filters.createdFrom);
-        if (filters.createdTo) predicate.createdAt.$lt = new Date(filters.createdTo);
+        if (filters.createdFrom)
+          predicate.createdAt.$gte = new Date(filters.createdFrom);
+        if (filters.createdTo)
+          predicate.createdAt.$lt = new Date(filters.createdTo);
       }
 
       const statusCountsRaw = await models.Complaint.aggregate([
@@ -69,10 +76,16 @@ function createDashboardService(context) {
         .populate('location.blockId', 'name')
         .populate('location.roomId', 'label');
 
-      const recentComplaints = recentDocs.map((doc) => complaintSummary(doc, { now }));
+      const recentComplaints = recentDocs.map((doc) =>
+        complaintSummary(doc, { now })
+      );
 
-      const userComplaintIds = await models.Complaint.find({ ownerId: user._id }).distinct('_id');
-      const activityDocs = await models.Activity.find({ complaintId: { $in: userComplaintIds } })
+      const userComplaintIds = await models.Complaint.find({
+        ownerId: user._id,
+      }).distinct('_id');
+      const activityDocs = await models.Activity.find({
+        complaintId: { $in: userComplaintIds },
+      })
         .sort({ occurredAt: -1, _id: -1 })
         .limit(10);
 
@@ -93,7 +106,11 @@ function createDashboardService(context) {
 
     getStaffDashboard: async (user, filters = {}) => {
       if (user.role !== 'STAFF') {
-        throw new AppError(403, 'FORBIDDEN', 'Only staff can access the staff dashboard.');
+        throw new AppError(
+          403,
+          'FORBIDDEN',
+          'Only staff can access the staff dashboard.'
+        );
       }
 
       const predicate = {
@@ -101,12 +118,15 @@ function createDashboardService(context) {
         hostelId: user.hostelId,
       };
 
-      if (filters.categoryId) predicate.categoryId = new mongoose.Types.ObjectId(filters.categoryId);
+      if (filters.categoryId)
+        predicate.categoryId = new mongoose.Types.ObjectId(filters.categoryId);
       if (filters.priority) predicate.priority = filters.priority;
       if (filters.createdFrom || filters.createdTo) {
         predicate.createdAt = {};
-        if (filters.createdFrom) predicate.createdAt.$gte = new Date(filters.createdFrom);
-        if (filters.createdTo) predicate.createdAt.$lt = new Date(filters.createdTo);
+        if (filters.createdFrom)
+          predicate.createdAt.$gte = new Date(filters.createdFrom);
+        if (filters.createdTo)
+          predicate.createdAt.$lt = new Date(filters.createdTo);
       }
 
       const statusCountsRaw = await models.Complaint.aggregate([
@@ -171,20 +191,32 @@ function createDashboardService(context) {
       const PRIORITY_RANK = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
       queueDocs.sort((a, b) => {
         const aOverdue =
-          (a.firstRespondedAt == null && a.responseDueAt && now > new Date(a.responseDueAt)) ||
-          (a.resolvedAt == null && a.resolutionDueAt && now > new Date(a.resolutionDueAt));
+          (a.firstRespondedAt == null &&
+            a.responseDueAt &&
+            now > new Date(a.responseDueAt)) ||
+          (a.resolvedAt == null &&
+            a.resolutionDueAt &&
+            now > new Date(a.resolutionDueAt));
         const bOverdue =
-          (b.firstRespondedAt == null && b.responseDueAt && now > new Date(b.responseDueAt)) ||
-          (b.resolvedAt == null && b.resolutionDueAt && now > new Date(b.resolutionDueAt));
+          (b.firstRespondedAt == null &&
+            b.responseDueAt &&
+            now > new Date(b.responseDueAt)) ||
+          (b.resolvedAt == null &&
+            b.resolutionDueAt &&
+            now > new Date(b.resolutionDueAt));
         if (aOverdue !== bOverdue) return bOverdue ? 1 : -1;
-        const pDiff = (PRIORITY_RANK[b.priority] || 0) - (PRIORITY_RANK[a.priority] || 0);
+        const pDiff =
+          (PRIORITY_RANK[b.priority] || 0) - (PRIORITY_RANK[a.priority] || 0);
         if (pDiff !== 0) return pDiff;
-        const cDiff = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        const cDiff =
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         if (cDiff !== 0) return cDiff;
         return String(a._id).localeCompare(String(b._id));
       });
 
-      const queue = queueDocs.slice(0, 10).map((doc) => complaintSummary(doc, { now }));
+      const queue = queueDocs
+        .slice(0, 10)
+        .map((doc) => complaintSummary(doc, { now }));
 
       return {
         asOf: now.toISOString(),
@@ -201,7 +233,11 @@ function createDashboardService(context) {
 
     getAdminDashboard: async (user, filters = {}) => {
       if (user.role !== 'ADMIN') {
-        throw new AppError(403, 'FORBIDDEN', 'Only administrators can access the admin dashboard.');
+        throw new AppError(
+          403,
+          'FORBIDDEN',
+          'Only administrators can access the admin dashboard.'
+        );
       }
 
       const adminHostelIds = (user.adminHostelIds || []).map(String);
@@ -209,23 +245,32 @@ function createDashboardService(context) {
 
       if (filters.hostelId) {
         if (!adminHostelIds.includes(String(filters.hostelId))) {
-          throw new AppError(404, 'NOT_FOUND', 'Hostel not found or not within admin scope.');
+          throw new AppError(
+            404,
+            'NOT_FOUND',
+            'Hostel not found or not within admin scope.'
+          );
         }
         targetHostelIds = [String(filters.hostelId)];
       }
 
-      const targetObjectIds = targetHostelIds.map((hId) => new mongoose.Types.ObjectId(hId));
+      const targetObjectIds = targetHostelIds.map(
+        (hId) => new mongoose.Types.ObjectId(hId)
+      );
 
       const predicate = {
         hostelId: { $in: targetObjectIds },
       };
 
-      if (filters.categoryId) predicate.categoryId = new mongoose.Types.ObjectId(filters.categoryId);
+      if (filters.categoryId)
+        predicate.categoryId = new mongoose.Types.ObjectId(filters.categoryId);
       if (filters.priority) predicate.priority = filters.priority;
       if (filters.createdFrom || filters.createdTo) {
         predicate.createdAt = {};
-        if (filters.createdFrom) predicate.createdAt.$gte = new Date(filters.createdFrom);
-        if (filters.createdTo) predicate.createdAt.$lt = new Date(filters.createdTo);
+        if (filters.createdFrom)
+          predicate.createdAt.$gte = new Date(filters.createdFrom);
+        if (filters.createdTo)
+          predicate.createdAt.$lt = new Date(filters.createdTo);
       }
 
       const statusCountsRaw = await models.Complaint.aggregate([
@@ -349,7 +394,9 @@ function createDashboardService(context) {
         .populate('location.blockId', 'name')
         .populate('location.roomId', 'label');
 
-      const recentComplaints = recentDocs.map((doc) => complaintSummary(doc, { now }));
+      const recentComplaints = recentDocs.map((doc) =>
+        complaintSummary(doc, { now })
+      );
 
       return {
         asOf: now.toISOString(),

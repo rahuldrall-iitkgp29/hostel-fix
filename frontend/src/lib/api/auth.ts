@@ -1,18 +1,18 @@
-import type { ApiClient } from "./client";
+import type { ApiClient } from './client';
 import {
   authResponseSchema,
   userResponseSchema,
   type AuthResponse,
   type UserResponse,
-} from "@/features/auth/types";
-import type { LoginFormData, RegisterFormData } from "@/features/auth/schemas";
+} from '@/features/auth/types';
+import type { LoginFormData, RegisterFormData } from '@/features/auth/schemas';
 
 export async function loginUser(
   client: ApiClient,
   credentials: LoginFormData
 ): Promise<AuthResponse> {
-  const response = await client.request("/auth/login", authResponseSchema, {
-    method: "POST",
+  const response = await client.request('/auth/login', authResponseSchema, {
+    method: 'POST',
     body: {
       email: credentials.email.trim().toLowerCase(),
       password: credentials.password,
@@ -39,24 +39,24 @@ export async function registerStudent(
     payload.phone = data.phone.trim();
   }
 
-  const response = await client.request("/auth/register", userResponseSchema, {
-    method: "POST",
+  const response = await client.request('/auth/register', userResponseSchema, {
+    method: 'POST',
     body: payload,
   });
   return response.data;
 }
 
 export async function refreshSession(client: ApiClient): Promise<AuthResponse> {
-  const response = await client.request("/auth/refresh", authResponseSchema, {
-    method: "POST",
+  const response = await client.request('/auth/refresh', authResponseSchema, {
+    method: 'POST',
     body: {},
   });
   return response.data;
 }
 
 export async function logoutUser(client: ApiClient): Promise<void> {
-  await client.requestNoContent("/auth/logout", {
-    method: "POST",
+  await client.requestNoContent('/auth/logout', {
+    method: 'POST',
     body: {},
   });
 }

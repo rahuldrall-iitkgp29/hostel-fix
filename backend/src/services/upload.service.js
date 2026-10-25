@@ -17,7 +17,11 @@ function createUploadService({ connection, models, config }) {
       complaintId: null,
     });
     if (unattachedCount >= 10) {
-      throw new AppError(409, 'UPLOAD_QUOTA_EXCEEDED', 'Upload quota exceeded (maximum 10 unattached uploads).');
+      throw new AppError(
+        409,
+        'UPLOAD_QUOTA_EXCEEDED',
+        'Upload quota exceeded (maximum 10 unattached uploads).'
+      );
     }
 
     let buffer;
@@ -29,14 +33,20 @@ function createUploadService({ connection, models, config }) {
 
     const { mimeType, width, height, sizeBytes } = validateImage(buffer);
 
-    let originalName = path.basename(file.originalFilename || 'upload.jpg')
+    let originalName = path
+      .basename(file.originalFilename || 'upload.jpg')
       .replace(/[\x00-\x1f\x7f/\\<>:"|?*]/g, '_')
       .trim();
     if (!originalName || /^\.+$/.test(originalName)) {
       originalName = 'upload.jpg';
     }
 
-    const ext = mimeType === 'image/png' ? '.png' : (mimeType === 'image/webp' ? '.webp' : '.jpg');
+    const ext =
+      mimeType === 'image/png'
+        ? '.png'
+        : mimeType === 'image/webp'
+          ? '.webp'
+          : '.jpg';
     const storageKey = `${randomUUID()}${ext}`;
     const targetPath = path.join(config.UPLOAD_DIR, storageKey);
 
@@ -73,7 +83,8 @@ function createUploadService({ connection, models, config }) {
   }
 
   async function getContent(attachmentId, user) {
-    const attachment = await models.Attachment.findById(attachmentId).select('+storageKey');
+    const attachment =
+      await models.Attachment.findById(attachmentId).select('+storageKey');
     if (!attachment) {
       throw new AppError(404, 'NOT_FOUND', 'Attachment not found.');
     }
@@ -95,8 +106,9 @@ function createUploadService({ connection, models, config }) {
       if (user.role === 'STUDENT') {
         authorized = String(complaint.ownerId) === String(user._id);
       } else if (user.role === 'STAFF') {
-        authorized = String(complaint.assigneeId) === String(user._id)
-          && String(complaint.hostelId) === String(user.hostelId);
+        authorized =
+          String(complaint.assigneeId) === String(user._id) &&
+          String(complaint.hostelId) === String(user.hostelId);
       } else if (user.role === 'ADMIN') {
         const adminHostels = (user.adminHostelIds ?? []).map(String);
         authorized = adminHostels.includes(String(complaint.hostelId));
@@ -118,10 +130,15 @@ function createUploadService({ connection, models, config }) {
 
   async function deleteUpload(attachmentId, user) {
     if (user.role !== 'STUDENT') {
-      throw new AppError(403, 'FORBIDDEN', 'Only students can manage staged uploads.');
+      throw new AppError(
+        403,
+        'FORBIDDEN',
+        'Only students can manage staged uploads.'
+      );
     }
 
-    const attachment = await models.Attachment.findById(attachmentId).select('+storageKey');
+    const attachment =
+      await models.Attachment.findById(attachmentId).select('+storageKey');
     if (!attachment) {
       throw new AppError(404, 'NOT_FOUND', 'Attachment not found.');
     }
@@ -131,7 +148,11 @@ function createUploadService({ connection, models, config }) {
     }
 
     if (attachment.complaintId != null) {
-      throw new AppError(409, 'ATTACHMENT_ALREADY_BOUND', 'Bound attachments cannot be deleted.');
+      throw new AppError(
+        409,
+        'ATTACHMENT_ALREADY_BOUND',
+        'Bound attachments cannot be deleted.'
+      );
     }
 
     await runTransaction(connection, async (session) => {

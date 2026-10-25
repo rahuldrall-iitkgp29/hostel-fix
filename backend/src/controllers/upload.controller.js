@@ -13,10 +13,16 @@ function createUploadController(getServices) {
 
     getContent: async (req, res) => {
       const services = getServices();
-      const { data, attachment } = await services.uploads.getContent(req.params.attachmentId, req.user);
+      const { data, attachment } = await services.uploads.getContent(
+        req.params.attachmentId,
+        req.user
+      );
       res.setHeader('Content-Type', attachment.mimeType);
       res.setHeader('Content-Length', attachment.sizeBytes);
-      res.setHeader('Content-Disposition', `inline; filename="${attachment.originalName}"`);
+      res.setHeader(
+        'Content-Disposition',
+        `inline; filename="${attachment.originalName}"`
+      );
       res.setHeader('Cache-Control', 'private, no-store');
       res.setHeader('X-Content-Type-Options', 'nosniff');
       return res.status(200).send(data);

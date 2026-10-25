@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { use } from "react";
-import { AuthGuard } from "@/features/auth/components/auth-guard";
-import { useAuth } from "@/features/auth/context/auth-context";
-import { AppShell } from "@/components/layout/app-shell";
-import { ComplaintDetailView } from "@/features/complaints/components/complaint-detail-view";
+import { use } from 'react';
+import { AuthGuard } from '@/features/auth/components/auth-guard';
+import { useAuth } from '@/features/auth/context/auth-context';
+import { AppShell } from '@/components/layout/app-shell';
+import { ComplaintDetailView } from '@/features/complaints/components/complaint-detail-view';
 
 function ComplaintContent({ complaintId }: { complaintId: string }) {
   const { user, logout } = useAuth();

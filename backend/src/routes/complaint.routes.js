@@ -1,5 +1,7 @@
 const { Router } = require('express');
-const { createComplaintController } = require('../controllers/complaint.controller');
+const {
+  createComplaintController,
+} = require('../controllers/complaint.controller');
 const { authenticate } = require('../middleware/authenticate');
 const { requireRole } = require('../middleware/authorize');
 const { validateBody } = require('../middleware/validateBody');

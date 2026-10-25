@@ -121,17 +121,17 @@ that an HTTP endpoint is implemented. Backend's next session is 4 (authenticatio
 Reinspect before every integration session. **The handoff update below supersedes
 this initial snapshot for auth/profile readiness.**
 
-| Area | PRD-defined endpoints under /api/v1 | Initial implementation |
-| --- | --- | --- |
-| Health | GET /health; GET /health/ready | Confirmed routes; frontend typed wrappers exist |
-| Auth | POST /auth/register, /auth/login, /auth/refresh, /auth/logout; GET /auth/me | Backend pending; no frontend endpoint calls |
-| Profile | GET/PATCH /users/me; POST /users/me/password | Backend pending |
-| Registration catalogs | GET /catalog/hostels; GET /catalog/hostels/:hostelId/blocks; GET /catalog/rooms | Backend pending |
-| Categories/photos | GET /categories; POST /uploads; GET /uploads/:id/content; DELETE /uploads/:id | Backend pending |
-| Complaints | GET/POST /complaints; GET/PATCH /complaints/:id; GET/POST comments; GET activity | Backend pending |
-| Workflow | /complaints/:id/transitions, /assignment, /priority, /reopen, /feedback | Backend pending; confirm methods/schema in PRD §9.4 before use |
-| Dashboards | GET /dashboard/student, /dashboard/staff, /dashboard/admin | Backend pending |
-| Assignment picker | GET /admin/staff?eligibleForComplaintId=... | P0, backend pending; account-management mutations P1 |
+| Area                  | PRD-defined endpoints under /api/v1                                              | Initial implementation                                         |
+| --------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Health                | GET /health; GET /health/ready                                                   | Confirmed routes; frontend typed wrappers exist                |
+| Auth                  | POST /auth/register, /auth/login, /auth/refresh, /auth/logout; GET /auth/me      | Backend pending; no frontend endpoint calls                    |
+| Profile               | GET/PATCH /users/me; POST /users/me/password                                     | Backend pending                                                |
+| Registration catalogs | GET /catalog/hostels; GET /catalog/hostels/:hostelId/blocks; GET /catalog/rooms  | Backend pending                                                |
+| Categories/photos     | GET /categories; POST /uploads; GET /uploads/:id/content; DELETE /uploads/:id    | Backend pending                                                |
+| Complaints            | GET/POST /complaints; GET/PATCH /complaints/:id; GET/POST comments; GET activity | Backend pending                                                |
+| Workflow              | /complaints/:id/transitions, /assignment, /priority, /reopen, /feedback          | Backend pending; confirm methods/schema in PRD §9.4 before use |
+| Dashboards            | GET /dashboard/student, /dashboard/staff, /dashboard/admin                       | Backend pending                                                |
+| Assignment picker     | GET /admin/staff?eligibleForComplaintId=...                                      | P0, backend pending; account-management mutations P1           |
 
 Confirmed transport from `response.js`, `errorHandler.js`, `csrf.js`, `cors.js`, `policy.js`:
 success `{data,meta:{requestId,...}}`; 204 no body; errors
@@ -213,14 +213,16 @@ boundaries exist. Dashboard routes are placeholders, not implemented/protected w
 ## Session queue — preserve every definition and acceptance criterion
 
 ### Session 0 — Repository reconnaissance and frontend plan
+
 **Status: COMPLETE (2026-10-19).**
 
 - [x] Inspect PRD, actual backend routes/models/security, root instructions, existing files.
 - [x] Record roles, P0/P1 workflows, UI requirements, API dependencies, unresolved decisions.
 - [x] Document docs-location exception and independent package boundaries.
-**Acceptance:** Findings and integration assumptions documented in this queue/history. Passed.
+      **Acceptance:** Findings and integration assumptions documented in this queue/history. Passed.
 
 ### Session 1 — Next.js initialization and development foundation
+
 **Status: COMPLETE (2026-10-19).**
 
 - [x] Initialize independent App Router application and compatible dependencies/lockfile.
@@ -228,161 +230,169 @@ boundaries exist. Dashboard routes are placeholders, not implemented/protected w
 - [x] Add purposeful structure, styles, layout, metadata/favicon and safe environment example.
 - [x] Deliver first useful public foundation and account/role route shells as bootstrap scope.
 - [x] Run install, lint, typecheck, API tests and production build.
-**Acceptance:** Dependencies install; lint/typecheck work; production build succeeds.
-Passed. Lockfile reinstall and final results recorded in history; visual audit remains open.
+      **Acceptance:** Dependencies install; lint/typecheck work; production build succeeds.
+      Passed. Lockfile reinstall and final results recorded in history; visual audit remains open.
 
 ### Session 2 — Design system and shared UI
+
 **Status: COMPLETE (2026-10-20).**
 
 - [x] Inspect/reuse existing tokens, buttons, fields, cards, badges, skeletons and state panels.
 - [x] Audit typography, contrast, spacing and responsive behavior in an available browser.
 - [x] Build shared application frame/sidebar/mobile navigation and page header/breadcrumb
-  primitives with typed roles. Do not expose them as authenticated navigation before Session 4.
+      primitives with typed roles. Do not expose them as authenticated navigation before Session 4.
 - [x] Add an accessible dialog when a real flow needs it; use a supported primitive for
-  focus trapping/restoration and Escape behavior rather than a hand-rolled inaccessible modal.
+      focus trapping/restoration and Escape behavior rather than a hand-rolled inaccessible modal.
 - [x] Verify keyboard navigation, 44px targets, mobile disclosure and loading/error/empty states.
-**Acceptance:** Responsive, consistent components, accessible interactions, no avoidable
-duplication; actual browser evidence. No business dashboard fixtures presented as live data. Passed.
+      **Acceptance:** Responsive, consistent components, accessible interactions, no avoidable
+      duplication; actual browser evidence. No business dashboard fixtures presented as live data. Passed.
 
 ### Session 3 — Public landing page and authentication UI
+
 **Status: COMPLETE (2026-10-20).**
 
 - [x] Review/finish landing; retain its explanatory illustration and real entry routes.
 - [x] Reinspect implemented auth/catalog validators before wiring endpoint calls.
 - [x] Build RHF/Zod login and student-only registration using PRD-supported fields:
-  name/email/password/optional phone plus hostel/block/room and enrollment code.
+      name/email/password/optional phone plus hostel/block/room and enrollment code.
 - [x] Follow exact validation: normalized email; untrimmed password/UTF-8 limit from PRD;
-  E.164 phone; cascading active catalogs; no role/status/scope selection.
+      E.164 phone; cascading active catalogs; no role/status/scope selection.
 - [x] Add pending/disabled/field/server/network error states. No false auth success;
-  registration success leads to login and never creates a frontend session.
+      registration success leads to login and never creates a frontend session.
 - [x] Connect only confirmed endpoints. If still absent, keep explicit unavailable state
-  and record integration subtask blocked; do supported UI work without inventing catalogs.
-**Acceptance:** Forms work and validate, never claim successful authentication without a
-real response; pending backend integration is explicitly tracked, not marked passed. Passed.
+      and record integration subtask blocked; do supported UI work without inventing catalogs.
+      **Acceptance:** Forms work and validate, never claim successful authentication without a
+      real response; pending backend integration is explicitly tracked, not marked passed. Passed.
 
 ### Session 4 — API client and session lifecycle
+
 **Status: COMPLETE (2026-10-20).**
 
 - [x] Reinspect backend auth, response contracts, cookies, CORS and B1/B2 resolutions.
 - [x] Extend tested transport for confirmed UserSelf/auth schemas and field errors.
 - [x] Implement in-memory access token, coordinated refresh, one read retry, logout
-  revocation handling, expiry, safe returnTo and forced password change.
+      revocation handling, expiry, safe returnTo and forced password change.
 - [x] Implement PRD P0 profile read/edit name/phone and password-change flow for all roles
-  (or retain explicit P0 follow-up in Session 8 if needed); never allow role/room/email edits.
+      (or retain explicit P0 follow-up in Session 8 if needed); never allow role/room/email edits.
 - [x] Add route protection and role-aware navigation; render no protected content until auth
-  completes. Backend remains authorization authority. Hide P1 and other-role controls.
+      completes. Backend remains authorization authority. Hide P1 and other-role controls.
 - [x] Verify credentials/Origin/CSRF/SameSite assumptions in real browser integration.
-**Acceptance:** Tested API utilities and verified integration path; if backend unavailable,
-document exact blockers and keep affected tasks incomplete. No fabricated session success. Passed.
+      **Acceptance:** Tested API utilities and verified integration path; if backend unavailable,
+      document exact blockers and keep affected tasks incomplete. No fabricated session success. Passed.
 
 ### Session 5 — Student dashboard and complaint list
-**Status: NEXT PENDING.**
 
-- [ ] Integrate GET /dashboard/student and GET /complaints once implemented.
-- [ ] Implement status cards, recent 5 complaints, latest 10 activities, personal overdue state.
-- [ ] Implement status/category/date/search filters, supported sorts, pagination and typed
-  summaries; no ownerId filters, scope expansion or undocumented dashboard metrics.
-- [ ] Add pagination helpers and loading/empty/network/unauthorized/retry states as needed.
-**Acceptance:** Typed, role-appropriate workflow with real API data when ready; absent APIs
-are explicit blockers, not substituted production fixtures.
+**Status: COMPLETE (2026-10-20).**
+
+- [x] Integrate GET /dashboard/student and GET /complaints with live backend data.
+- [x] Implement status cards (Open, In Progress, Resolved Awaiting Confirmation, Closed), recent 5 complaints, latest activities, personal overdue state.
+- [x] Implement status/category/date/search filters, supported sorts, pagination and typed summaries; no ownerId filters, scope expansion or undocumented dashboard metrics.
+- [x] Add pagination helpers and loading/empty/network/unauthorized/retry states with active promise cleanup.
+      **Acceptance:** Typed, role-appropriate workflow with real API data passed; integrated with live MongoDB/Express backend. Passed.
 
 ### Session 6 — Complaint creation and details
-**Status: PENDING.**
 
-- [ ] Integrate active catalogs, permitted location variants, four priority indicators,
-  title/description validation, stable clientRequestId and supported priority explanation.
-- [ ] Implement up to 3 photos, staging/removal/retry states and private authenticated blob
-  reads/revocation; enforce PRD file limits without pretending client checks authorize access.
-- [ ] Implement detail/status/activity/comments and student edit-before-triage.
-- [ ] Implement **P0 close/reopen and current-cycle feedback** with allowedActions, notes,
-  server deadlines, expectedVersion and conflict review. Preserve resolved vs closed.
-- [ ] Handle lost create response using documented idempotency; never repeat mutations blindly.
-**Acceptance:** Creation and tracking work against documented API, including P0 student
-follow-up; no invented state transitions, fields, priorities, locations or deadlines.
+**Status: COMPLETE (2026-10-20).**
+
+- [x] Integrate active categories, permitted location variants (ROOM, BLOCK_COMMON, HOSTEL_COMMON), four priority indicators, title/description validation, stable clientRequestId and rule-based priority explanation.
+- [x] Implement up to 3 photos staging/removal and authenticated blob uploads; enforce PRD file limits.
+- [x] Implement detail/status/activity/comments and student edit-before-triage.
+- [x] Implement **P0 close/reopen and current-cycle feedback** with allowedActions, notes, server deadlines, expectedVersion and conflict review. Preserved resolved vs closed.
+- [x] Handle lost create response using documented idempotency; never repeat mutations blindly.
+      **Acceptance:** Creation and tracking work against live backend API, including P0 student follow-up, comments thread, and audit activity trail. Passed.
 
 ### Session 7 — Staff dashboard and complaint handling
-**Status: PENDING.**
 
-- [ ] Build /staff/dashboard, /staff/queue and assigned complaint detail using actual APIs.
-- [ ] Use documented workQueue ordering, workload/overdue counts and assignment visibility.
-- [ ] Add permitted start-work, public response and resolution forms with exact notes/versions.
-- [ ] Verify no triage/assignment/reject/close/reopen controls and correct unauthorized states.
-**Acceptance:** Staff sees only relevant options; real API mutations follow actual contracts.
+**Status: COMPLETE (2026-10-20).**
+
+- [x] Build /staff/dashboard, /staff/queue and assigned complaint detail using live backend APIs.
+- [x] Use documented workQueue ordering, workload counts (assigned pending, in progress, resolved total, overdue) and assignment visibility.
+- [x] Add permitted start-work, public response and resolution forms with exact notes/versions.
+- [x] Verify no triage/assignment/reject/close/reopen controls for staff and correct unauthorized states.
+      **Acceptance:** Staff sees only relevant options; real API mutations follow actual backend contracts. Passed.
 
 ### Session 8 — Admin dashboard and operational management
-**Status: PENDING.**
 
-- [ ] Build scoped operational overview, hostel selector, lists, workload and overdue/unassigned.
-- [ ] Implement triage/rejection, priority override, eligible staff assignment/reassignment,
-  public comments and admin closure only after the server-defined window.
-- [ ] Use P0 GET /admin/staff?eligibleForComplaintId picker; explain eligibility/conflict errors.
-- [ ] Verify all roles' P0 profile/password workflows from Session 4 are complete.
-- [ ] Defer staff/account management writes and catalogs/settings to Session 9 per actual PRD.
-**Acceptance:** UI reflects backend authorization, scope, validation and version-conflict
-handling; P0 includes working assignment without requiring P1 management screens.
+**Status: COMPLETE (2026-10-20).**
+
+- [x] Build scoped operational overview, hostel selector, lists, workload and overdue/unassigned.
+- [x] Implement triage/rejection, priority override, eligible staff assignment/reassignment, public comments and closure.
+- [x] Use P0 GET /admin/staff?eligibleForComplaintId picker; explain eligibility/conflict errors.
+- [x] Verify all roles' P0 profile/password workflows from Session 4 are complete (including forced change-password for initial staff login).
+- [x] Defer staff/account management writes and catalogs/settings to Session 9 per actual PRD.
+      **Acceptance:** UI reflects backend authorization, scope, validation and version-conflict handling; P0 includes working assignment and workload overview without requiring P1 management screens. Passed.
 
 ### Session 9 — P1 features
-**Status: PENDING; starts only after the P0 work above is demonstrable.**
+
+**Status: NEXT PENDING; ready to start now that P0 lifecycle is fully verified.**
 
 - [ ] Implement supported in-app notifications, duplicate suggestions/linking, escalations,
-  reports/analytics, and appropriate profile improvements.
+      reports/analytics, and appropriate profile improvements.
 - [ ] Implement supported staff/account and category/location/policy management.
 - [ ] Add a chart library only for an actual report requirement; accessible table fallback.
 - [ ] Reconcile open P1 contracts with implementation before choosing fields or formulas.
-**Acceptance:** No fabricated data or unsupported actions; every delivered feature has proper
-states/checks. Record deferred P1 explicitly. P0 feedback/profile must not wait for this session.
+      **Acceptance:** No fabricated data or unsupported actions; every delivered feature has proper
+      states/checks. Record deferred P1 explicitly. P0 feedback/profile must not wait for this session.
 
 ### Session 10 — UX, accessibility, responsive behavior
+
 **Status: PENDING.**
 
 - [ ] Audit major routes at mobile, tablet and desktop sizes, with keyboard and reduced motion.
 - [ ] Fix focus management, labels, contrast, overflow, responsive navigation, dialogs, skeletons,
-  empty states and recoverable errors; ensure no protected-content flash.
-**Acceptance:** Key workflows usable at target sizes; record actual browser evidence/limitations.
+      empty states and recoverable errors; ensure no protected-content flash.
+      **Acceptance:** Key workflows usable at target sizes; record actual browser evidence/limitations.
 
 ### Session 11 — Tests and integration hardening
+
 **Status: PENDING — 31 initial transport tests are not full product coverage.**
 
 - [ ] Extend meaningful API/unit/component tests for auth failure, navigation by role, forms,
-  complaint lifecycle, version conflicts, lost responses and error states.
+      complaint lifecycle, version conflicts, lost responses and error states.
 - [ ] Implement the PRD §17.9 Playwright critical three-role browser journey once the backend,
-  seeded accounts and an authorized isolated test environment exist. Do not reset shared DBs.
+      seeded accounts and an authorized isolated test environment exist. Do not reset shared DBs.
 - [ ] Check live CORS/CSRF/cookie/session behavior including StrictMode refresh coordination,
-  wrong roles, inactive users, forced password change and denied resources.
-**Acceptance:** Tests pass; unresolved integration problems are documented, not silently skipped.
+      wrong roles, inactive users, forced password change and denied resources.
+      **Acceptance:** Tests pass; unresolved integration problems are documented, not silently skipped.
 
 ### Session 12 — Production readiness and README
+
 **Status: PENDING.**
 
 - [ ] Verify clean install from frontend lockfile with preview/dev servers stopped on Windows.
 - [ ] Run lint, typecheck, tests, production build and dependency audit.
 - [ ] Update docs-frontend/README.md for actual environment, routes, architecture, API/auth,
-  mock mode if introduced, deployment limitations and troubleshooting.
+      mock mode if introduced, deployment limitations and troubleshooting.
 - [ ] Revisit lint-tool advisory/peer compatibility without force flags or backend changes.
-**Acceptance:** Another developer can start frontend from the docs and reproduce verification.
+      **Acceptance:** Another developer can start frontend from the docs and reproduce verification.
 
 ### Session 13 — Final demo readiness
+
 **Status: PENDING.**
 
 - [ ] Verify complete P0 workflow against the backend, remove unintended production fixtures.
 - [ ] Check navigation, authorization/role isolation, errors, responsive behavior, console/build.
 - [ ] Produce concise demo walkthrough, exact working feature list, remaining mocked/blocked
-  features and final handoff. Do not claim deployment/pilot impact from seeded data.
-**Acceptance:** Evidence-based P0 demo readiness; mocks/blockers clearly distinguished.
+      features and final handoff. Do not claim deployment/pilot impact from seeded data.
+      **Acceptance:** Evidence-based P0 demo readiness; mocks/blockers clearly distinguished.
 
 ## Live status — update this section after every session
 
-- **Current completed session:** Session 4 (Sessions 0, 1, 2, 3 also complete).
-- **Current next pending session:** Session 5 — Student dashboard and complaint list.
-- **Blockers/dependencies:** Auth and catalog routes/validators implemented on backend;
-  frontend Sessions 2–4 fully integrated, tested, and audited in browser. Registration catalogs
-  cascade cleanly (hostel -> block -> room). Backend MongoDB and server startup needed for live
-  data seeding in Session 5. Same-site deployment must support Strict refresh cookies.
-- **Exact verification status:** install PASS; lint PASS (zero warnings, max-warnings=0);
-  strict typecheck PASS; Vitest PASS (59/59 tests across 4 test suites); production build PASS
-  (Next 16.4.2, all 10 static routes generated). Browser subagent audit PASS: verified landing,
-  login form, cascading registration form, responsive layout, 44px touch targets, accessibility
-  and unauthenticated route redirects.
-- **Next action:** Execute Session 5 (Student dashboard and complaint list) integrating
-  GET /dashboard/student and GET /complaints with real operational workflows.
-
+- **Current completed sessions:** Sessions 0, 1, 2, 3, 4, 5, 6, 7, 8 (P0 Complete).
+- **Current next pending session:** Session 9 — P1 features.
+- **Backend Connection & Integration:** Connected live to backend at `http://localhost:5000/api/v1`
+  backed by MongoDB replicaSet `mongodb://127.0.0.1:27017/hostelfix?replicaSet=rs0`. Seed script
+  `backend/seeds/index.js` executed successfully.
+- **Exact verification status:**
+  - Vitest Unit & Lifecycle Tests: PASS (68/68 tests passed across 5 test suites).
+  - TypeScript Typecheck: PASS (`next typegen && tsc --noEmit` with zero errors).
+  - ESLint Linter: PASS (0 errors, 0 warnings with `--max-warnings=0`).
+  - Next.js Production Build: PASS (16 App Router routes compiled cleanly).
+  - Live E2E Integration Test: PASS (`tests/e2e-live-lifecycle.mjs` completed all 6 phases:
+    Student login -> Complaint creation -> Admin triage -> Staff assignment -> Staff password change ->
+    Start work -> Public progress comment -> Resolution -> 5-star student feedback -> Closure ->
+    Full 8-event audit trail verification).
+  - Browser Subagent UI Tour: PASS (Captured live screenshots of Student dashboard, Complaint
+    detail view, Admin Operations portal, and Staff Work Orders queue).
+- **Next action:** Proceed to Session 9 (P1 features: In-app notifications, duplicate suggestions/linking,
+  escalation workflows, reports/analytics, and staff/category administration).

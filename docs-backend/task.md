@@ -1,8 +1,8 @@
 # HostelFix Backend --- Codex Task Queue
 
 > **Purpose:** A persistent, session-by-session execution queue for
-> implementing the HostelFix backend. Keep this file as the *active
-> backlog*, not a diary. `history.md` is the durable handoff log.
+> implementing the HostelFix backend. Keep this file as the _active
+> backlog_, not a diary. `history.md` is the durable handoff log.
 >
 > **How to use:** Start every new Codex chat with the **Master Prompt**
 > below. Codex must read `prd.md`, this file, `history.md`, and the
@@ -14,7 +14,7 @@
 > `history.md`, and `models.md` are in `docs-backend/`; example configuration
 > is `backend/.env.example`. Older history entries retain their original paths.
 
-------------------------------------------------------------------------
+---
 
 # MASTER PROMPT --- READ THIS AT THE START OF EVERY CODEX SESSION
 
@@ -24,14 +24,14 @@ Continue the existing repository; do not assume prior-chat memory.
 ## Mandatory first actions
 
 1.  Read these files in order:
-    -   `prd.md` --- source of truth for product behavior and API
-        contracts.
-    -   `task.md` --- this active task queue; begin at the first
-        remaining session.
-    -   `history.md` --- prior work, commands run, test results,
-        decisions, blockers, and next handoff.
-    -   `README.md`, `package.json`, `.env.example`, and any `AGENTS.md`
-        that exist.
+    - `prd.md` --- source of truth for product behavior and API
+      contracts.
+    - `task.md` --- this active task queue; begin at the first
+      remaining session.
+    - `history.md` --- prior work, commands run, test results,
+      decisions, blockers, and next handoff.
+    - `README.md`, `package.json`, `.env.example`, and any `AGENTS.md`
+      that exist.
 2.  Inspect the actual repository tree, Git status/diff, installed
     dependencies, scripts, current source files, and test setup before
     editing.
@@ -52,50 +52,50 @@ Continue the existing repository; do not assume prior-chat memory.
 
 ## Binding implementation rules
 
--   **JavaScript only** for the backend. Do not migrate to TypeScript.
--   Use the stack and conventions defined in `prd.md`: Node.js, Express,
-    MongoDB/Mongoose, Zod, Vitest and Supertest. Follow the repository's
-    existing module system consistently; do not mix ESM and CommonJS.
--   Implement the API under `/api/v1` and match the PRD's exact paths,
-    roles, request fields, response envelopes, status codes, error
-    codes, pagination, and state transitions.
--   Treat the PRD as the contract. Do not silently simplify security or
-    business rules for convenience.
--   Do not trust role, owner, hostel, room, assignee, status, SLA, or
-    other privileged fields supplied by clients. Derive access scope
-    from the authenticated account and database records.
--   Validate every request at the boundary with strict Zod schemas.
-    Reject unknown fields, invalid IDs, unsafe query operators, invalid
-    enum values, and invalid pagination/sort inputs.
--   Keep controllers thin. Put reusable business logic in services; keep
-    route declarations, validators, middleware, models, and utilities
-    separated in a way consistent with the repo.
--   All complaint workflow mutations must enforce the PRD state machine,
-    expected-version/optimistic-concurrency checks, and atomic
-    activity-history writes. Use MongoDB transactions where required. A
-    replica set is required for transaction-backed tests; do not quietly
-    downgrade to standalone MongoDB.
--   Implement refresh-session rotation/reuse detection,
-    cookie/CSRF/Origin controls, rate limiting, safe response
-    projections, and session revocation exactly as specified in the PRD.
--   Never expose passwords, password hashes, OTPs, raw refresh tokens,
-    session hashes, secrets, internal storage keys, stack traces, or raw
-    database errors.
--   Keep P0 as the release gate. Do not begin P1 features until all P0
-    backend requirements and tests are complete, unless the PRD
-    explicitly makes a P1 prerequisite necessary for a P0 route.
--   Do not add P2 features, LLM/ML classification, or unrequested
-    dependencies.
--   Do not claim a test passed unless you ran it and observed the
-    result. Do not hide skipped tests, warnings, or known failures.
--   Do not use destructive database commands against any non-test
-    database. Tests must use an explicitly named local test database and
-    a dedicated test URI. Keep the future Atlas/production URI separate
-    and untouched. If MongoDB must be installed for local work, keep the
-    installation/data setup project-local as requested; never overwrite
-    production connection settings.
--   Never print `.env` secrets into terminal output, test snapshots,
-    logs, `history.md`, or the final summary.
+- **JavaScript only** for the backend. Do not migrate to TypeScript.
+- Use the stack and conventions defined in `prd.md`: Node.js, Express,
+  MongoDB/Mongoose, Zod, Vitest and Supertest. Follow the repository's
+  existing module system consistently; do not mix ESM and CommonJS.
+- Implement the API under `/api/v1` and match the PRD's exact paths,
+  roles, request fields, response envelopes, status codes, error
+  codes, pagination, and state transitions.
+- Treat the PRD as the contract. Do not silently simplify security or
+  business rules for convenience.
+- Do not trust role, owner, hostel, room, assignee, status, SLA, or
+  other privileged fields supplied by clients. Derive access scope
+  from the authenticated account and database records.
+- Validate every request at the boundary with strict Zod schemas.
+  Reject unknown fields, invalid IDs, unsafe query operators, invalid
+  enum values, and invalid pagination/sort inputs.
+- Keep controllers thin. Put reusable business logic in services; keep
+  route declarations, validators, middleware, models, and utilities
+  separated in a way consistent with the repo.
+- All complaint workflow mutations must enforce the PRD state machine,
+  expected-version/optimistic-concurrency checks, and atomic
+  activity-history writes. Use MongoDB transactions where required. A
+  replica set is required for transaction-backed tests; do not quietly
+  downgrade to standalone MongoDB.
+- Implement refresh-session rotation/reuse detection,
+  cookie/CSRF/Origin controls, rate limiting, safe response
+  projections, and session revocation exactly as specified in the PRD.
+- Never expose passwords, password hashes, OTPs, raw refresh tokens,
+  session hashes, secrets, internal storage keys, stack traces, or raw
+  database errors.
+- Keep P0 as the release gate. Do not begin P1 features until all P0
+  backend requirements and tests are complete, unless the PRD
+  explicitly makes a P1 prerequisite necessary for a P0 route.
+- Do not add P2 features, LLM/ML classification, or unrequested
+  dependencies.
+- Do not claim a test passed unless you ran it and observed the
+  result. Do not hide skipped tests, warnings, or known failures.
+- Do not use destructive database commands against any non-test
+  database. Tests must use an explicitly named local test database and
+  a dedicated test URI. Keep the future Atlas/production URI separate
+  and untouched. If MongoDB must be installed for local work, keep the
+  installation/data setup project-local as requested; never overwrite
+  production connection settings.
+- Never print `.env` secrets into terminal output, test snapshots,
+  logs, `history.md`, or the final summary.
 
 ## Session execution loop --- mandatory
 
@@ -117,13 +117,13 @@ For the **first pending session only**:
 6.  Review the diff for security issues, accidental scope expansion,
     secrets, dead code, and inconsistent API contracts.
 7.  Update `history.md` with:
-    -   date/time and session ID;
-    -   scope completed and files created/changed;
-    -   behavior and design decisions;
-    -   exact commands run and actual pass/fail/skip counts;
-    -   tests not run and why;
-    -   remaining bugs, risks, blockers, and PRD ambiguities;
-    -   the exact next session/task to start.
+    - date/time and session ID;
+    - scope completed and files created/changed;
+    - behavior and design decisions;
+    - exact commands run and actual pass/fail/skip counts;
+    - tests not run and why;
+    - remaining bugs, risks, blockers, and PRD ambiguities;
+    - the exact next session/task to start.
 8.  Update `task.md`: **remove only tasks that are fully implemented and
     verified**. Do not leave completed tasks checked off; remove them
     from the active queue. Keep incomplete tasks, split partially
@@ -156,17 +156,17 @@ Use this template for each session entry:
 
 ### YYYY-MM-DD --- Session N: short title
 
--   **Goal / PRD references:**
--   **Changes made:**
--   **Files changed:**
--   **Commands run:**
--   **Results:** passed / failed / skipped counts; include the actual
-    command output summary.
--   **Security / regression review:**
--   **Known gaps / blockers:**
--   **Next session:**
+- **Goal / PRD references:**
+- **Changes made:**
+- **Files changed:**
+- **Commands run:**
+- **Results:** passed / failed / skipped counts; include the actual
+  command output summary.
+- **Security / regression review:**
+- **Known gaps / blockers:**
+- **Next session:**
 
-------------------------------------------------------------------------
+---
 
 # ACTIVE TASK QUEUE
 
@@ -191,60 +191,60 @@ Use this template for each session entry:
 
 ## Session 12 --- P1 backend features (start only after P0 gate passes)
 
--   [ ] Implement deterministic duplicate suggestions and safe candidate
-    visibility only when the scoring/visibility contract is fully
-    specified in `prd.md`.
--   [ ] Implement administrator duplicate link/unlink with reason,
-    same-hostel checks, cycle/chain prevention, version checks, and
-    atomic activity on both complaints.
--   [ ] Implement durable in-app notifications and read-state APIs with
-    deduplication, event-driven creation, and stale-link
-    reauthorization.
--   [ ] Implement manual/idempotent escalation only according to the
-    PRD; scheduled processing must be safe to retry.
--   [ ] Implement P1 staff/account/category/location/policy management
-    only where Section 9 and supporting policy sections define the
-    contracts.
--   [ ] Add tests for every P1 feature, especially access isolation,
-    idempotency, version conflicts, and cross-resource consistency.
+- [ ] Implement deterministic duplicate suggestions and safe candidate
+      visibility only when the scoring/visibility contract is fully
+      specified in `prd.md`.
+- [ ] Implement administrator duplicate link/unlink with reason,
+      same-hostel checks, cycle/chain prevention, version checks, and
+      atomic activity on both complaints.
+- [ ] Implement durable in-app notifications and read-state APIs with
+      deduplication, event-driven creation, and stale-link
+      reauthorization.
+- [ ] Implement manual/idempotent escalation only according to the
+      PRD; scheduled processing must be safe to retry.
+- [ ] Implement P1 staff/account/category/location/policy management
+      only where Section 9 and supporting policy sections define the
+      contracts.
+- [ ] Add tests for every P1 feature, especially access isolation,
+      idempotency, version conflicts, and cross-resource consistency.
 
 **Acceptance:** Each P1 feature is implemented only from a complete
 contract and has integration coverage. P1 must not destabilize P0.
 
 ## Session 13 --- Final backend verification and handoff
 
--   [ ] Run all tests and record exact results; include skipped tests
-    and their reasons.
--   [ ] Perform a final route inventory against `prd.md`; no
-    undocumented route or unimplemented required P0 route may be hidden.
--   [ ] Inspect Git diff/status, secrets, accidental generated files,
-    TODOs, unhandled promises, logs, and dead code.
--   [ ] Confirm README, `.env.example`, seed instructions, and
-    `history.md` describe the actual code---not intended future
-    behavior.
--   [ ] Produce a final backend completion report: completed P0/P1
-    scope, route count, test results, known limitations, deployment
-    assumptions, and unresolved PRD blockers.
+- [ ] Run all tests and record exact results; include skipped tests
+      and their reasons.
+- [ ] Perform a final route inventory against `prd.md`; no
+      undocumented route or unimplemented required P0 route may be hidden.
+- [ ] Inspect Git diff/status, secrets, accidental generated files,
+      TODOs, unhandled promises, logs, and dead code.
+- [ ] Confirm README, `.env.example`, seed instructions, and
+      `history.md` describe the actual code---not intended future
+      behavior.
+- [ ] Produce a final backend completion report: completed P0/P1
+      scope, route count, test results, known limitations, deployment
+      assumptions, and unresolved PRD blockers.
 
 **Acceptance:** Backend status is auditable and reproducible. Do not say
 "complete" if required routes/tests remain blocked or unverified.
 
-------------------------------------------------------------------------
+---
 
 # Queue maintenance rules
 
--   Remove a completed task/session from this active queue only after
-    its acceptance criteria are verified.
--   Keep stable session numbers in headings; never renumber remaining
-    sessions.
--   If only part of a session is done, leave the session and its
-    unfinished tasks in place. Rewrite the remaining bullets to be
-    precise.
--   If a discovered bug affects an earlier completed session, add a new
-    top-priority task describing the regression and record the link to
-    the prior history entry.
--   If the PRD changes, record the changed contract and date in
-    `history.md` before implementing it.
--   `task.md` is the **current work queue**; `history.md` is the
-    **append-only execution log and handoff**. Never replace history
-    with a short summary.
+- Remove a completed task/session from this active queue only after
+  its acceptance criteria are verified.
+- Keep stable session numbers in headings; never renumber remaining
+  sessions.
+- If only part of a session is done, leave the session and its
+  unfinished tasks in place. Rewrite the remaining bullets to be
+  precise.
+- If a discovered bug affects an earlier completed session, add a new
+  top-priority task describing the regression and record the link to
+  the prior history entry.
+- If the PRD changes, record the changed contract and date in
+  `history.md` before implementing it.
+- `task.md` is the **current work queue**; `history.md` is the
+  **append-only execution log and handoff**. Never replace history
+  with a short summary.

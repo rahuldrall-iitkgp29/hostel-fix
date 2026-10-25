@@ -16,9 +16,12 @@ const factories = Object.freeze({
 // Registration is explicit and connection-local. Importing does not connect,
 // create global Mongoose models, read configuration, or start index builds.
 function createModels(connection) {
-  return Object.fromEntries(Object.entries(factories).map(([name, factory]) => [name,
-    connection.models[name] ?? connection.model(name, factory()),
-  ]));
+  return Object.fromEntries(
+    Object.entries(factories).map(([name, factory]) => [
+      name,
+      connection.models[name] ?? connection.model(name, factory()),
+    ])
+  );
 }
 
 async function ensureIndexes(models) {

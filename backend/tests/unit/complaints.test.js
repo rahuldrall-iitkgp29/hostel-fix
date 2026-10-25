@@ -1,8 +1,19 @@
 import { describe, test, expect } from 'vitest';
 import { generateReference } from '../../src/utils/referenceGenerator';
-import { computePriority, DEFAULT_WEIGHTS, DEFAULT_THRESHOLDS } from '../../src/services/priority.service';
-import { computeDeadlines, tightenDeadlines, DEFAULT_SLA_TARGETS } from '../../src/services/sla.service';
-import { computeCanonicalPayloadHash, getAllowedActions } from '../../src/services/complaint.service';
+import {
+  computePriority,
+  DEFAULT_WEIGHTS,
+  DEFAULT_THRESHOLDS,
+} from '../../src/services/priority.service';
+import {
+  computeDeadlines,
+  tightenDeadlines,
+  DEFAULT_SLA_TARGETS,
+} from '../../src/services/sla.service';
+import {
+  computeCanonicalPayloadHash,
+  getAllowedActions,
+} from '../../src/services/complaint.service';
 
 describe('complaint unit tests', () => {
   describe('referenceGenerator', () => {
@@ -25,28 +36,42 @@ describe('complaint unit tests', () => {
       const result = computePriority({});
       expect(result.score).toBe(0);
       expect(result.suggestedPriority).toBe('LOW');
-      expect(result.priorityExplanation).toBe('No urgency indicators were reported.');
+      expect(result.priorityExplanation).toBe(
+        'No urgency indicators were reported.'
+      );
     });
 
     test('computes MEDIUM for functionalityLoss alone', () => {
       const result = computePriority({ functionalityLoss: true });
       expect(result.score).toBe(1);
       expect(result.suggestedPriority).toBe('MEDIUM');
-      expect(result.priorityExplanation).toBe('Loss of functionality was reported.');
+      expect(result.priorityExplanation).toBe(
+        'Loss of functionality was reported.'
+      );
     });
 
     test('computes HIGH for essentialServiceOutage alone (score 3) or with functionalityLoss (score 4)', () => {
-      const highRes = computePriority({ essentialServiceOutage: true, functionalityLoss: true });
+      const highRes = computePriority({
+        essentialServiceOutage: true,
+        functionalityLoss: true,
+      });
       expect(highRes.score).toBe(4);
       expect(highRes.suggestedPriority).toBe('HIGH');
-      expect(highRes.priorityExplanation).toBe('Essential service outage and loss of functionality were reported.');
+      expect(highRes.priorityExplanation).toBe(
+        'Essential service outage and loss of functionality were reported.'
+      );
     });
 
     test('computes CRITICAL for safetyRisk and essentialServiceOutage (score 7)', () => {
-      const critRes = computePriority({ safetyRisk: true, essentialServiceOutage: true });
+      const critRes = computePriority({
+        safetyRisk: true,
+        essentialServiceOutage: true,
+      });
       expect(critRes.score).toBe(7);
       expect(critRes.suggestedPriority).toBe('CRITICAL');
-      expect(critRes.priorityExplanation).toBe('Safety risk and essential service outage were reported.');
+      expect(critRes.priorityExplanation).toBe(
+        'Safety risk and essential service outage were reported.'
+      );
     });
 
     test('orders active indicators in weight-descending order for 3+ indicators', () => {
@@ -57,7 +82,9 @@ describe('complaint unit tests', () => {
       });
       expect(res.score).toBe(7);
       expect(res.suggestedPriority).toBe('CRITICAL');
-      expect(res.priorityExplanation).toBe('Safety risk, affects multiple rooms and loss of functionality were reported.');
+      expect(res.priorityExplanation).toBe(
+        'Safety risk, affects multiple rooms and loss of functionality were reported.'
+      );
     });
   });
 
@@ -88,9 +115,13 @@ describe('complaint unit tests', () => {
       });
 
       // CRITICAL response is 12:00, earlier than 18:00
-      expect(tightened.responseDueAt.toISOString()).toBe('2026-10-20T12:00:00.000Z');
+      expect(tightened.responseDueAt.toISOString()).toBe(
+        '2026-10-20T12:00:00.000Z'
+      );
       // CRITICAL resolution is 18:00, earlier than 22nd
-      expect(tightened.resolutionDueAt.toISOString()).toBe('2026-10-20T18:00:00.000Z');
+      expect(tightened.resolutionDueAt.toISOString()).toBe(
+        '2026-10-20T18:00:00.000Z'
+      );
     });
 
     test('never relaxes deadlines when candidate deadline is later', () => {
@@ -106,8 +137,12 @@ describe('complaint unit tests', () => {
       });
 
       // LOW response is 24h later, but existing early response is preserved
-      expect(result.responseDueAt.toISOString()).toBe(earlyResponse.toISOString());
-      expect(result.resolutionDueAt.toISOString()).toBe(earlyResolution.toISOString());
+      expect(result.responseDueAt.toISOString()).toBe(
+        earlyResponse.toISOString()
+      );
+      expect(result.resolutionDueAt.toISOString()).toBe(
+        earlyResolution.toISOString()
+      );
     });
   });
 
@@ -122,7 +157,12 @@ describe('complaint unit tests', () => {
         blockId: '670000000000000000000020',
         roomId: '670000000000000000000030',
       },
-      indicators: { safetyRisk: false, essentialServiceOutage: false, affectsMultipleRooms: false, functionalityLoss: true },
+      indicators: {
+        safetyRisk: false,
+        essentialServiceOutage: false,
+        affectsMultipleRooms: false,
+        functionalityLoss: true,
+      },
       attachmentIds: ['670000000000000000000100', '670000000000000000000099'],
     };
 
@@ -166,7 +206,11 @@ describe('complaint unit tests', () => {
   describe('getAllowedActions', () => {
     const studentUser = { _id: 'stu-1', role: 'STUDENT' };
     const staffUser = { _id: 'sta-1', role: 'STAFF' };
-    const adminUser = { _id: 'adm-1', role: 'ADMIN', adminHostelIds: ['hos-1'] };
+    const adminUser = {
+      _id: 'adm-1',
+      role: 'ADMIN',
+      adminHostelIds: ['hos-1'],
+    };
 
     test('student owner on SUBMITTED complaint gets EDIT and COMMENT', () => {
       const complaint = {

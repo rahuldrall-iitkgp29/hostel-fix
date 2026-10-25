@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { AuthGuard } from "@/features/auth/components/auth-guard";
-import { useAuth } from "@/features/auth/context/auth-context";
-import { AppShell } from "@/components/layout/app-shell";
-import { PageHeader } from "@/components/layout/page-header";
-import { ComplaintList } from "@/features/complaints/components/complaint-list";
+import { AuthGuard } from '@/features/auth/components/auth-guard';
+import { useAuth } from '@/features/auth/context/auth-context';
+import { AppShell } from '@/components/layout/app-shell';
+import { PageHeader } from '@/components/layout/page-header';
+import { ComplaintList } from '@/features/complaints/components/complaint-list';
 
 function StaffQueueContent() {
   const { user, logout } = useAuth();
@@ -15,7 +15,7 @@ function StaffQueueContent() {
       user={{
         name: user.name,
         email: user.email,
-        role: "STAFF",
+        role: 'STAFF',
       }}
       onLogout={logout}
     >
@@ -25,8 +25,8 @@ function StaffQueueContent() {
           title="Assigned Work Orders"
           description="Review tasks assigned to you sorted by SLA urgency and priority. Update progress and mark resolved."
           breadcrumbs={[
-            { label: "Dashboard", href: "/staff/dashboard" },
-            { label: "Work Queue" },
+            { label: 'Dashboard', href: '/staff/dashboard' },
+            { label: 'Work Queue' },
           ]}
         />
 
@@ -38,7 +38,7 @@ function StaffQueueContent() {
 
 export default function StaffQueuePage() {
   return (
-    <AuthGuard allowedRoles={["STAFF"]}>
+    <AuthGuard allowedRoles={['STAFF']}>
       <StaffQueueContent />
     </AuthGuard>
   );

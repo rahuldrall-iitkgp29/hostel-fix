@@ -48,7 +48,10 @@ async function seedDatabase({ config, database, models: providedModels }) {
   }
 
   // 2. Blocks
-  let blockAlpha = await models.Block.findOne({ hostelId: hostelA._id, code: 'ALPHA' });
+  let blockAlpha = await models.Block.findOne({
+    hostelId: hostelA._id,
+    code: 'ALPHA',
+  });
   if (!blockAlpha) {
     blockAlpha = new models.Block({
       hostelId: hostelA._id,
@@ -59,7 +62,10 @@ async function seedDatabase({ config, database, models: providedModels }) {
     await blockAlpha.save();
   }
 
-  let blockBeta = await models.Block.findOne({ hostelId: hostelA._id, code: 'BETA' });
+  let blockBeta = await models.Block.findOne({
+    hostelId: hostelA._id,
+    code: 'BETA',
+  });
   if (!blockBeta) {
     blockBeta = new models.Block({
       hostelId: hostelA._id,
@@ -80,7 +86,11 @@ async function seedDatabase({ config, database, models: providedModels }) {
   ];
   const roomMap = {};
   for (const { block, label } of roomsToSeed) {
-    let room = await models.Room.findOne({ hostelId: hostelA._id, blockId: block._id, label });
+    let room = await models.Room.findOne({
+      hostelId: hostelA._id,
+      blockId: block._id,
+      label,
+    });
     if (!room) {
       room = new models.Room({
         hostelId: hostelA._id,
@@ -95,15 +105,38 @@ async function seedDatabase({ config, database, models: providedModels }) {
 
   // 4. Categories
   const categoriesToSeed = [
-    { code: 'ELECTRICAL', name: 'Electrical', description: 'Fans, lights, switches, wiring' },
-    { code: 'PLUMBING', name: 'Plumbing', description: 'Water supply, drainage, leaks' },
-    { code: 'FURNITURE', name: 'Furniture', description: 'Beds, desks, chairs, wardrobes' },
-    { code: 'CIVIL', name: 'Civil & Structural', description: 'Walls, floors, ceilings, doors, windows' },
-    { code: 'CLEANING', name: 'Cleaning & Hygiene', description: 'Room/corridor cleaning, pest control' },
+    {
+      code: 'ELECTRICAL',
+      name: 'Electrical',
+      description: 'Fans, lights, switches, wiring',
+    },
+    {
+      code: 'PLUMBING',
+      name: 'Plumbing',
+      description: 'Water supply, drainage, leaks',
+    },
+    {
+      code: 'FURNITURE',
+      name: 'Furniture',
+      description: 'Beds, desks, chairs, wardrobes',
+    },
+    {
+      code: 'CIVIL',
+      name: 'Civil & Structural',
+      description: 'Walls, floors, ceilings, doors, windows',
+    },
+    {
+      code: 'CLEANING',
+      name: 'Cleaning & Hygiene',
+      description: 'Room/corridor cleaning, pest control',
+    },
   ];
   const categoryMap = {};
   for (const item of categoriesToSeed) {
-    let cat = await models.Category.findOne({ hostelId: hostelA._id, code: item.code });
+    let cat = await models.Category.findOne({
+      hostelId: hostelA._id,
+      code: item.code,
+    });
     if (!cat) {
       cat = new models.Category({
         hostelId: hostelA._id,
@@ -188,10 +221,21 @@ async function seedDatabase({ config, database, models: providedModels }) {
         ownerId: asha._id,
         hostelId: hostelA._id,
         title: 'Broken ceiling fan in A-101',
-        description: 'The ceiling fan in room A-101 is not spinning and makes a humming noise when turned on.',
+        description:
+          'The ceiling fan in room A-101 is not spinning and makes a humming noise when turned on.',
         categoryId: categoryMap.ELECTRICAL._id,
-        location: { type: 'ROOM', hostelId: hostelA._id, blockId: blockAlpha._id, roomId: roomMap['A-101']._id },
-        indicators: { safetyRisk: false, essentialServiceOutage: false, affectsMultipleRooms: false, functionalityLoss: true },
+        location: {
+          type: 'ROOM',
+          hostelId: hostelA._id,
+          blockId: blockAlpha._id,
+          roomId: roomMap['A-101']._id,
+        },
+        indicators: {
+          safetyRisk: false,
+          essentialServiceOutage: false,
+          affectsMultipleRooms: false,
+          functionalityLoss: true,
+        },
         status: 'ASSIGNED',
         priority: 'MEDIUM',
         suggestedPriority: 'MEDIUM',
@@ -199,7 +243,9 @@ async function seedDatabase({ config, database, models: providedModels }) {
         priorityExplanation: 'Loss of functionality was reported.',
         assigneeId: ravi._id,
         clientRequestId: '11111111-1111-4111-8111-111111111111',
-        clientRequestHash: createHash('sha256').update('seed-complaint-1').digest('hex'),
+        clientRequestHash: createHash('sha256')
+          .update('seed-complaint-1')
+          .digest('hex'),
         cycleNumber: 1,
         reopenCount: 0,
         createdAt: new Date(Date.now() - 15 * 60000),
@@ -259,10 +305,21 @@ async function seedDatabase({ config, database, models: providedModels }) {
         ownerId: asha._id,
         hostelId: hostelA._id,
         title: 'Water leak under bathroom sink',
-        description: 'Water is dripping steadily from the pipe beneath the bathroom sink in A-101.',
+        description:
+          'Water is dripping steadily from the pipe beneath the bathroom sink in A-101.',
         categoryId: categoryMap.PLUMBING._id,
-        location: { type: 'ROOM', hostelId: hostelA._id, blockId: blockAlpha._id, roomId: roomMap['A-101']._id },
-        indicators: { safetyRisk: false, essentialServiceOutage: true, affectsMultipleRooms: false, functionalityLoss: true },
+        location: {
+          type: 'ROOM',
+          hostelId: hostelA._id,
+          blockId: blockAlpha._id,
+          roomId: roomMap['A-101']._id,
+        },
+        indicators: {
+          safetyRisk: false,
+          essentialServiceOutage: true,
+          affectsMultipleRooms: false,
+          functionalityLoss: true,
+        },
         status: 'SUBMITTED',
         priority: 'HIGH',
         suggestedPriority: 'HIGH',
@@ -270,7 +327,9 @@ async function seedDatabase({ config, database, models: providedModels }) {
         priorityExplanation: 'Essential service outage reported.',
         assigneeId: null,
         clientRequestId: '22222222-2222-4222-8222-222222222222',
-        clientRequestHash: createHash('sha256').update('seed-complaint-2').digest('hex'),
+        clientRequestHash: createHash('sha256')
+          .update('seed-complaint-2')
+          .digest('hex'),
         cycleNumber: 1,
         reopenCount: 0,
         createdAt: new Date(Date.now() - 20 * 60000),
@@ -300,24 +359,40 @@ async function seedDatabase({ config, database, models: providedModels }) {
       const past = (hoursAgo) => new Date(Date.now() - hoursAgo * 3600000);
       const c3CreatedAt = past(50);
       const c3ResolvedAt = past(25);
-      const c3ReopenUntil = new Date(c3ResolvedAt.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const c3ReopenUntil = new Date(
+        c3ResolvedAt.getTime() + 7 * 24 * 60 * 60 * 1000
+      );
       complaint3 = new models.Complaint({
         reference: c3Ref,
         ownerId: asha._id,
         hostelId: hostelA._id,
         title: 'Desk drawer handle broken',
-        description: 'The right side handle of the study desk drawer has detached from the wooden frame.',
+        description:
+          'The right side handle of the study desk drawer has detached from the wooden frame.',
         categoryId: categoryMap.FURNITURE._id,
-        location: { type: 'ROOM', hostelId: hostelA._id, blockId: blockAlpha._id, roomId: roomMap['A-101']._id },
-        indicators: { safetyRisk: false, essentialServiceOutage: false, affectsMultipleRooms: false, functionalityLoss: false },
+        location: {
+          type: 'ROOM',
+          hostelId: hostelA._id,
+          blockId: blockAlpha._id,
+          roomId: roomMap['A-101']._id,
+        },
+        indicators: {
+          safetyRisk: false,
+          essentialServiceOutage: false,
+          affectsMultipleRooms: false,
+          functionalityLoss: false,
+        },
         status: 'CLOSED',
         priority: 'LOW',
         suggestedPriority: 'LOW',
         prioritySource: 'RULE',
-        priorityExplanation: 'General maintenance issue without immediate risk or outage.',
+        priorityExplanation:
+          'General maintenance issue without immediate risk or outage.',
         assigneeId: ravi._id,
         clientRequestId: '33333333-3333-4333-8333-333333333333',
-        clientRequestHash: createHash('sha256').update('seed-complaint-3').digest('hex'),
+        clientRequestHash: createHash('sha256')
+          .update('seed-complaint-3')
+          .digest('hex'),
         cycleNumber: 1,
         reopenCount: 0,
         createdAt: c3CreatedAt,
@@ -336,21 +411,53 @@ async function seedDatabase({ config, database, models: providedModels }) {
 
       const acts = [
         { type: 'CREATED', actor: asha, time: past(50) },
-        { type: 'TRIAGED', actor: priya, time: past(47), note: 'Routine furniture repair scheduled.' },
-        { type: 'ASSIGNED', actor: priya, time: past(46), note: 'Assigned to carpentry technician.', changes: { previousAssigneeId: null, assigneeId: String(ravi._id) } },
-        { type: 'WORK_STARTED', actor: ravi, time: past(30), note: 'Inspecting drawer handle and fitting replacement screws.' },
-        { type: 'RESOLVED', actor: ravi, time: past(25), note: 'Replaced broken drawer handle and aligned tracks.' },
-        { type: 'CLOSED', actor: asha, time: past(20), note: 'Fixed properly, drawer closes smoothly.' },
+        {
+          type: 'TRIAGED',
+          actor: priya,
+          time: past(47),
+          note: 'Routine furniture repair scheduled.',
+        },
+        {
+          type: 'ASSIGNED',
+          actor: priya,
+          time: past(46),
+          note: 'Assigned to carpentry technician.',
+          changes: { previousAssigneeId: null, assigneeId: String(ravi._id) },
+        },
+        {
+          type: 'WORK_STARTED',
+          actor: ravi,
+          time: past(30),
+          note: 'Inspecting drawer handle and fitting replacement screws.',
+        },
+        {
+          type: 'RESOLVED',
+          actor: ravi,
+          time: past(25),
+          note: 'Replaced broken drawer handle and aligned tracks.',
+        },
+        {
+          type: 'CLOSED',
+          actor: asha,
+          time: past(20),
+          note: 'Fixed properly, drawer closes smoothly.',
+        },
       ];
 
       let prev = null;
       for (const a of acts) {
-        const nextStatus = a.type === 'CREATED' ? 'SUBMITTED'
-          : a.type === 'TRIAGED' ? 'TRIAGED'
-          : a.type === 'ASSIGNED' ? 'ASSIGNED'
-          : a.type === 'WORK_STARTED' ? 'IN_PROGRESS'
-          : a.type === 'RESOLVED' ? 'RESOLVED'
-          : 'CLOSED';
+        const nextStatus =
+          a.type === 'CREATED'
+            ? 'SUBMITTED'
+            : a.type === 'TRIAGED'
+              ? 'TRIAGED'
+              : a.type === 'ASSIGNED'
+                ? 'ASSIGNED'
+                : a.type === 'WORK_STARTED'
+                  ? 'IN_PROGRESS'
+                  : a.type === 'RESOLVED'
+                    ? 'RESOLVED'
+                    : 'CLOSED';
         const doc = new models.Activity({
           complaintId: complaint3._id,
           type: a.type,

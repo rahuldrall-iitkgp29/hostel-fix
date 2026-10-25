@@ -8,17 +8,17 @@ indexes. JavaScript/CommonJS is used throughout.
 
 ## Models and boundaries
 
-| Model | Stored data / constraints |
-|---|---|
-| User | One role with its fields on the same document; normalized unique email; immutable role; active/inactive status; version and hidden credential hashes. |
-| Session | User, unique UUID-v4 refresh family, hidden bcrypt hash, expiry, revocation, refresh time and bounded private audit fields. |
-| Hostel / Block / Room | Separate reference documents with normalized codes/labels, scoped uniqueness and active flags. Enrollment hashes are excluded from API projections. |
-| Category | Hostel-scoped immutable code, name/description and active flag. |
-| HostelPolicy | One policy per hostel, complete ordered SLA targets, positive weights, descending thresholds and independently incremented policyVersion. |
-| Complaint | Immutable ownership/reference/create key/attachments, version, validated location/indicators, state fields, current SLA snapshot and at most two immutable prior cycles. |
-| Activity / Comment | Public actor/author snapshots, bounded text and append-only history, with chronological indexes. |
-| Attachment | Validated-image metadata, private UUID storage key, staged expiry and one-time binding. Bound metadata cannot be deleted or rebound. |
-| Feedback | One replaceable document per complaint; cycle and validity flag. Earlier ratings/comments belong in immutable activity. |
+| Model                 | Stored data / constraints                                                                                                                                                |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| User                  | One role with its fields on the same document; normalized unique email; immutable role; active/inactive status; version and hidden credential hashes.                    |
+| Session               | User, unique UUID-v4 refresh family, hidden bcrypt hash, expiry, revocation, refresh time and bounded private audit fields.                                              |
+| Hostel / Block / Room | Separate reference documents with normalized codes/labels, scoped uniqueness and active flags. Enrollment hashes are excluded from API projections.                      |
+| Category              | Hostel-scoped immutable code, name/description and active flag.                                                                                                          |
+| HostelPolicy          | One policy per hostel, complete ordered SLA targets, positive weights, descending thresholds and independently incremented policyVersion.                                |
+| Complaint             | Immutable ownership/reference/create key/attachments, version, validated location/indicators, state fields, current SLA snapshot and at most two immutable prior cycles. |
+| Activity / Comment    | Public actor/author snapshots, bounded text and append-only history, with chronological indexes.                                                                         |
+| Attachment            | Validated-image metadata, private UUID storage key, staged expiry and one-time binding. Bound metadata cannot be deleted or rebound.                                     |
+| Feedback              | One replaceable document per complaint; cycle and validity flag. Earlier ratings/comments belong in immutable activity.                                                  |
 
 Model validation checks document structure and relationships among its fields.
 It does **not** authenticate callers or implement command authorization, active

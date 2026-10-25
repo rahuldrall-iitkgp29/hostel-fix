@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { AuthGuard } from "@/features/auth/components/auth-guard";
-import { useAuth } from "@/features/auth/context/auth-context";
-import { AppShell } from "@/components/layout/app-shell";
-import { PageHeader } from "@/components/layout/page-header";
-import { ComplaintList } from "@/features/complaints/components/complaint-list";
+import { AuthGuard } from '@/features/auth/components/auth-guard';
+import { useAuth } from '@/features/auth/context/auth-context';
+import { AppShell } from '@/components/layout/app-shell';
+import { PageHeader } from '@/components/layout/page-header';
+import { ComplaintList } from '@/features/complaints/components/complaint-list';
 
 function AdminAssignmentContent() {
   const { user, logout } = useAuth();
@@ -15,7 +15,7 @@ function AdminAssignmentContent() {
       user={{
         name: user.name,
         email: user.email,
-        role: "ADMIN",
+        role: 'ADMIN',
       }}
       onLogout={logout}
     >
@@ -25,8 +25,8 @@ function AdminAssignmentContent() {
           title="Complaint Assignments"
           description="Assign eligible maintenance staff based on category specialization and existing workload balance."
           breadcrumbs={[
-            { label: "Dashboard", href: "/admin/dashboard" },
-            { label: "Assignments" },
+            { label: 'Dashboard', href: '/admin/dashboard' },
+            { label: 'Assignments' },
           ]}
         />
 
@@ -42,7 +42,7 @@ function AdminAssignmentContent() {
 
 export default function AdminAssignmentPage() {
   return (
-    <AuthGuard allowedRoles={["ADMIN"]}>
+    <AuthGuard allowedRoles={['ADMIN']}>
       <AdminAssignmentContent />
     </AuthGuard>
   );

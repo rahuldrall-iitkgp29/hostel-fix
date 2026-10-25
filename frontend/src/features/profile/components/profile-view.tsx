@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "sonner";
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 import {
   User,
   Mail,
@@ -13,17 +13,17 @@ import {
   CircleAlert,
   Save,
   Clock,
-} from "lucide-react";
-import { useAuth } from "@/features/auth/context/auth-context";
-import { profileSchema, type ProfileFormData } from "@/features/auth/schemas";
-import { updateProfile, getMe } from "@/lib/api/user";
-import { ApiError } from "@/lib/api/errors";
-import { TextField } from "@/components/ui/text-field";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ChangePasswordForm } from "@/features/auth/components/change-password-form";
-import { PageHeader } from "@/components/layout/page-header";
+} from 'lucide-react';
+import { useAuth } from '@/features/auth/context/auth-context';
+import { profileSchema, type ProfileFormData } from '@/features/auth/schemas';
+import { updateProfile, getMe } from '@/lib/api/user';
+import { ApiError } from '@/lib/api/errors';
+import { TextField } from '@/components/ui/text-field';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ChangePasswordForm } from '@/features/auth/components/change-password-form';
+import { PageHeader } from '@/components/layout/page-header';
 
 export function ProfileView() {
   const { user, updateUser, apiClient } = useAuth();
@@ -40,8 +40,8 @@ export function ProfileView() {
     resolver: zodResolver(profileSchema),
     values: {
       expectedVersion: user?.version ?? 1,
-      name: user?.name ?? "",
-      phone: user?.phone ?? "",
+      name: user?.name ?? '',
+      phone: user?.phone ?? '',
     },
   });
 
@@ -59,14 +59,14 @@ export function ProfileView() {
       reset({
         expectedVersion: response.user.version,
         name: response.user.name,
-        phone: response.user.phone ?? "",
+        phone: response.user.phone ?? '',
       });
-      toast.success("Profile updated successfully");
+      toast.success('Profile updated successfully');
     } catch (err: unknown) {
       if (err instanceof ApiError) {
-        if (err.status === 409 || err.code === "VERSION_CONFLICT") {
+        if (err.status === 409 || err.code === 'VERSION_CONFLICT') {
           setProfileError(
-            "Your profile was modified in another session. We have reloaded the latest profile data. Please review and reapply your changes."
+            'Your profile was modified in another session. We have reloaded the latest profile data. Please review and reapply your changes.'
           );
           // Refetch latest state
           try {
@@ -75,7 +75,7 @@ export function ProfileView() {
             reset({
               expectedVersion: latest.user.version,
               name: latest.user.name,
-              phone: latest.user.phone ?? "",
+              phone: latest.user.phone ?? '',
             });
           } catch {
             // ignore refetch failure
@@ -93,15 +93,17 @@ export function ProfileView() {
         }
         setProfileError(err.message);
       } else {
-        setProfileError("Failed to update profile. Please check your connection.");
+        setProfileError(
+          'Failed to update profile. Please check your connection.'
+        );
       }
     }
   };
 
-  const roleTones: Record<string, "neutral" | "success" | "warning"> = {
-    STUDENT: "neutral",
-    STAFF: "warning",
-    ADMIN: "success",
+  const roleTones: Record<string, 'neutral' | 'success' | 'warning'> = {
+    STUDENT: 'neutral',
+    STAFF: 'warning',
+    ADMIN: 'success',
   };
 
   return (
@@ -112,8 +114,8 @@ export function ProfileView() {
         description="Manage your contact details and account security. Role and hostel allocations are managed by your hostel office."
         badge={<Badge tone={roleTones[user.role]}>{user.role}</Badge>}
         breadcrumbs={[
-          { label: "Dashboard", href: `/${user.role.toLowerCase()}/dashboard` },
-          { label: "Profile" },
+          { label: 'Dashboard', href: `/${user.role.toLowerCase()}/dashboard` },
+          { label: 'Profile' },
         ]}
       />
 
@@ -138,7 +140,9 @@ export function ProfileView() {
                 <div>
                   <p className="text-xs text-muted">Hostel Email</p>
                   <p className="font-medium text-ink break-all">{user.email}</p>
-                  <span className="text-[11px] text-muted">Tied to institutional ID</span>
+                  <span className="text-[11px] text-muted">
+                    Tied to institutional ID
+                  </span>
                 </div>
               </div>
 
@@ -150,13 +154,13 @@ export function ProfileView() {
                 </div>
               </div>
 
-              {user.role === "STUDENT" && (
+              {user.role === 'STUDENT' && (
                 <div className="flex items-start gap-2.5">
                   <Building className="mt-0.5 size-4 text-brand shrink-0" />
                   <div>
                     <p className="text-xs text-muted">Room Allocation</p>
                     <p className="font-medium text-ink">
-                      {user.roomId ? `Room ${user.roomId}` : "Allocated"}
+                      {user.roomId ? `Room ${user.roomId}` : 'Allocated'}
                     </p>
                   </div>
                 </div>
@@ -169,9 +173,9 @@ export function ProfileView() {
                     <p className="text-xs text-muted">Member since</p>
                     <p className="text-xs text-muted">
                       {new Date(user.createdAt).toLocaleDateString(undefined, {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
                       })}
                     </p>
                   </div>
@@ -181,9 +185,12 @@ export function ProfileView() {
           </Card>
 
           <Card className="p-4 bg-brand-soft/40 border-brand/20">
-            <p className="text-xs text-brand font-medium">HostelFix P0 Operations</p>
+            <p className="text-xs text-brand font-medium">
+              HostelFix P0 Operations
+            </p>
             <p className="mt-1 text-xs text-muted">
-              Role changes, hostel reassignment, and room transfers must be requested directly from your warden.
+              Role changes, hostel reassignment, and room transfers must be
+              requested directly from your warden.
             </p>
           </Card>
         </div>
@@ -206,19 +213,26 @@ export function ProfileView() {
                 role="alert"
                 className="flex items-start gap-3 rounded-xl border border-danger/20 bg-danger/5 p-4 text-sm text-danger"
               >
-                <CircleAlert className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+                <CircleAlert
+                  className="mt-0.5 size-5 shrink-0"
+                  aria-hidden="true"
+                />
                 <p>{profileError}</p>
               </div>
             )}
 
-            <form onSubmit={handleSubmit(onProfileSubmit)} className="space-y-5" noValidate>
+            <form
+              onSubmit={handleSubmit(onProfileSubmit)}
+              className="space-y-5"
+              noValidate
+            >
               <TextField
                 id="profile-name"
                 label="Full name"
                 autoComplete="name"
                 error={errors.name?.message}
                 disabled={isSubmitting}
-                {...register("name")}
+                {...register('name')}
               />
 
               <TextField
@@ -230,7 +244,7 @@ export function ProfileView() {
                 hint="Used by maintenance staff if they need to reach you regarding a repair"
                 error={errors.phone?.message}
                 disabled={isSubmitting}
-                {...register("phone")}
+                {...register('phone')}
               />
 
               <div className="flex items-center justify-between border-t border-line pt-4">
@@ -266,7 +280,7 @@ export function ProfileView() {
                 className="text-xs"
               >
                 <KeyRound className="size-3.5" />
-                {showPasswordSection ? "Hide form" : "Change password"}
+                {showPasswordSection ? 'Hide form' : 'Change password'}
               </Button>
             </div>
 

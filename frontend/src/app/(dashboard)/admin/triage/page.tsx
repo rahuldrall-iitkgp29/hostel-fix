@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { AuthGuard } from "@/features/auth/components/auth-guard";
-import { useAuth } from "@/features/auth/context/auth-context";
-import { AppShell } from "@/components/layout/app-shell";
-import { PageHeader } from "@/components/layout/page-header";
-import { ComplaintList } from "@/features/complaints/components/complaint-list";
+import { AuthGuard } from '@/features/auth/components/auth-guard';
+import { useAuth } from '@/features/auth/context/auth-context';
+import { AppShell } from '@/components/layout/app-shell';
+import { PageHeader } from '@/components/layout/page-header';
+import { ComplaintList } from '@/features/complaints/components/complaint-list';
 
 function AdminTriageContent() {
   const { user, logout } = useAuth();
@@ -15,7 +15,7 @@ function AdminTriageContent() {
       user={{
         name: user.name,
         email: user.email,
-        role: "ADMIN",
+        role: 'ADMIN',
       }}
       onLogout={logout}
     >
@@ -25,8 +25,8 @@ function AdminTriageContent() {
           title="Review Incoming Reports"
           description="Review newly submitted and reopened complaints. Validate urgency, verify location, or reject out-of-scope issues."
           breadcrumbs={[
-            { label: "Dashboard", href: "/admin/dashboard" },
-            { label: "Triage & Review" },
+            { label: 'Dashboard', href: '/admin/dashboard' },
+            { label: 'Triage & Review' },
           ]}
         />
 
@@ -42,7 +42,7 @@ function AdminTriageContent() {
 
 export default function AdminTriagePage() {
   return (
-    <AuthGuard allowedRoles={["ADMIN"]}>
+    <AuthGuard allowedRoles={['ADMIN']}>
       <AdminTriageContent />
     </AuthGuard>
   );

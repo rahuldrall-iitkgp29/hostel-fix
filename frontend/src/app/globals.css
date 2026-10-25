@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme inline {
   --color-canvas: #f8f9f4;
@@ -17,22 +17,78 @@
 }
 
 @layer base {
-  html { scroll-behavior: smooth; scroll-padding-top: 2rem; }
-  body { background: var(--color-canvas); color: var(--color-ink); -webkit-font-smoothing: antialiased; }
-  button, a, input, select, textarea, summary { -webkit-tap-highlight-color: transparent; }
-  button:not(:disabled), summary { cursor: pointer; }
-  :focus-visible { outline: 3px solid var(--color-brand); outline-offset: 4px; }
-  ::selection { background: var(--color-lime); color: var(--color-ink); }
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 2rem;
+  }
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  summary {
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:not(:disabled),
+  summary {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-brand);
+    outline-offset: 4px;
+  }
+  ::selection {
+    background: var(--color-lime);
+    color: var(--color-ink);
+  }
   @media (prefers-reduced-motion: reduce) {
-    html { scroll-behavior: auto; }
-    *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
 @layer components {
-  .eyebrow { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--color-brand); }
-  .section-title { font-size: clamp(2rem, 4vw, 3rem); line-height: 1.12; font-weight: 600; letter-spacing: -0.045em; }
-  .skip-link { position: absolute; top: -5rem; left: 1rem; z-index: 100; border-radius: 0.75rem; background: white; padding: 0.75rem 1rem; font-weight: 600; }
-  .skip-link:focus { top: 1rem; }
-  .journey-grid { background-image: radial-gradient(#c6d6bd 1px, transparent 1px); background-size: 22px 22px; }
+  .eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--color-brand);
+  }
+  .section-title {
+    font-size: clamp(2rem, 4vw, 3rem);
+    line-height: 1.12;
+    font-weight: 600;
+    letter-spacing: -0.045em;
+  }
+  .skip-link {
+    position: absolute;
+    top: -5rem;
+    left: 1rem;
+    z-index: 100;
+    border-radius: 0.75rem;
+    background: white;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+  }
+  .skip-link:focus {
+    top: 1rem;
+  }
+  .journey-grid {
+    background-image: radial-gradient(#c6d6bd 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
 }
