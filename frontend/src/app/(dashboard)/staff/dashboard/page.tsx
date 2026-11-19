@@ -22,6 +22,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/features/complaints/components/status-badge';
 import { PriorityBadge } from '@/features/complaints/components/priority-badge';
 import { getStaffDashboard } from '@/lib/api/complaints';
+import { getApiErrorMessage } from '@/lib/api/errors';
 import { StaffDashboardHistory } from '@/features/complaints/components/dashboard-history';
 import type {
   StaffDashboardData,
@@ -46,10 +47,13 @@ function StaffDashboardContent() {
           setLoading(false);
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (active) {
           setError(
-            'Unable to load staff dashboard. Please check your connection.'
+            getApiErrorMessage(
+              error,
+              'Unable to load staff dashboard. Please check your connection.'
+            )
           );
           setLoading(false);
         }

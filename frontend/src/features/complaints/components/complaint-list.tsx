@@ -18,6 +18,9 @@ import { StatusBadge } from './status-badge';
 import { PriorityBadge } from './priority-badge';
 import { StatePanel } from '@/components/feedback/state-panel';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getApiErrorMessage } from '@/lib/api/errors';
+
+const EMPTY_FILTERS = Object.freeze({});
 
 export type ComplaintListProps = {
   initialStatus?: string;
@@ -30,7 +33,7 @@ export function ComplaintList({
   initialStatus,
   initialSort = 'createdAt:desc',
   scopeTitle = 'Complaints',
-  fixedFilters = {},
+  fixedFilters = EMPTY_FILTERS,
 }: ComplaintListProps) {
   const { apiClient } = useAuth();
   const [complaints, setComplaints] = useState<ComplaintSummary[]>([]);
@@ -70,9 +73,14 @@ export function ComplaintList({
           setLoading(false);
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (active) {
-          setError('Failed to load complaints. Please check your connection.');
+          setError(
+            getApiErrorMessage(
+              error,
+              'Failed to load complaints. Please check your connection.'
+            )
+          );
           setLoading(false);
         }
       });

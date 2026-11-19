@@ -434,3 +434,66 @@ Manual local use: `npm.cmd run dev`, login with DEMO.md, inspect with `status`/`
 then `npm.cmd run stop`. To rebuild the initial demo use `reset:demo`. README contains
 all commands, mode/configuration details, actual collection relationships and basic
 read-only mongosh navigation. No independent demo infrastructure work remains blocked.
+
+## Follow-up: complaint request loop and dashboard 429 — 20 November 2026
+
+The reported browser requests established HTTP 429 on repeated
+`GET /api/v1/complaints?page=1&limit=10&sort=createdAt:desc`. Reproduction with an
+existing demo student sent 120 complaint-list requests in four seconds: 118 returned
+200 and two returned 429. Returning to the dashboard then displayed “Dashboard
+unavailable.” Complaint reads and dashboard reads intentionally share the existing
+120 requests/minute per-user limiter.
+
+Root cause: `ComplaintList` used `fixedFilters = {}` as a parameter default and
+included `fixedFilters` in its request effect's dependencies. Every response updated
+component state and rendered a fresh default object. Its changed identity ran the
+effect again, fetching another response and repeating until the read budget was
+exhausted. The earlier browser scenarios did not leave a complaint-list page open,
+so they missed this behavior. Logging in with another student started the same
+loop against that account's separate read budget.
+
+The default is now one frozen module-level empty object. Existing effect dependencies,
+real filter changes and pagination are retained. Backend rate limits, authentication,
+CSRF and API retry behavior were not relaxed. Dashboard/list error panels now preserve
+the common client's validated `ApiError` message; arbitrary exceptions and malformed
+server bodies still use safe generic messages. A rate-limited request consequently
+shows “Too many requests. Try again later.” instead of incorrectly blaming connectivity.
+
+The `content.js` unsafe-eval/CSP warning names a chrome-extension source and is
+separate from the application's 429 responses. Application CSP was not weakened.
+
+Changes: `complaint-list.tsx`, student/admin/staff dashboard pages, common API error
+helper, new `request-error.test.ts`, and new `tests/browser/complaint-list.spec.ts`.
+The browser regressions cover all four list callers (student complaints, staff
+queue, admin triage, admin assignment), bounded initial requests, one request per
+filter/page change, safe 429 messages and explicit retry without a request loop.
+
+Validation: frontend unit tests passed (87 tests, nine files); lint, TypeScript,
+production build and repository/frontend formatting passed. The five new browser
+regressions passed in isolation. Final complete browser command:
+`$env:HOSTELFIX_TEST_PORT='27018'; $env:PLAYWRIGHT_CHANNEL='msedge'; npm.cmd run test:browser --prefix frontend`
+passed all nine tests in 60.0 seconds, including all four existing workflows.
+`npm.cmd run frontend:test` passed 87 tests; `frontend:lint`, `frontend:typecheck`,
+`frontend:build`, `frontend:format` and `format:check` passed. Type/build checks used
+the existing explicit HTTPS example API configuration. `git diff --check` passed.
+
+The same real demo reproduction after the fix made two successful initial complaint
+reads in four seconds, returned dashboard HTTP 200 and did not show the unavailable
+panel. The two development reads are consistent with React Strict Mode. The application
+was restored with `npm.cmd run start`; `npm.cmd run health` verified MongoDB on 27018,
+the API on 5000 and frontend on 3000. No commit or push was performed.
+
+A complete browser attempt was interrupted by another application frontend start
+competing with the test frontend for Next's shared development lock; the supervisor
+then shut down its owned database, producing 503 failures and a failed fixture
+cleanup. That interrupted run is not claimed as passing. Tests were rerun sequentially
+with the owned local database explicitly started. No unowned MongoDB or arbitrary
+data was deleted. Stop the managed application before browser tests, and restart it
+afterward; alternate ports do not remove Next's per-checkout development lock.
+
+Another intermediate full run exhausted the unchanged refresh limit because the new
+list tests unnecessarily used full-page navigation for every page switch. Those
+tests now exercise the application's normal navigation links, preserving the session
+and leaving refresh-specific behavior to the existing concurrent-refresh regression.
+All existing tests still execute; no limiter or test assertion was weakened. The
+final complete run passed after these test-isolation corrections.

@@ -22,6 +22,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/features/complaints/components/status-badge';
 import { PriorityBadge } from '@/features/complaints/components/priority-badge';
 import { getStudentDashboard } from '@/lib/api/complaints';
+import { getApiErrorMessage } from '@/lib/api/errors';
 import type {
   StudentDashboardData,
   ComplaintSummary,
@@ -45,10 +46,13 @@ function StudentDashboardContent() {
           setLoading(false);
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (active) {
           setError(
-            'Unable to load dashboard data. Please check your connection.'
+            getApiErrorMessage(
+              error,
+              'Unable to load dashboard data. Please check your connection.'
+            )
           );
           setLoading(false);
         }

@@ -25,6 +25,10 @@ export class ApiError extends Error {
   }
 }
 
+export function getApiErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof ApiError ? error.message : fallback;
+}
+
 export function normalizeApiError(body: unknown, response: Response): ApiError {
   const parsed = errorEnvelope.safeParse(body);
   const retryAfter = response.headers.get('Retry-After') ?? undefined;

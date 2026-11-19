@@ -103,6 +103,11 @@ database afterward only if it started it. Configure backend development environm
 values first. Package-level backend tests still require the owned database to be
 running. Infrastructure failures fail the command; they are not reported as skips.
 
+Stop the managed application with `npm.cmd run stop` before root or browser test
+runs, then restart it afterward. Next.js permits one development server per
+frontend checkout, so the test server on 3100 cannot share that lock with an
+application server on 3000.
+
 | Location      | Command                                        | Purpose                                                                                                       |
 | ------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | Root          | `npm.cmd test`                                 | Backend, frontend and browser suites, with owned database management.                                         |

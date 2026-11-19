@@ -20,6 +20,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/features/complaints/components/status-badge';
 import { PriorityBadge } from '@/features/complaints/components/priority-badge';
 import { getAdminDashboard } from '@/lib/api/complaints';
+import { getApiErrorMessage } from '@/lib/api/errors';
 import { AdminDashboardHistory } from '@/features/complaints/components/dashboard-history';
 import type {
   AdminDashboardData,
@@ -48,10 +49,13 @@ function AdminDashboardContent() {
           setLoading(false);
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (active) {
           setError(
-            'Unable to load administrator dashboard. Please check your connection.'
+            getApiErrorMessage(
+              error,
+              'Unable to load administrator dashboard. Please check your connection.'
+            )
           );
           setLoading(false);
         }
