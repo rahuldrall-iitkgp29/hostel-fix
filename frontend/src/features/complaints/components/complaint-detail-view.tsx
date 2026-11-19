@@ -15,14 +15,13 @@ import {
   UserCheck,
   Wrench,
   XCircle,
-  FileImage,
 } from 'lucide-react';
 import { useAuth } from '@/features/auth/context/auth-context';
 import {
   getComplaintDetail,
-  listComments,
+  getCommentsPage,
   addComment,
-  listActivities,
+  getActivitiesPage,
   transitionComplaint,
   assignComplaint,
   overridePriority,
@@ -47,6 +46,9 @@ import { TextareaField } from '@/components/ui/textarea-field';
 import { SelectField } from '@/components/ui/select-field';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatePanel } from '@/components/feedback/state-panel';
+import { PrivatePhoto } from './private-photo';
+import { EditComplaintForm } from './edit-complaint-form';
+import { PaginationControls } from '@/components/ui/pagination';
 import { ApiError } from '@/lib/api/errors';
 
 export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
@@ -56,6 +58,10 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
   const [complaint, setComplaint] = useState<ComplaintDetail | null>(null);
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [commentPage, setCommentPage] = useState(1);
+  const [activityPage, setActivityPage] = useState(1);
+  const [commentPages, setCommentPages] = useState(1);
+  const [activityPages, setActivityPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,6 +71,7 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
 
   // Dialog modals
   const [activeDialog, setActiveDialog] = useState<
+    | 'edit'
     | 'triage'
     | 'reject'
     | 'startWork'
@@ -97,14 +104,16 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
     let active = true;
     Promise.all([
       getComplaintDetail(apiClient, complaintId),
-      listComments(apiClient, complaintId),
-      listActivities(apiClient, complaintId),
+      getCommentsPage(apiClient, complaintId, commentPage),
+      getActivitiesPage(apiClient, complaintId, activityPage),
     ])
       .then(([detailRes, commentRes, activityRes]) => {
         if (active) {
           setComplaint(detailRes);
-          setComments(commentRes);
-          setActivities(activityRes);
+          setComments(commentRes.data);
+          setCommentPages(commentRes.meta.totalPages);
+          setActivities(activityRes.data);
+          setActivityPages(activityRes.meta.totalPages);
           setError(null);
           setLoading(false);
         }
@@ -120,7 +129,7 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
     return () => {
       active = false;
     };
-  }, [apiClient, complaintId, refreshKey]);
+  }, [apiClient, complaintId, refreshKey, commentPage, activityPage]);
 
   // Load eligible staff if admin opens assign dialog
   const openAssignModal = async () => {
@@ -152,7 +161,9 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
         expectedVersion: complaint.version,
         body: commentText.trim(),
       });
-      setComments([newC, ...comments]);
+      void newC;
+      setCommentPage(1);
+      reloadData();
       setCommentText('');
       // Increment version locally
       setComplaint({ ...complaint, version: complaint.version + 1 });
@@ -334,6 +345,11 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
 
           {/* Action buttons matching backend allowedActions */}
           <div className="flex flex-wrap items-center gap-2 pt-2 md:pt-0">
+            {allowedActions.includes('EDIT') && (
+              <Button type="button" onClick={() => setActiveDialog('edit')}>
+                Edit complaint
+              </Button>
+            )}
             {allowedActions.includes('TRIAGE') && (
               <Button
                 variant="primary"
@@ -370,7 +386,7 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
               </Button>
             )}
 
-            {allowedActions.includes('PRIORITY_OVERRIDE') && (
+            {allowedActions.includes('CHANGE_PRIORITY') && (
               <Button
                 variant="secondary"
                 onClick={() => {
@@ -545,27 +561,14 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
             )}
           </Card>
 
-          {/* Photos */}
-          {complaint.attachments && complaint.attachments.length > 0 && (
+          {complaint.attachments.length > 0 && (
             <Card className="space-y-4">
-              <h2 className="text-base font-semibold text-ink flex items-center gap-2">
-                <FileImage className="size-4 text-brand" /> Attached Photos (
-                {complaint.attachments.length})
+              <h2 className="font-semibold">
+                Attached Photos ({complaint.attachments.length})
               </h2>
               <div className="grid gap-4 sm:grid-cols-3">
-                {complaint.attachments.map((att) => (
-                  <div
-                    key={att.id}
-                    className="flex flex-col items-center justify-center rounded-xl border border-line bg-canvas p-4 text-center"
-                  >
-                    <FileImage className="size-8 text-brand mb-2" />
-                    <span className="truncate max-w-full text-xs font-medium text-ink">
-                      {att.originalName}
-                    </span>
-                    <span className="text-[10px] text-muted">
-                      {(att.sizeBytes / 1024).toFixed(1)} KB
-                    </span>
-                  </div>
+                {complaint.attachments.map((attachment) => (
+                  <PrivatePhoto key={attachment.id} attachment={attachment} />
                 ))}
               </div>
             </Card>
@@ -596,28 +599,37 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
             </h2>
 
             {/* Comment Form */}
-            <form onSubmit={handleAddComment} className="space-y-3">
-              <textarea
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                placeholder="Write a message, update, or question visible to student, staff, and admin..."
-                rows={3}
-                disabled={submittingComment}
-                className="w-full rounded-xl border border-line bg-surface p-3 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none"
-              />
-              <div className="flex justify-end">
-                <Button
-                  type="submit"
-                  variant="primary"
-                  loading={submittingComment}
-                  disabled={!commentText.trim()}
-                  className="text-xs"
-                >
-                  <Send className="size-3.5" /> Post comment
-                </Button>
-              </div>
-            </form>
+            {allowedActions.includes('COMMENT') && (
+              <form onSubmit={handleAddComment} className="space-y-3">
+                <textarea
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  placeholder="Write a message, update, or question visible to student, staff, and admin..."
+                  rows={3}
+                  disabled={submittingComment}
+                  className="w-full rounded-xl border border-line bg-surface p-3 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none"
+                />
+                <div className="flex justify-end">
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    loading={submittingComment}
+                    disabled={!commentText.trim()}
+                    className="text-xs"
+                  >
+                    <Send className="size-3.5" /> Post comment
+                  </Button>
+                </div>
+              </form>
+            )}
 
+            <PaginationControls
+              label="Comments"
+              page={commentPage}
+              totalPages={commentPages}
+              onPage={setCommentPage}
+              disabled={submittingComment}
+            />
             {/* Comments List */}
             {comments.length === 0 ? (
               <p className="text-center text-xs text-muted py-4 border-t border-line">
@@ -657,6 +669,12 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
               <ActivityIcon className="size-4 text-brand" /> Activity Timeline
             </h2>
 
+            <PaginationControls
+              label="Activity"
+              page={activityPage}
+              totalPages={activityPages}
+              onPage={setActivityPage}
+            />
             {activities.length === 0 ? (
               <p className="text-xs text-muted">No activities recorded yet.</p>
             ) : (
@@ -693,28 +711,44 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
         open={activeDialog !== null}
         onClose={() => setActiveDialog(null)}
         title={
-          activeDialog === 'triage'
-            ? 'Triage Complaint'
-            : activeDialog === 'reject'
-              ? 'Reject Complaint'
-              : activeDialog === 'startWork'
-                ? 'Start Work on Repair'
-                : activeDialog === 'resolve'
-                  ? 'Record Repair Resolution'
-                  : activeDialog === 'close'
-                    ? 'Confirm and Close Report'
-                    : activeDialog === 'assign'
-                      ? 'Assign Maintenance Staff'
-                      : activeDialog === 'priority'
-                        ? 'Override Priority'
-                        : activeDialog === 'reopen'
-                          ? 'Reopen Complaint'
-                          : activeDialog === 'feedback'
-                            ? 'Rate Repair Experience'
-                            : ''
+          activeDialog === 'edit'
+            ? 'Edit complaint'
+            : activeDialog === 'triage'
+              ? 'Triage Complaint'
+              : activeDialog === 'reject'
+                ? 'Reject Complaint'
+                : activeDialog === 'startWork'
+                  ? 'Start Work on Repair'
+                  : activeDialog === 'resolve'
+                    ? 'Record Repair Resolution'
+                    : activeDialog === 'close'
+                      ? 'Confirm and Close Report'
+                      : activeDialog === 'assign'
+                        ? 'Assign Maintenance Staff'
+                        : activeDialog === 'priority'
+                          ? 'Override Priority'
+                          : activeDialog === 'reopen'
+                            ? 'Reopen Complaint'
+                            : activeDialog === 'feedback'
+                              ? 'Rate Repair Experience'
+                              : ''
         }
       >
         <div className="space-y-4">
+          {activeDialog === 'edit' && (
+            <EditComplaintForm
+              key={complaint.version}
+              complaint={complaint}
+              onSaved={() => {
+                setActiveDialog(null);
+                reloadData();
+              }}
+              onConflict={() => {
+                setActiveDialog(null);
+                reloadData();
+              }}
+            />
+          )}
           {actionError && (
             <div
               role="alert"
@@ -783,7 +817,7 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
             />
           )}
 
-          {activeDialog === 'feedback' ? (
+          {activeDialog === 'edit' ? null : activeDialog === 'feedback' ? (
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-ink mb-1">
@@ -842,22 +876,24 @@ export function ComplaintDetailView({ complaintId }: { complaintId: string }) {
             />
           )}
 
-          <div className="flex justify-end gap-3 pt-3 border-t border-line">
-            <Button
-              variant="secondary"
-              onClick={() => setActiveDialog(null)}
-              disabled={submittingAction}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleExecuteAction}
-              loading={submittingAction}
-            >
-              Confirm
-            </Button>
-          </div>
+          {activeDialog !== 'edit' && (
+            <div className="flex justify-end gap-3 pt-3 border-t border-line">
+              <Button
+                variant="secondary"
+                onClick={() => setActiveDialog(null)}
+                disabled={submittingAction}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleExecuteAction}
+                loading={submittingAction}
+              >
+                Confirm
+              </Button>
+            </div>
+          )}
         </div>
       </Dialog>
     </div>

@@ -1,5 +1,18 @@
 import { z } from 'zod';
 import type { ApiClient } from './client';
+import {
+  attachmentSchema,
+  complaintSummarySchema,
+  complaintDetailSchema,
+  commentSchema,
+  activitySchema,
+  feedbackSchema,
+  categorySchema,
+  staffSchema,
+  studentDashboardSchema,
+  staffDashboardSchema,
+  adminDashboardSchema,
+} from '@/features/complaints/response-schemas';
 import type {
   ComplaintSummary,
   ComplaintDetail,
@@ -19,57 +32,46 @@ import type {
   CommentFormData,
 } from '@/features/complaints/schemas';
 
-const passThrough = z.unknown();
-
-function unwrapComplaint(data: unknown): ComplaintDetail {
-  if (data && typeof data === 'object' && 'complaint' in data) {
-    return (data as { complaint: ComplaintDetail }).complaint;
-  }
-  return data as ComplaintDetail;
-}
-
-function unwrapComment(data: unknown): CommentItem {
-  if (data && typeof data === 'object' && 'comment' in data) {
-    return (data as { comment: CommentItem }).comment;
-  }
-  return data as CommentItem;
-}
-
-function unwrapFeedback(data: unknown): FeedbackItem {
-  if (data && typeof data === 'object' && 'feedback' in data) {
-    return (data as { feedback: FeedbackItem }).feedback;
-  }
-  return data as FeedbackItem;
-}
-
 export async function getStudentDashboard(
   client: ApiClient,
   filters?: Record<string, string | number | boolean | null | undefined>
 ): Promise<StudentDashboardData> {
-  const response = await client.request('/dashboard/student', passThrough, {
-    query: filters,
-  });
-  return response.data as StudentDashboardData;
+  const response = await client.request(
+    '/dashboard/student',
+    studentDashboardSchema,
+    {
+      query: filters,
+    }
+  );
+  return response.data;
 }
 
 export async function getStaffDashboard(
   client: ApiClient,
   filters?: Record<string, string | number | boolean | null | undefined>
 ): Promise<StaffDashboardData> {
-  const response = await client.request('/dashboard/staff', passThrough, {
-    query: filters,
-  });
-  return response.data as StaffDashboardData;
+  const response = await client.request(
+    '/dashboard/staff',
+    staffDashboardSchema,
+    {
+      query: filters,
+    }
+  );
+  return response.data;
 }
 
 export async function getAdminDashboard(
   client: ApiClient,
   filters?: Record<string, string | number | boolean | null | undefined>
 ): Promise<AdminDashboardData> {
-  const response = await client.request('/dashboard/admin', passThrough, {
-    query: filters,
-  });
-  return response.data as AdminDashboardData;
+  const response = await client.request(
+    '/dashboard/admin',
+    adminDashboardSchema,
+    {
+      query: filters,
+    }
+  );
+  return response.data;
 }
 
 export async function listComplaints(
@@ -79,18 +81,9 @@ export async function listComplaints(
   data: ComplaintSummary[];
   meta: { page: number; limit: number; total: number; totalPages: number };
 }> {
-  const response = await client.request('/complaints', z.array(passThrough), {
+  return client.requestPage('/complaints', complaintSummarySchema, {
     query: filters,
   });
-  return {
-    data: response.data as ComplaintSummary[],
-    meta: response.meta as unknown as {
-      page: number;
-      limit: number;
-      total: number;
-      totalPages: number;
-    },
-  };
 }
 
 export async function getComplaintDetail(
@@ -99,9 +92,9 @@ export async function getComplaintDetail(
 ): Promise<ComplaintDetail> {
   const response = await client.request(
     `/complaints/${encodeURIComponent(complaintId)}`,
-    passThrough
+    z.object({ complaint: complaintDetailSchema })
   );
-  return unwrapComplaint(response.data);
+  return response.data.complaint;
 }
 
 export async function createComplaint(
@@ -130,11 +123,15 @@ export async function createComplaint(
     clientRequestId: data.clientRequestId,
   };
 
-  const response = await client.request('/complaints', passThrough, {
-    method: 'POST',
-    body: payload,
-  });
-  return unwrapComplaint(response.data);
+  const response = await client.request(
+    '/complaints',
+    z.object({ complaint: complaintDetailSchema }),
+    {
+      method: 'POST',
+      body: payload,
+    }
+  );
+  return response.data.complaint;
 }
 
 export async function editComplaint(
@@ -144,13 +141,13 @@ export async function editComplaint(
 ): Promise<ComplaintDetail> {
   const response = await client.request(
     `/complaints/${encodeURIComponent(complaintId)}`,
-    passThrough,
+    z.object({ complaint: complaintDetailSchema }),
     {
       method: 'PATCH',
       body: data,
     }
   );
-  return unwrapComplaint(response.data);
+  return response.data.complaint;
 }
 
 export async function listComments(
@@ -160,10 +157,10 @@ export async function listComments(
 ): Promise<CommentItem[]> {
   const response = await client.request(
     `/complaints/${encodeURIComponent(complaintId)}/comments`,
-    z.array(passThrough),
+    z.array(commentSchema),
     { query: pagination }
   );
-  return response.data as CommentItem[];
+  return response.data;
 }
 
 export async function addComment(
@@ -173,13 +170,13 @@ export async function addComment(
 ): Promise<CommentItem> {
   const response = await client.request(
     `/complaints/${encodeURIComponent(complaintId)}/comments`,
-    passThrough,
+    z.object({ comment: commentSchema }),
     {
       method: 'POST',
       body: data,
     }
   );
-  return unwrapComment(response.data);
+  return response.data.comment;
 }
 
 export async function listActivities(
@@ -189,10 +186,10 @@ export async function listActivities(
 ): Promise<ActivityItem[]> {
   const response = await client.request(
     `/complaints/${encodeURIComponent(complaintId)}/activity`,
-    z.array(passThrough),
+    z.array(activitySchema),
     { query: pagination }
   );
-  return response.data as ActivityItem[];
+  return response.data;
 }
 
 export async function transitionComplaint(
@@ -202,13 +199,13 @@ export async function transitionComplaint(
 ): Promise<ComplaintDetail> {
   const response = await client.request(
     `/complaints/${encodeURIComponent(complaintId)}/transitions`,
-    passThrough,
+    z.object({ complaint: complaintDetailSchema }),
     {
       method: 'POST',
       body: payload,
     }
   );
-  return unwrapComplaint(response.data);
+  return response.data.complaint;
 }
 
 export async function assignComplaint(
@@ -218,13 +215,13 @@ export async function assignComplaint(
 ): Promise<ComplaintDetail> {
   const response = await client.request(
     `/complaints/${encodeURIComponent(complaintId)}/assignment`,
-    passThrough,
+    z.object({ complaint: complaintDetailSchema }),
     {
       method: 'POST',
       body: payload,
     }
   );
-  return unwrapComplaint(response.data);
+  return response.data.complaint;
 }
 
 export async function overridePriority(
@@ -234,13 +231,13 @@ export async function overridePriority(
 ): Promise<ComplaintDetail> {
   const response = await client.request(
     `/complaints/${encodeURIComponent(complaintId)}/priority`,
-    passThrough,
+    z.object({ complaint: complaintDetailSchema }),
     {
       method: 'POST',
       body: payload,
     }
   );
-  return unwrapComplaint(response.data);
+  return response.data.complaint;
 }
 
 export async function reopenComplaint(
@@ -250,13 +247,13 @@ export async function reopenComplaint(
 ): Promise<ComplaintDetail> {
   const response = await client.request(
     `/complaints/${encodeURIComponent(complaintId)}/reopen`,
-    passThrough,
+    z.object({ complaint: complaintDetailSchema }),
     {
       method: 'POST',
       body: payload,
     }
   );
-  return unwrapComplaint(response.data);
+  return response.data.complaint;
 }
 
 export async function submitFeedback(
@@ -266,70 +263,54 @@ export async function submitFeedback(
 ): Promise<FeedbackItem> {
   const response = await client.request(
     `/complaints/${encodeURIComponent(complaintId)}/feedback`,
-    passThrough,
+    z.object({ feedback: feedbackSchema }),
     {
       method: 'POST',
       body: payload,
     }
   );
-  return unwrapFeedback(response.data);
+  return response.data.feedback;
 }
 
 export async function getCategories(
   client: ApiClient,
   hostelId: string
 ): Promise<CategoryItem[]> {
-  const response = await client.request('/categories', z.array(passThrough), {
-    query: { hostelId, limit: 100 },
-  });
-  return response.data as CategoryItem[];
+  const response = await client.request(
+    '/categories',
+    z.array(categorySchema),
+    {
+      query: { hostelId, limit: 100 },
+    }
+  );
+  return response.data;
 }
 
 export async function getAdminStaff(
   client: ApiClient,
   query: { hostelId: string; eligibleForComplaintId?: string }
 ): Promise<AdminStaffItem[]> {
-  const response = await client.request('/admin/staff', z.array(passThrough), {
+  const response = await client.request('/admin/staff', z.array(staffSchema), {
     query: { ...query, limit: 100 },
   });
-  return response.data as AdminStaffItem[];
+  return response.data;
 }
 
 export async function uploadAttachment(
   client: ApiClient,
-  file: File,
-  accessToken?: string | null
+  file: File
 ): Promise<AttachmentItem> {
   const formData = new FormData();
   formData.append('file', file);
-
-  const baseUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1';
-  const headers = new Headers({
-    Accept: 'application/json',
-    'X-CSRF-Protection': '1',
-  });
-  if (accessToken) {
-    headers.set('Authorization', `Bearer ${accessToken}`);
-  }
-
-  const response = await fetch(`${baseUrl}/uploads`, {
-    method: 'POST',
-    headers,
-    body: formData,
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    const errorBody: unknown = await response.json().catch(() => null);
-    throw new Error(
-      (errorBody as { error?: { message?: string } })?.error?.message ||
-        'Failed to upload photo'
-    );
-  }
-
-  const result = (await response.json()) as { data: AttachmentItem };
-  return result.data;
+  const response = await client.request(
+    '/uploads',
+    z.object({
+      attachment: attachmentSchema,
+      expiresAt: z.iso.datetime(),
+    }),
+    { method: 'POST', formData }
+  );
+  return response.data.attachment;
 }
 
 export async function deleteAttachment(
@@ -341,5 +322,38 @@ export async function deleteAttachment(
     {
       method: 'DELETE',
     }
+  );
+}
+
+export function getCommentsPage(
+  client: ApiClient,
+  complaintId: string,
+  page: number
+) {
+  return client.requestPage(
+    `/complaints/${encodeURIComponent(complaintId)}/comments`,
+    commentSchema,
+    { query: { page, limit: 20 } }
+  );
+}
+export function getActivitiesPage(
+  client: ApiClient,
+  complaintId: string,
+  page: number
+) {
+  return client.requestPage(
+    `/complaints/${encodeURIComponent(complaintId)}/activity`,
+    activitySchema,
+    { query: { page, limit: 20 } }
+  );
+}
+export function getAttachmentContent(
+  client: ApiClient,
+  attachmentId: string,
+  signal?: AbortSignal
+) {
+  return client.requestBlob(
+    `/uploads/${encodeURIComponent(attachmentId)}/content`,
+    { signal }
   );
 }

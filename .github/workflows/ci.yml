@@ -1,0 +1,48 @@
+name: HostelFix checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  application:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    env:
+      NODE_ENV: development
+      MONGODB_URI: mongodb://127.0.0.1:27017/hostelfix?replicaSet=rs0
+      TEST_MONGODB_URI: mongodb://127.0.0.1:27017/hostelfix_test?replicaSet=rs0
+      JWT_SECRET: ci-only-isolated-fixture-secret-at-least-32-bytes
+      CORS_ORIGIN: http://localhost:3000
+      COOKIE_SECURE: 'false'
+      UPLOAD_DIR: ${{ github.workspace }}\.local\ci-uploads
+      NEXT_PUBLIC_API_BASE_URL: https://api.hostelfix.example/api/v1
+      PLAYWRIGHT_CHANNEL: msedge
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.14.0'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+      - run: npm.cmd ci
+      - run: npm.cmd ci
+        working-directory: frontend
+      - name: Install owned local MongoDB
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/mongodb/install.ps1
+      - name: Start owned replica set
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/mongodb/start.ps1
+      - run: node scripts/mongodb/test-safety.js
+      - run: npm.cmd test
+      - run: npm.cmd run build
+      - run: npm.cmd run verify:production
+      - run: npm.cmd run format:check
+      - run: npm.cmd run lint
+        working-directory: frontend
+      - run: npm.cmd run typecheck
+        working-directory: frontend
+      - name: Stop owned MongoDB
+        if: always()
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/mongodb/stop.ps1

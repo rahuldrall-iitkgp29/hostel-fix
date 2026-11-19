@@ -28,6 +28,24 @@ export function validateApiBaseUrl(value: string | undefined): string {
   }
 }
 
+export function getConfiguredApiBaseUrl(
+  value = process.env.NEXT_PUBLIC_API_BASE_URL,
+  environment = process.env.NODE_ENV
+): string {
+  const base = validateApiBaseUrl(
+    value ||
+      (environment === 'production'
+        ? undefined
+        : 'http://localhost:5000/api/v1')
+  );
+  if (environment === 'production' && new URL(base).protocol !== 'https:')
+    throw new ApiError(
+      'Production API configuration requires HTTPS.',
+      'CONFIGURATION_ERROR'
+    );
+  return base;
+}
+
 export function buildApiUrl(
   baseUrl: string,
   path: string,

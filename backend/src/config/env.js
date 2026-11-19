@@ -1,4 +1,5 @@
 const path = require('node:path');
+const { isIP } = require('node:net');
 const dotenv = require('dotenv');
 const { z } = require('zod');
 const { mongo } = require('mongoose');
@@ -47,6 +48,20 @@ function isMongoUri(value) {
 
 const fixedInteger = (value) =>
   z.literal(String(value)).default(String(value)).transform(Number);
+function validProxy(value) {
+  if (value === '' || value === 'loopback') return true;
+  return value.split(',').every((entry) => {
+    const [address, prefix] = entry.trim().split('/');
+    const family = isIP(address);
+    return (
+      Boolean(family) &&
+      (prefix === undefined ||
+        (/^\d+$/.test(prefix) &&
+          Number(prefix) > 0 &&
+          Number(prefix) <= (family === 4 ? 32 : 128)))
+    );
+  });
+}
 const envSchema = z
   .object({
     NODE_ENV: z
@@ -70,6 +85,13 @@ const envSchema = z
           value.trim().length > 0 && Buffer.byteLength(value, 'utf8') >= 32
       ),
     CORS_ORIGIN: z.string().refine(isOrigin),
+    TRUST_PROXY: z
+      .string()
+      .default('')
+      .refine(validProxy)
+      .transform((value) =>
+        value ? value.split(',').map((entry) => entry.trim()) : false
+      ),
     UPLOAD_DIR: z.string().min(1).refine(path.isAbsolute),
     COOKIE_DOMAIN: z.preprocess(
       (value) => (value === '' ? undefined : value),
@@ -90,6 +112,19 @@ const envSchema = z
       .default('info'),
   })
   .superRefine((env, ctx) => {
+    if (env.COOKIE_DOMAIN && isOrigin(env.CORS_ORIGIN)) {
+      const domain = env.COOKIE_DOMAIN.replace(/^\./, '').toLowerCase();
+      const hostname = new URL(env.CORS_ORIGIN).hostname.toLowerCase();
+      if (
+        !domain.includes('.') ||
+        (hostname !== domain && !hostname.endsWith(`.${domain}`))
+      )
+        ctx.addIssue({
+          code: 'custom',
+          path: ['COOKIE_DOMAIN'],
+          message: 'Cookie domain must match the frontend site.',
+        });
+    }
     if (env.NODE_ENV === 'test') {
       if (!isTestDatabaseUri(env.TEST_MONGODB_URI)) {
         ctx.addIssue({

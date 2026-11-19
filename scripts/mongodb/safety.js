@@ -7,17 +7,25 @@ const backendRequire = createRequire(
   path.join(projectRoot, 'backend/package.json')
 );
 const { parse } = backendRequire('dotenv');
-const dataDirectory = path.join(projectRoot, '.local/mongodb-data');
-const configPath = path.join(projectRoot, '.local/mongodb-runtime/mongod.cfg');
+const { TEST_PORT } = backendRequire('./src/config/testDatabase');
+const localDirectory =
+  TEST_PORT === '27017' ? '.local' : `.local/mongodb-test-${TEST_PORT}`;
+const dataDirectory = path.join(projectRoot, localDirectory, 'mongodb-data');
+const configPath = path.join(
+  projectRoot,
+  localDirectory,
+  'mongodb-runtime/mongod.cfg'
+);
 const statePath = path.join(
   projectRoot,
-  '.local/mongodb-runtime/instance.json'
+  localDirectory,
+  'mongodb-runtime/instance.json'
 );
 const executable = path.join(
   projectRoot,
   'tools/mongodb/mongodb-win32-x86_64-windows-8.0.34/bin/mongod.exe'
 );
-const member = '127.0.0.1:27017';
+const member = `127.0.0.1:${TEST_PORT}`;
 const expectedUris = Object.freeze({
   MONGODB_URI: `mongodb://${member}/hostelfix?replicaSet=rs0`,
   TEST_MONGODB_URI: `mongodb://${member}/hostelfix_test?replicaSet=rs0`,
@@ -75,12 +83,12 @@ function validateOwnership(state, parsed, serverStatus) {
   ensure(
     samePath(
       parsed.systemLog?.path,
-      path.join(projectRoot, '.local/mongodb-logs/mongod.log')
+      path.join(projectRoot, localDirectory, 'mongodb-logs/mongod.log')
     ),
     'MongoDB log path does not belong to this checkout.'
   );
   ensure(
-    parsed.net?.bindIp === '127.0.0.1' && parsed.net.port === 27017,
+    parsed.net?.bindIp === '127.0.0.1' && parsed.net.port === Number(TEST_PORT),
     'MongoDB is not bound exclusively to the configured loopback endpoint.'
   );
   // getCmdLineOpts reports --replSet as replSet, and YAML as replSetName.

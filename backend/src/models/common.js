@@ -1,4 +1,5 @@
 const { Schema } = require('mongoose');
+const { addDemoOwnership } = require('./demoOwnership');
 
 const integer = (min = 1, max = Number.MAX_SAFE_INTEGER) => ({
   type: Number,
@@ -80,6 +81,7 @@ function modelSchema(
             'ipAddress',
             'storageKey',
             'clientRequestHash',
+            'demoSeedOwner',
           ])
             delete value[field];
           return value;
@@ -87,6 +89,7 @@ function modelSchema(
       },
     }
   );
+  addDemoOwnership(schema);
 
   schema.post('init', function () {
     this.$locals.persistedVersion = this.version;

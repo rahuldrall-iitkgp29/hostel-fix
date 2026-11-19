@@ -7,15 +7,13 @@ const { testEnv } = require('../helpers/env.helper');
 function fixture(hello = {}) {
   const connection = new EventEmitter();
   connection.readyState = 0;
-  const command = vi
-    .fn()
-    .mockResolvedValue({
-      setName: 'rs0',
-      isWritablePrimary: true,
-      logicalSessionTimeoutMinutes: 30,
-      maxWireVersion: 25,
-      ...hello,
-    });
+  const command = vi.fn().mockResolvedValue({
+    setName: 'rs0',
+    isWritablePrimary: true,
+    logicalSessionTimeoutMinutes: 30,
+    maxWireVersion: 25,
+    ...hello,
+  });
   connection.db = {
     admin: () => ({ command }),
     command: vi.fn().mockResolvedValue({ ok: 1 }),
@@ -71,9 +69,9 @@ test.each(['development', 'test', 'production'])(
       autoIndex: mode !== 'production',
       bufferCommands: false,
       serverSelectionTimeoutMS: 5000,
-      timeoutMS: 5000,
+      socketTimeoutMS: 5000,
     });
-    expect(command).toHaveBeenCalledWith({ hello: 1 }, { timeoutMS: 5000 });
+    expect(command).toHaveBeenCalledWith({ hello: 1 }, { maxTimeMS: 5000 });
     await db.check();
     await db.disconnect();
     expect(connection.close).toHaveBeenCalledOnce();

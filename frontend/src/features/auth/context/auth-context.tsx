@@ -3,16 +3,16 @@
 import {
   createContext,
   useContext,
-  useState,
   useEffect,
-  useCallback,
   useMemo,
+  useSyncExternalStore,
   type ReactNode,
 } from 'react';
 import { useRouter } from 'next/navigation';
 import { createApiClient, type ApiClient } from '@/lib/api/client';
-import { validateApiBaseUrl } from '@/lib/api/url';
+import { getConfiguredApiBaseUrl } from '@/lib/api/url';
 import { loginUser, logoutUser, refreshSession } from '@/lib/api/auth';
+import { createSessionStore, emptySession } from '../session-store';
 import type { UserSelf, AuthResponse } from '../types';
 import type { LoginFormData } from '../schemas';
 
@@ -26,183 +26,80 @@ type AuthContextValue = {
   updateUser: (user: UserSelf) => void;
   apiClient: ApiClient;
 };
-
 const AuthContext = createContext<AuthContextValue | null>(null);
-
-let inMemoryAccessToken: string | null = null;
-let inFlightRefreshPromise: Promise<string | null> | null = null;
-let refreshTimer: NodeJS.Timeout | null = null;
-
-function clearRefreshTimer() {
-  if (refreshTimer) {
-    clearTimeout(refreshTimer);
-    refreshTimer = null;
-  }
-}
-
-function getBaseUrl(): string {
-  return validateApiBaseUrl(
-    process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1'
-  );
-}
-
-// Module-level unauthenticated client for refresh & login
-const unauthClient = createApiClient({
-  baseUrl: getBaseUrl(),
-});
-
-async function executeRefresh(): Promise<string | null> {
-  if (inFlightRefreshPromise) {
-    return inFlightRefreshPromise;
-  }
-
-  inFlightRefreshPromise = (async () => {
-    try {
-      const authData = await refreshSession(unauthClient);
-      inMemoryAccessToken = authData.accessToken;
-      clearRefreshTimer();
-      const delaySeconds = Math.max(
-        authData.expiresIn - 60,
-        authData.expiresIn / 2
-      );
-      refreshTimer = setTimeout(() => {
-        void executeRefresh();
-      }, delaySeconds * 1000);
-      return authData.accessToken;
-    } catch {
-      inMemoryAccessToken = null;
-      clearRefreshTimer();
-      return null;
-    } finally {
-      inFlightRefreshPromise = null;
+function makeStore() {
+  const baseUrl = getConfiguredApiBaseUrl();
+  const publicClient = createApiClient({ baseUrl });
+  const channel =
+    typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined'
+      ? new BroadcastChannel('hostelfix-session')
+      : null;
+  const store = createSessionStore(
+    {
+      refresh: () => refreshSession(publicClient),
+      login: (data) => loginUser(publicClient, data),
+      logout: (token) =>
+        logoutUser(createApiClient({ baseUrl, getAccessToken: () => token })),
+    },
+    {
+      run: (work) =>
+        typeof navigator !== 'undefined' && navigator.locks
+          ? navigator.locks.request('hostelfix-session', work)
+          : work(),
+      broadcast: () => channel?.postMessage('logout'),
     }
-  })();
-
-  return inFlightRefreshPromise;
+  );
+  if (channel)
+    channel.onmessage = (event: MessageEvent<unknown>) => {
+      if (event.data === 'logout') store.receiveLogout();
+    };
+  return store;
 }
-
+let browserStore: ReturnType<typeof makeStore> | undefined;
+function getStore() {
+  // Authenticated state is never shared between server-rendered requests.
+  if (typeof window === 'undefined') return makeStore();
+  return (browserStore ??= makeStore());
+}
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const [user, setUser] = useState<UserSelf | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-
-  const refresh = useCallback(async () => {
-    const token = await executeRefresh();
-    setAccessToken(token);
-    return token;
-  }, []);
-
-  const apiClient = useMemo(() => {
-    return createApiClient({
-      baseUrl: getBaseUrl(),
-      getAccessToken: () => inMemoryAccessToken,
-      onUnauthorized: executeRefresh,
-    });
-  }, []);
-
-  const login = useCallback(
-    async (data: LoginFormData): Promise<AuthResponse> => {
-      const authData = await loginUser(unauthClient, data);
-      inMemoryAccessToken = authData.accessToken;
-      setAccessToken(authData.accessToken);
-      setUser(authData.user);
-      clearRefreshTimer();
-      const delaySeconds = Math.max(
-        authData.expiresIn - 60,
-        authData.expiresIn / 2
-      );
-      refreshTimer = setTimeout(() => {
-        void executeRefresh();
-      }, delaySeconds * 1000);
-      return authData;
-    },
-    []
+  const store = useMemo(() => getStore(), []);
+  const snapshot = useSyncExternalStore(
+    store.subscribe,
+    store.getSnapshot,
+    () => emptySession
   );
-
-  const logout = useCallback(async () => {
-    clearRefreshTimer();
-    inMemoryAccessToken = null;
-    try {
-      await logoutUser(apiClient);
-    } catch {
-      // Ignore network errors on logout
-    } finally {
-      setAccessToken(null);
-      setUser(null);
-      router.push('/login');
-    }
-  }, [apiClient, router]);
-
-  const updateUser = useCallback((updated: UserSelf) => {
-    setUser(updated);
-  }, []);
-
-  // Initial session check
+  const apiClient = useMemo(
+    () =>
+      createApiClient({
+        baseUrl: getConfiguredApiBaseUrl(),
+        getAccessToken: () => store.getSnapshot().accessToken,
+        ensureAccessToken: store.ensureAccessToken,
+        onUnauthorized: store.refresh,
+      }),
+    [store]
+  );
   useEffect(() => {
-    let mounted = true;
-    void refreshSession(unauthClient)
-      .then((authData) => {
-        if (!mounted) return;
-        inMemoryAccessToken = authData.accessToken;
-        setAccessToken(authData.accessToken);
-        setUser(authData.user);
-        clearRefreshTimer();
-        const delaySeconds = Math.max(
-          authData.expiresIn - 60,
-          authData.expiresIn / 2
-        );
-        refreshTimer = setTimeout(() => {
-          void executeRefresh();
-        }, delaySeconds * 1000);
-      })
-      .catch(() => {
-        if (!mounted) return;
-        inMemoryAccessToken = null;
-        setAccessToken(null);
-        setUser(null);
-      })
-      .finally(() => {
-        if (mounted) setIsLoading(false);
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  const contextValue = useMemo<AuthContextValue>(
-    () => ({
-      user,
-      accessToken,
-      isLoading,
-      login,
-      logout,
-      refresh,
-      updateUser,
-      apiClient,
-    }),
-    [
-      user,
-      accessToken,
-      isLoading,
-      login,
-      logout,
-      refresh,
-      updateUser,
-      apiClient,
-    ]
-  );
-
-  return (
-    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
-  );
+    void store.initialize();
+  }, [store]);
+  const value: AuthContextValue = {
+    ...snapshot,
+    apiClient,
+    login: store.login,
+    refresh: store.refresh,
+    updateUser: store.updateUser,
+    logout: async () => {
+      try {
+        await store.logout();
+      } finally {
+        router.push('/login');
+      }
+    },
+  };
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
-
 export function useAuth(): AuthContextValue {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 }

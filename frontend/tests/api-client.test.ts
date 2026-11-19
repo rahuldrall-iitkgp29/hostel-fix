@@ -62,21 +62,19 @@ describe('API transport', () => {
   );
 
   it('preserves structured errors, field paths, request IDs and retry headers', async () => {
-    const fetcher = vi
-      .fn<typeof fetch>()
-      .mockResolvedValue(
-        Response.json(
-          {
-            error: {
-              code: 'VALIDATION_ERROR',
-              message: 'Check the highlighted fields.',
-              requestId,
-              fields: [{ path: 'email', message: 'Invalid email.' }],
-            },
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json(
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Check the highlighted fields.',
+            requestId,
+            fields: [{ path: 'email', message: 'Invalid email.' }],
           },
-          { status: 422, headers: { 'Retry-After': '30' } }
-        )
-      );
+        },
+        { status: 422, headers: { 'Retry-After': '30' } }
+      )
+    );
     await expect(
       createApiClient({ baseUrl, fetcher }).request('/health', schema)
     ).rejects.toMatchObject({
@@ -89,20 +87,18 @@ describe('API transport', () => {
   });
 
   it('does not retry unauthorized requests or invent a refresh call', async () => {
-    const fetcher = vi
-      .fn<typeof fetch>()
-      .mockResolvedValue(
-        Response.json(
-          {
-            error: {
-              code: 'TOKEN_EXPIRED',
-              message: 'Session expired.',
-              requestId,
-            },
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json(
+        {
+          error: {
+            code: 'TOKEN_EXPIRED',
+            message: 'Session expired.',
+            requestId,
           },
-          { status: 401 }
-        )
-      );
+        },
+        { status: 401 }
+      )
+    );
     await expect(
       createApiClient({ baseUrl, fetcher }).request('/health', schema)
     ).rejects.toMatchObject({ code: 'TOKEN_EXPIRED', status: 401 });
@@ -119,6 +115,26 @@ describe('API transport', () => {
         body: {},
       })
     ).rejects.toMatchObject({ code: 'NETWORK_ERROR' });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it('recovers session state after a rejected mutation without replaying the write', async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        Response.json(
+          { error: { code: 'TOKEN_EXPIRED', message: 'Expired.', requestId } },
+          { status: 401 }
+        )
+      );
+    const onUnauthorized = vi.fn().mockResolvedValue('refreshed');
+    await expect(
+      createApiClient({ baseUrl, fetcher, onUnauthorized }).requestNoContent(
+        '/test-resource',
+        { method: 'POST', body: {} }
+      )
+    ).rejects.toMatchObject({ status: 401 });
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
 

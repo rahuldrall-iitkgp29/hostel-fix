@@ -38,11 +38,15 @@ function createDatabase(
           bufferCommands: false,
           serverSelectionTimeoutMS: timeoutMs,
           connectTimeoutMS: timeoutMs,
-          timeoutMS: timeoutMs,
+          socketTimeoutMS: timeoutMs,
         });
-        const hello = await connection.db
-          .admin()
-          .command({ hello: 1 }, { timeoutMS: timeoutMs });
+        const hello = await withTimeout(
+          () =>
+            connection.db
+              .admin()
+              .command({ hello: 1 }, { maxTimeMS: timeoutMs }),
+          timeoutMs
+        );
         if (
           !hello.setName ||
           !hello.isWritablePrimary ||
@@ -67,7 +71,7 @@ function createDatabase(
     if (closing || connection.readyState !== 1) throw unavailable();
     try {
       await withTimeout(
-        () => connection.db.command({ ping: 1 }, { timeoutMS: 1000 }),
+        () => connection.db.command({ ping: 1 }, { maxTimeMS: 1000 }),
         1000
       );
     } catch {

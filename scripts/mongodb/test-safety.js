@@ -7,6 +7,7 @@ const {
   configPath,
   executable,
   expectedUris,
+  member,
   validateUris,
   validateOwnership,
   validateReplicaConfig,
@@ -36,7 +37,13 @@ for (const [name, value] of [
   ],
   ['wrong replica set', expectedUris.TEST_MONGODB_URI.replace('rs0', 'rs1')],
   ['no replica set', expectedUris.TEST_MONGODB_URI.split('?')[0]],
-  ['alternate port', expectedUris.TEST_MONGODB_URI.replace('27017', '27018')],
+  [
+    'alternate port',
+    expectedUris.TEST_MONGODB_URI.replace(
+      member,
+      `127.0.0.1:${Number(member.split(':')[1]) === 65535 ? 65534 : Number(member.split(':')[1]) + 1}`
+    ),
+  ],
   [
     'extra options',
     `${expectedUris.TEST_MONGODB_URI}&proxyHost=private.invalid`,
@@ -63,8 +70,10 @@ check('reject nonlocal development URI before connection', () =>
 const state = { pid: 123, projectRoot, executable, configPath };
 const parsed = {
   storage: { dbPath: dataDirectory },
-  systemLog: { path: path.join(projectRoot, '.local/mongodb-logs/mongod.log') },
-  net: { bindIp: '127.0.0.1', port: 27017 },
+  systemLog: {
+    path: path.join(path.dirname(dataDirectory), 'mongodb-logs/mongod.log'),
+  },
+  net: { bindIp: '127.0.0.1', port: Number(member.split(':')[1]) },
   replication: { replSetName: 'rs0' },
 };
 check('accept owned local process configuration', () =>
@@ -113,24 +122,24 @@ check('reject public network binding', () =>
     () =>
       validateOwnership(
         state,
-        { ...parsed, net: { bindIp: '0.0.0.0', port: 27017 } },
+        {
+          ...parsed,
+          net: { bindIp: '0.0.0.0', port: Number(member.split(':')[1]) },
+        },
         { pid: 123 }
       ),
     SetupError
   )
 );
 check('accept one local rs0 member', () =>
-  validateReplicaConfig({ _id: 'rs0', members: [{ host: '127.0.0.1:27017' }] })
+  validateReplicaConfig({ _id: 'rs0', members: [{ host: member }] })
 );
 check('reject unexpected replica-set members', () =>
   assert.throws(
     () =>
       validateReplicaConfig({
         _id: 'rs0',
-        members: [
-          { host: '127.0.0.1:27017' },
-          { host: 'remote.invalid:27017' },
-        ],
+        members: [{ host: member }, { host: 'remote.invalid:27017' }],
       }),
     SetupError
   )
@@ -140,7 +149,7 @@ check('reject another replica set', () =>
     () =>
       validateReplicaConfig({
         _id: 'other',
-        members: [{ host: '127.0.0.1:27017' }],
+        members: [{ host: member }],
       }),
     SetupError
   )

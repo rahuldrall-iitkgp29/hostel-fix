@@ -1,4 +1,6 @@
 const { randomUUID } = require('node:crypto');
+const fs = require('node:fs/promises');
+const path = require('node:path');
 const request = require('supertest');
 const { createApp } = require('../../src/app');
 const {
@@ -106,14 +108,47 @@ async function openAuthDatabase() {
       // Route-created IDs are discovered only through this run's random emails.
       const users = await models.User.find({
         email: { $in: [...emails] },
-      }).select('_id');
+      })
+        .select('_id')
+        .lean();
       for (const account of users)
         fixture.track(models.User, { _id: account._id });
       const records = await models.Session.find({
         userId: { $in: users.map((account) => account._id) },
-      }).select('_id');
+      })
+        .select('_id')
+        .lean();
       for (const record of records)
         fixture.track(models.Session, { _id: record._id });
+      // Discover HTTP-created business records only through this fixture's
+      // exact random user IDs, including when an assertion failed mid-journey.
+      const userIds = users.map((account) => account._id);
+      const complaints = await models.Complaint.find({
+        ownerId: { $in: userIds },
+      })
+        .select('_id')
+        .lean();
+      const complaintIds = complaints.map((doc) => doc._id);
+      for (const doc of complaints)
+        fixture.track(models.Complaint, { _id: doc._id });
+      for (const name of ['Activity', 'Comment', 'Feedback']) {
+        for (const doc of await models[name]
+          .find({ complaintId: { $in: complaintIds } })
+          .select('_id')
+          .lean())
+          fixture.track(models[name], { _id: doc._id });
+      }
+      for (const doc of await models.Attachment.find({
+        ownerId: { $in: userIds },
+      })
+        .select('+storageKey')
+        .lean()) {
+        fixture.track(models.Attachment, { _id: doc._id });
+        if (/^[a-f\d-]{36}\.(?:jpg|jpeg|png|webp)$/i.test(doc.storageKey))
+          await fs
+            .unlink(path.join(config.UPLOAD_DIR, doc.storageKey))
+            .catch(() => {});
+      }
     } finally {
       await fixture.close();
     }

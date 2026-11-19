@@ -5,6 +5,8 @@ const { createStorage } = require('./config/storage');
 const { createLogger } = require('./config/logger');
 const { unavailable } = require('./utils/AppError');
 const { withTimeout } = require('./utils/withTimeout');
+const { createModels, verifyIndexes } = require('./models');
+const { startUploadCleanup } = require('./services/uploadCleanup.service');
 
 async function startServer({
   config = loadEnv(),
@@ -17,8 +19,11 @@ async function startServer({
   let shuttingDown = false;
   let shutdownPromise;
   let server;
+  let stopCleanup;
   try {
     await database.connect();
+    if (config.NODE_ENV === 'production')
+      await verifyIndexes(createModels(database.connection));
     await withTimeout(() => storage.prepare(), 5000);
     const app = createApp({
       config,
@@ -35,6 +40,12 @@ async function startServer({
         resolve(listener);
       });
     });
+    if (database.connection?.readyState === 1)
+      stopCleanup = startUploadCleanup({
+        config,
+        models: createModels(database.connection),
+        logger,
+      });
   } catch {
     await database.disconnect().catch(() => {});
     throw unavailable();
@@ -57,6 +68,8 @@ async function startServer({
           });
         });
       } finally {
+        if (stopCleanup)
+          await withTimeout(stopCleanup, shutdownMs).catch(() => {});
         await withTimeout(() => database.disconnect(), shutdownMs);
       }
     })().catch(() => {

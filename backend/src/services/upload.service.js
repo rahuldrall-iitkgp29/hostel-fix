@@ -4,82 +4,105 @@ const { randomUUID } = require('node:crypto');
 const { AppError, unavailable } = require('../utils/AppError');
 const { validateImage } = require('../utils/imageValidation');
 const { attachment: projectAttachment } = require('../models/projections');
-const { runTransaction } = require('../utils/transactions');
+const { authorizedTransaction } = require('../utils/authorizedTransaction');
+const { removeTemporaryUpload } = require('../utils/temporaryUploads');
 
-function createUploadService({ connection, models, config }) {
+function createUploadService({ connection, models, config, sessions }) {
   async function createUpload({ file, user }) {
-    if (user.role !== 'STUDENT') {
-      throw new AppError(403, 'FORBIDDEN', 'Only students can stage uploads.');
-    }
-
-    const unattachedCount = await models.Attachment.countDocuments({
-      ownerId: user._id,
-      complaintId: null,
-    });
-    if (unattachedCount >= 10) {
-      throw new AppError(
-        409,
-        'UPLOAD_QUOTA_EXCEEDED',
-        'Upload quota exceeded (maximum 10 unattached uploads).'
+    let targetPath;
+    let ownsTarget = false;
+    let saved = false;
+    try {
+      if (user.role !== 'STUDENT')
+        throw new AppError(
+          403,
+          'FORBIDDEN',
+          'Only students can stage uploads.'
+        );
+      let buffer;
+      try {
+        buffer = await fs.readFile(file.filepath);
+      } catch {
+        throw unavailable();
+      }
+      const { mimeType, width, height, sizeBytes } = validateImage(buffer);
+      let originalName = path
+        .basename(file.originalFilename || 'upload.jpg')
+        .replace(/[\x00-\x1f\x7f/\\<>:"|?*]/g, '_')
+        .trim()
+        .slice(0, 255);
+      if (!originalName || /^\.+$/.test(originalName))
+        originalName = 'upload.jpg';
+      const ext =
+        mimeType === 'image/png'
+          ? '.png'
+          : mimeType === 'image/webp'
+            ? '.webp'
+            : '.jpg';
+      const storageKey = `${randomUUID()}${ext}`;
+      targetPath = path.join(config.UPLOAD_DIR, storageKey);
+      try {
+        await fs.mkdir(config.UPLOAD_DIR, { recursive: true });
+        const handle = await fs.open(targetPath, 'wx', 0o600);
+        ownsTarget = true;
+        try {
+          await handle.writeFile(buffer);
+        } finally {
+          await handle.close();
+        }
+      } catch {
+        throw unavailable();
+      }
+      const attachment = await authorizedTransaction(
+        connection,
+        sessions,
+        user,
+        async (session) => {
+          const count = await models.Attachment.countDocuments({
+            ownerId: user._id,
+            complaintId: null,
+          }).session(session);
+          if (count >= 10)
+            throw new AppError(
+              409,
+              'UPLOAD_QUOTA_EXCEEDED',
+              'Upload quota exceeded (maximum 10 unattached uploads).'
+            );
+          const record = new models.Attachment({
+            ownerId: user._id,
+            originalName,
+            mimeType,
+            sizeBytes,
+            width,
+            height,
+            storageKey,
+          });
+          await record.save({ session });
+          return record;
+        }
       );
-    }
-
-    let buffer;
-    try {
-      buffer = await fs.readFile(file.filepath);
-    } catch {
-      throw unavailable();
-    }
-
-    const { mimeType, width, height, sizeBytes } = validateImage(buffer);
-
-    let originalName = path
-      .basename(file.originalFilename || 'upload.jpg')
-      .replace(/[\x00-\x1f\x7f/\\<>:"|?*]/g, '_')
-      .trim();
-    if (!originalName || /^\.+$/.test(originalName)) {
-      originalName = 'upload.jpg';
-    }
-
-    const ext =
-      mimeType === 'image/png'
-        ? '.png'
-        : mimeType === 'image/webp'
-          ? '.webp'
-          : '.jpg';
-    const storageKey = `${randomUUID()}${ext}`;
-    const targetPath = path.join(config.UPLOAD_DIR, storageKey);
-
-    try {
-      await fs.mkdir(config.UPLOAD_DIR, { recursive: true });
-      await fs.writeFile(targetPath, buffer, { flag: 'wx', mode: 0o600 });
-    } catch {
-      throw unavailable();
+      saved = true;
+      return {
+        attachment: projectAttachment(attachment),
+        expiresAt: attachment.expiresAt.toISOString(),
+      };
     } finally {
-      await fs.unlink(file.filepath).catch(() => {});
+      await removeTemporaryUpload(file.filepath);
+      if (ownsTarget && !saved) {
+        // An unknown transaction commit outcome may have persisted the record.
+        // Never delete content until the database proves it is unreferenced.
+        try {
+          if (
+            !(await models.Attachment.exists({
+              storageKey: path.basename(targetPath),
+            }))
+          )
+            await fs.unlink(targetPath);
+        } catch {
+          /* The orphan cleanup worker retries after database recovery. */
+        }
+      }
     }
-
-    let attachment;
-    try {
-      attachment = new models.Attachment({
-        ownerId: user._id,
-        originalName,
-        mimeType,
-        sizeBytes,
-        width,
-        height,
-        storageKey,
-      });
-      await attachment.save();
-    } catch (error) {
-      await fs.unlink(targetPath).catch(() => {});
-      throw error;
-    }
-
-    return {
-      attachment: projectAttachment(attachment),
-      expiresAt: attachment.expiresAt.toISOString(),
-    };
   }
 
   async function getContent(attachmentId, user) {
@@ -155,8 +178,21 @@ function createUploadService({ connection, models, config }) {
       );
     }
 
-    await runTransaction(connection, async (session) => {
-      await models.Attachment.deleteOne({ _id: attachment._id }, { session });
+    await authorizedTransaction(connection, sessions, user, async (session) => {
+      const current =
+        await models.Attachment.findById(attachmentId).session(session);
+      if (!current)
+        throw new AppError(404, 'NOT_FOUND', 'Attachment not found.');
+      if (current.complaintId)
+        throw new AppError(
+          409,
+          'ATTACHMENT_ALREADY_BOUND',
+          'Bound attachments cannot be deleted.'
+        );
+      await models.Attachment.deleteOne(
+        { _id: current._id, complaintId: null },
+        { session }
+      );
     });
 
     const filePath = path.join(config.UPLOAD_DIR, attachment.storageKey);

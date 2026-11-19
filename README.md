@@ -1,299 +1,300 @@
 # HostelFix
 
-JavaScript/CommonJS backend for hostel maintenance. Product contracts are in
-[prd.md](prd.md); the active backend queue and verified work are in
-[docs-backend/task.md](docs-backend/task.md) and [docs-backend/history.md](docs-backend/history.md).
+Hostel maintenance reporting with an Express/Mongoose API and a Next.js frontend.
+The product/API contracts are in [prd.md](prd.md). Frontend documentation is in
+[frontend/docs-frontend/README.md](frontend/docs-frontend/README.md). The temporary
+implementation verification report is [analysis.md](analysis.md).
 
-## Current backend (P0 Complete)
+## Runtime and installation
 
-The backend implements all **33 P0 REST endpoints** under `/api/v1` matching the PRD specification:
-
-| Area           | Method / Path                                      | Role / Access        | Purpose                                                                             |
-| -------------- | -------------------------------------------------- | -------------------- | ----------------------------------------------------------------------------------- |
-| **Health**     | `GET /api/v1/health`                               | Public               | Process liveness probe.                                                             |
-| **Health**     | `GET /api/v1/health/ready`                         | Public               | Database & private storage readiness probe.                                         |
-| **Auth**       | `POST /api/v1/auth/register`                       | Public + CSRF        | Student registration with enrollment code verification.                             |
-| **Auth**       | `POST /api/v1/auth/login`                          | Public + CSRF        | Creates session, returns JWT and sets `hf_refresh` cookie.                          |
-| **Auth**       | `POST /api/v1/auth/refresh`                        | Refresh cookie       | Rotates refresh token, detects reuse, and revokes compromised family.               |
-| **Auth**       | `POST /api/v1/auth/logout`                         | Bearer / Cookie      | Revokes addressed session(s) and clears cookie.                                     |
-| **Auth**       | `GET /api/v1/auth/me`                              | Authenticated        | Current session user profile.                                                       |
-| **Users**      | `GET /api/v1/users/me`                             | Authenticated        | Profile view.                                                                       |
-| **Users**      | `PATCH /api/v1/users/me`                           | Authenticated + CSRF | Updates editable profile fields (`name`, `phone`) with version check.               |
-| **Users**      | `POST /api/v1/users/me/password`                   | Authenticated + CSRF | Password change, revokes all sessions, forces re-login.                             |
-| **Catalog**    | `GET /api/v1/catalog/hostels`                      | Public               | Paginated list of active hostels.                                                   |
-| **Catalog**    | `GET /api/v1/catalog/hostels/:hostelId/blocks`     | Public               | Active blocks in a hostel.                                                          |
-| **Catalog**    | `GET /api/v1/catalog/rooms`                        | Public               | Paginated rooms in a block without leaking occupants.                               |
-| **Categories** | `GET /api/v1/categories`                           | Authenticated        | Active categories in caller's hostel (`includeInactive` admin only).                |
-| **Uploads**    | `POST /api/v1/uploads`                             | STUDENT + CSRF       | Stages complaint photo (JPEG, PNG, WebP ≤5 MiB, ≤12 MP). Max 10 unattached.         |
-| **Uploads**    | `GET /api/v1/uploads/:attachmentId/content`        | Authorized           | Streams private photo with secure headers.                                          |
-| **Uploads**    | `DELETE /api/v1/uploads/:attachmentId`             | STUDENT owner + CSRF | Deletes unattached staged upload.                                                   |
-| **Complaints** | `POST /api/v1/complaints`                          | STUDENT + CSRF       | Submits report with deterministic SLA deadlines & priority calculation. Idempotent. |
-| **Complaints** | `GET /api/v1/complaints`                           | Authenticated        | Scoped complaint list (Student: own; Staff: assigned; Admin: scoped hostels).       |
-| **Complaints** | `GET /api/v1/complaints/:complaintId`              | Authorized           | Detailed complaint view with allowed actions and cycle history.                     |
-| **Complaints** | `PATCH /api/v1/complaints/:complaintId`            | STUDENT owner + CSRF | Edits complaint content before triage (`SUBMITTED` only).                           |
-| **Complaints** | `GET /api/v1/complaints/:complaintId/comments`     | Authorized           | Chronological public discussion comments.                                           |
-| **Complaints** | `POST /api/v1/complaints/:complaintId/comments`    | Authorized + CSRF    | Adds comment to nonterminal complaint.                                              |
-| **Complaints** | `GET /api/v1/complaints/:complaintId/activity`     | Authorized           | Immutable timeline of audit events.                                                 |
-| **Workflow**   | `POST /api/v1/complaints/:complaintId/transitions` | Authorized + CSRF    | State transitions (`TRIAGED`, `REJECTED`, `IN_PROGRESS`, `RESOLVED`, `CLOSED`).     |
-| **Workflow**   | `POST /api/v1/complaints/:complaintId/assignment`  | ADMIN + CSRF         | Assigns/reassigns eligible technician in hostel/category with concurrency check.    |
-| **Workflow**   | `POST /api/v1/complaints/:complaintId/priority`    | ADMIN + CSRF         | Overrides priority and tightens deadlines.                                          |
-| **Workflow**   | `POST /api/v1/complaints/:complaintId/reopen`      | STUDENT owner + CSRF | Reopens resolved complaint within 7-day window (max 2 reopens). Clears assignee.    |
-| **Workflow**   | `POST /api/v1/complaints/:complaintId/feedback`    | STUDENT owner + CSRF | Rates resolution 1–5 stars on `RESOLVED` or `CLOSED` complaint.                     |
-| **Admin**      | `GET /api/v1/admin/staff`                          | ADMIN                | Assignment picker with `eligibleForComplaintId` filtering and open count.           |
-| **Dashboard**  | `GET /api/v1/dashboard/student`                    | STUDENT              | Personal overview (status counts, recent complaints, latest activity).              |
-| **Dashboard**  | `GET /api/v1/dashboard/staff`                      | STAFF                | Workload overview (status counts, overdue counts, work queue sorted per §15.4).     |
-| **Dashboard**  | `GET /api/v1/dashboard/admin`                      | ADMIN                | Operational overview (hostel-scoped counts, unassigned, overdue, staff workload).   |
-
-## Seed and Demo Accounts
-
-To populate the development database with deterministic reference data and demo accounts:
+Node.js 24 LTS is the verified runtime. The packages retain their declared engine
+requirements; older supported runtimes have not been separately validated in this
+implementation pass. Root/backend and frontend have separate npm lockfiles.
 
 ```powershell
-npm.cmd run seed
+npm.cmd ci
+npm.cmd ci --prefix frontend
 ```
 
-To cleanly reset the test/local database and re-seed (strictly guarded against non-test hosts):
-
-```powershell
-npm.cmd run seed:reset
-```
-
-### Provisioned Demo Accounts
-
-| Role      | Name            | Email                      | Password           | Scope                             |
-| --------- | --------------- | -------------------------- | ------------------ | --------------------------------- |
-| `STUDENT` | Asha Student    | `student.a@hostelfix.demo` | `DemoStudent@2026` | Hostel A, Block Alpha, Room A-101 |
-| `STAFF`   | Ravi Technician | `staff.r@hostelfix.demo`   | `DemoStaff@2026!`  | Hostel A, Electrical & Plumbing   |
-| `ADMIN`   | Priya Warden    | `admin.p@hostelfix.demo`   | `DemoAdmin@2026!`  | Hostel A (Admin scope)            |
-
-Enrollment code for Hostel A: `ENROLL-HOSTEL-A-2026`.
+The root npm workspace contains only `backend`; the root command interface also
+orchestrates the separate frontend package. `formidable` is an explicit backend
+production dependency. Run all commands below from the repository root.
 
 ## Local setup
 
-Use Node.js **20.19+** (the PRD targets Node 20 LTS) and npm. Run commands from the
-repository root. The root package delegates to the `backend` npm workspace;
-there is one root lockfile. Backend source, configuration and tests use CommonJS.
+Only copy examples when the destination does not exist; preserve existing configuration.
+Configure `backend/.env` using `backend/.env.example` and set:
+
+- `NODE_ENV=development` explicitly.
+- `MONGODB_URI=mongodb://127.0.0.1:27018/hostelfix?replicaSet=rs0`
+- `TEST_MONGODB_URI=mongodb://127.0.0.1:27018/hostelfix_test?replicaSet=rs0`
+- A private, randomly generated JWT secret with at least 32 bytes.
+- An absolute upload directory, `CORS_ORIGIN=http://localhost:3000`, and
+  `COOKIE_SECURE=false` for local HTTP development only.
+
+Use `frontend/.env.local` for the public, non-secret local API URL:
+`NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api/v1`.
+Keep localhost naming consistent with the backend CORS origin.
+
+This checkout uses its owned MongoDB on **27018**, because 27017 belongs to an
+unrelated instance. Root commands reuse the existing ownership configuration;
+they never infer ownership from an occupied port. On a fresh checkout select a
+free port explicitly. Environment files are preserved.
+
+Portable MongoDB is managed through the root commands and existing Windows scripts:
 
 ```powershell
-npm.cmd ci
-Copy-Item backend/.env.example backend/.env
+$env:HOSTELFIX_TEST_PORT='27018'
+npm.cmd run db:install
+npm.cmd run db:start
+npm.cmd run seed
+npm.cmd run dev
+# In another terminal:
+npm.cmd run status
+npm.cmd run health
+npm.cmd run stop
 ```
 
-Only copy the example if `backend/.env` does not already exist. For a fresh checkout,
-fill the two database placeholders with the local URIs below, set `JWT_SECRET` to a
-cryptographically random secret of at least 32 bytes, and set `UPLOAD_DIR` to
-an absolute persistent directory on your machine.
-Keep credentials out of Git and terminal output.
+The portable MongoDB instance is loopback-only, unauthenticated development/test
+infrastructure. It is not a production database. The scripts verify process identity,
+configuration, paths, and replica membership before management or test writes.
 
-| Command                         | Behavior                                                                            |
-| ------------------------------- | ----------------------------------------------------------------------------------- |
-| `npm.cmd run dev`               | Nodemon watches backend JavaScript and runs the server.                             |
-| `npm.cmd start`                 | Validates config, connects to replica set, prepares storage, listens on port 5000.  |
-| `npm.cmd test`                  | Runs all backend Vitest/Supertest tests.                                            |
-| `npm.cmd run test:coverage`     | Runs the full suite with V8 coverage; HTML report at `backend/coverage/index.html`. |
-| `npm.cmd run seed`              | Seeds deterministic reference data, policies, accounts, and sample complaints.      |
-| `npm.cmd run seed:reset`        | Guarded test reset runner (drops collections and re-seeds cleanly).                 |
-| `npm.cmd run db:ensure-indexes` | Adds declared indexes for all twelve models using the configured database.          |
+### A port conflict with another MongoDB instance
 
-## Configuration
-
-`backend/.env.example` lists the PRD §13.9 settings. Startup requires
-`MONGODB_URI`, `JWT_SECRET`, `CORS_ORIGIN`, and `UPLOAD_DIR`. Invalid settings
-produce a nonzero exit and safe variable names, never their values or a stack.
-
-- `MONGODB_URI` is parsed by the MongoDB driver without connecting. A non-SRV
-  URI requires a nonempty `replicaSet`; direct/secondary-only connections are
-  rejected. Startup verifies a transaction-capable replica-set primary. Production
-  requires database username/password authentication. Atlas SRV syntax is accepted
-  for deployment; local development/tests use the project-local MongoDB below.
-- `NODE_ENV=test` also requires the exact documented local `TEST_MONGODB_URI`.
-  The database layer uses that independent key exclusively in test mode, even if
-  `MONGODB_URI` names another environment. Remote, alternate-database/port, missing,
-  credentialed or extra-option test URIs are rejected before connecting.
-- `CORS_ORIGIN` is one exact origin with no path or trailing slash. HTTP is
-  allowed only for localhost/loopback; production requires HTTPS.
-- `COOKIE_SECURE` defaults to `true`; `false` is limited to localhost development.
-  Production always requires `true`. Empty `COOKIE_DOMAIN` means host-only.
-- The PRD's access/refresh lifetimes and bcrypt cost are enforced as
-  `600`, `604800`, and `12`, respectively; other supplied values are rejected.
-- `PORT` is an integer from 1–65535; `LOG_LEVEL` defaults to `info`.
-  `UPLOAD_DIR` must be absolute. Startup creates the directory if missing and
-  verifies private read/write access; no static upload route is registered.
-- Configuration validation does not prove secret randomness or storage durability.
-  Deployment must provide a random secret, HTTPS and persistent upload storage.
-
-The JSON limit (32 KiB), cookie attributes, upload bounds and rate policies are
-fixed PRD constants in `src/config/policy.js`, not undocumented environment knobs.
-Refresh cookies now use these settings; the approved hashing/locator contracts
-are recorded in PRD §§13.1–13.3 and the Session 4 history.
-
-CORS allows only `CORS_ORIGIN`, with credentials and the exact PRD methods/headers.
-Every POST/PUT/PATCH/DELETE requires that exact `Origin` and
-`X-CSRF-Protection: 1`, including local test clients; missing/mismatched values
-return 403 `CSRF_INVALID`. Preflight does not require those mutation credentials.
-Pino logs generated request IDs, method, status and duration, plus safe lifecycle
-events; it does not serialize request bodies, URLs, headers, configuration or raw
-driver errors. In-memory rate limiting is for a single process; Redis remains P1.
-
-Database connection/selection and storage startup checks use five-second timeouts.
-Production disables Mongoose `autoIndex`; run `db:ensure-indexes` against the
-intended deployment configuration to add indexes without dropping existing ones.
-Ctrl+C/SIGINT or SIGTERM stops new HTTP connections, drains
-requests for up to five seconds, then closes the application's database connection.
-Shutdown is idempotent; a failed database shutdown has a five-second deadline and
-the CLI exits unsuccessfully. This does not stop the separate MongoDB process.
-
-## Source layout and tests
-
-`backend/src/app.js` exports `createApp()` with no env loading, database access,
-or network listener. `src/server.js` is the executable entry point. Routers,
-controllers, middleware, validators, config and utilities are separate. Models
-are registered explicitly on a connection through `src/models/index.js`.
-Authentication and profile services are implemented. Other product services and
-the seed runner remain in their later sessions.
-
-The full suite now requires the project-local `rs0` below. Test fixtures explicitly
-select `hostelfix_test`, never a real env file or the development URI. An optional
-process `TEST_MONGODB_URI` override is validated against the same exact target.
-Database tests check the project's ownership record, actual MongoDB settings and
-single local replica-set member before discovery/writes. Missing infrastructure
-fails with startup instructions instead of silently skipping tests.
-
-Tests cover transport/security, safe errors/logs, production configuration,
-readiness failures/recovery, graceful shutdown and real transaction isolation,
-commit and rollback, model/index uniqueness, safe serialization, immutable
-history, concurrent version conflicts, auth validation, long credentials,
-session rotation/reuse, forced changes, password revocation and auth races.
-Infrastructure tests delete only their
-UUID record from `hostelfix_infrastructure_test`; model tests track and remove
-only their own random ObjectIds. Auth fixtures discover route-created records
-through their exact random emails and track those IDs for guarded cleanup.
-Empty test collections and indexes remain. Temporary
-storage fixtures are under ignored `backend/.local/` and removed without recursive
-deletion. No development records, database drops or resets are used.
-
-Verified Session 4 suite: **426 passed, 0 failed/skipped** across thirteen files;
-statement coverage **96.91%**. Run it after starting MongoDB:
+Never terminate, claim, reset, or modify an unrelated instance. Select a free port
+explicitly for a separate owned test replica set:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\mongodb\start.ps1
+$env:HOSTELFIX_TEST_PORT='27018'
+npm.cmd run db:start
+npm.cmd run db:status
 npm.cmd test
-npm.cmd run test:coverage
+npm.cmd run db:stop
 ```
 
-## Project-local MongoDB on Windows
+Alternate-port infrastructure uses `.local/mongodb-test-<port>/` and retains all
+ownership/loopback/replica-set guards. Tests use only the corresponding
+`hostelfix_test` database; arbitrary database URI overrides remain forbidden.
+Use the same `HOSTELFIX_TEST_PORT` for start, tests, browser checks, and stop.
+No application environment file is overwritten by selecting a test port.
 
-MongoDB Community **8.0.34** uses the same portable ZIP, checksum verification,
-hidden-process and ownership-record pattern as PCB. Ghar Se's older portable
-installation is 8.0.12. This setup makes no system PATH, service, registry or
-machine execution-policy changes. The Node MongoDB driver **7.2.0** is a root
-development-only administration dependency. The backend runtime uses Mongoose
-**9.11.2** with its own driver dependency.
+## Working P0 features
 
-After a reboot, run these from the project root in PowerShell:
+Students can register, sign in, manage profiles/passwords, report issues with up to
+three private photos, edit submitted complaints, comment, reopen eligible resolutions,
+close repairs, and leave feedback. Administrators can triage/reject reports, change
+priority, assign staff, and view scoped operational dashboards. Assigned staff can
+view private evidence, start work, resolve repairs, and track their queue.
+
+Complaint and profile mutations use version checks. Comments and activity have
+paginated history. Creation retries preserve idempotency keys for the same draft;
+concurrent duplicate requests return one complaint. API responses are validated at
+runtime. Access tokens stay in memory; refresh cookies are HttpOnly and rotated.
+
+Modern browsers with Web Locks serialize refresh/login/logout across tabs. Logout
+is broadcast across same-origin tabs. A local queue coordinates requests even when
+Web Locks are absent, but cross-tab coordination requires Web Locks support.
+
+## Verification commands
+
+Root `test` starts/verifies the owned replica set and sequentially runs backend
+unit/integration tests, frontend tests and browser regressions. It stops the
+database afterward only if it started it. Configure backend development environment
+values first. Package-level backend tests still require the owned database to be
+running. Infrastructure failures fail the command; they are not reported as skips.
+
+| Location      | Command                                        | Purpose                                                                                                       |
+| ------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Root          | `npm.cmd test`                                 | Backend, frontend and browser suites, with owned database management.                                         |
+| Root          | `npm.cmd run backend:test -- tests/unit`       | Backend unit suite through the root interface.                                                                |
+| Root          | `npm.cmd run test:coverage`                    | Backend V8 coverage plus frontend and browser suites.                                                         |
+| Root          | `npm.cmd run build --workspace backend`        | Syntax-check interpreted backend JavaScript; no bundle is needed.                                             |
+| Root          | `npm.cmd run verify:production`                | Fresh production-only installation outside the checkout, startup and health probes against the owned test DB. |
+| Root          | `npm.cmd run format:check`                     | Repository formatting.                                                                                        |
+| Root          | `npm.cmd run format:check --workspace backend` | Backend formatting.                                                                                           |
+| Frontend      | `npm.cmd test`                                 | Frontend unit/contract/session regression tests.                                                              |
+| Frontend      | `npm.cmd run lint`                             | ESLint with zero permitted warnings.                                                                          |
+| Frontend      | `npm.cmd run typecheck`                        | Next route generation and TypeScript.                                                                         |
+| Frontend      | `npm.cmd run build`                            | Production build; requires an explicit HTTPS API URL.                                                         |
+| Frontend      | `npm.cmd run format:check`                     | Frontend formatting.                                                                                          |
+| Frontend      | `npm.cmd run test:browser`                     | Real browser flows using unique owned test accounts and exact-ID cleanup.                                     |
+| Both packages | `npm.cmd audit`                                | Complete dependency audit, including development tools.                                                       |
+
+Type generation uses Next's production configuration phase. Set a valid non-secret
+HTTPS API URL for type/build checks, for example:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\mongodb\start.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\mongodb\status.ps1
+$env:NEXT_PUBLIC_API_BASE_URL='https://api.hostelfix.example/api/v1'
+npm.cmd run typecheck --prefix frontend
+npm.cmd run build --prefix frontend
 ```
 
-`start.ps1` starts the owned process if needed, initializes `rs0` only when MongoDB
-reports `NotYetInitialized`, and waits for PRIMARY. Repeating it retains the PID
-and existing replica-set configuration. Every script resolves paths from its
-own location, so an absolute `-File 'C:\path\to\checkout\scripts\mongodb\start.ps1'`
-also works from another directory. The execution-policy override applies only to
-that PowerShell process. No administrator service installation is required.
-
-First-time installation and explicit initialization (already performed here):
+The example domain validates configuration; it is not a provisioned endpoint.
+Browser tests run their own frontend on 3100 and backend on 5100, explicitly use a
+local API URL, and refuse occupied ports. On Windows with installed Edge:
 
 ```powershell
-npm.cmd ci
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\mongodb\install.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\mongodb\start.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\mongodb\init-replica-set.ps1
+$env:PLAYWRIGHT_CHANNEL='msedge'
+npm.cmd run test:browser --prefix frontend
 ```
 
-The installer downloads the [official Windows ZIP](https://fastdl.mongodb.org/windows/mongodb-windows-x86_64-8.0.34.zip)
-and its [official SHA-256](https://fastdl.mongodb.org/windows/mongodb-windows-x86_64-8.0.34.zip.sha256),
-then compares both to the pinned digest before extraction:
-`6b021a0864494e4decf278b36477a29eb36072432773e4e62c2f42c302630db0`.
-It retains existing installations and refuses a partial installation or mismatched
-archive. Windows x64/AVX and the Visual C++ x64 runtime are required; missing
-system prerequisites are reported, never automatically installed.
+Alternatively install Playwright Chromium with `npx playwright install chromium`
+from `frontend/` and leave `PLAYWRIGHT_CHANNEL` unset. Test accounts and generated
+files are temporary; no demo or development records are reset.
 
-| Setting                       | Local value                                                        |
-| ----------------------------- | ------------------------------------------------------------------ |
-| Executable                    | `tools/mongodb/mongodb-win32-x86_64-windows-8.0.34/bin/mongod.exe` |
-| Archive/checksum              | `tools/mongodb/mongodb-windows-x86_64-8.0.34.zip[.sha256]`         |
-| Data                          | `.local/mongodb-data/`                                             |
-| Logs                          | `.local/mongodb-logs/mongod.log`, `stdout.log`, `stderr.log`       |
-| Runtime config/ownership/lock | `.local/mongodb-runtime/`                                          |
-| Bind / port                   | `127.0.0.1:27017` exclusively                                      |
-| Replica set                   | `rs0`, single member `127.0.0.1:27017`                             |
-| WiredTiger cache              | 0.25 GB                                                            |
+GitHub Actions in `.github/workflows/ci.yml` runs owned MongoDB, backend/frontend
+checks, builds, browser regressions, and production-only installation on Windows.
+The workflow is configured locally; a remote Actions run requires pushing the branch.
 
-The ignored **`backend/.env`** uses the existing application key and an independent
-test key. For a new checkout, set these non-secret local URIs there:
+## Production deployment
 
-```dotenv
-MONGODB_URI=mongodb://127.0.0.1:27017/hostelfix?replicaSet=rs0
-TEST_MONGODB_URI=mongodb://127.0.0.1:27017/hostelfix_test?replicaSet=rs0
-```
+1. Provision an authenticated, TLS-protected MongoDB replica set with appropriate
+   backups and transaction support. Use a random secret from a secret manager.
+2. Set backend `NODE_ENV=production`, `COOKIE_SECURE=true`, an exact HTTPS
+   `CORS_ORIGIN`, and an absolute durable `UPLOAD_DIR`. Configure HTTPS termination.
+3. Use frontend/API hosts within the same site for `SameSite=Strict` refresh cookies.
+   Host-only cookies are the default. If setting `COOKIE_DOMAIN`, it must match the
+   frontend site and also be valid for the API host; avoid unnecessary domain sharing.
+4. Set `TRUST_PROXY` only to actual proxy IPs/CIDRs or the narrowly applicable
+   `loopback` value. Empty trusts no proxy. Booleans, hop counts and catch-all networks
+   are rejected. Verify forwarded client IPs through the actual proxy.
+5. Run `npm.cmd run db:ensure-indexes` against the intended deployment configuration.
+   Production disables auto-index creation and refuses startup when declared indexes
+   are missing or have incompatible uniqueness/TTL/partial-filter options. The migration
+   adds indexes; it does not drop unrelated indexes.
+6. Build the frontend with its real HTTPS `NEXT_PUBLIC_API_BASE_URL`. This value is
+   bundled into browser assets: changing it requires a rebuild. Missing production
+   configuration cannot silently fall back to localhost.
+7. Install backend production dependencies with `npm.cmd ci --omit=dev` at root
+   and frontend production dependencies with `npm.cmd ci --omit=dev --prefix frontend`
+   after building. Root `npm.cmd start` starts both services under production backend
+   configuration and leaves external MongoDB management to the deployment. Check both
+   `/api/v1/health` and `/api/v1/health/ready`.
+8. Verify real HTTPS/cookie behavior, monitoring, backup restoration and rollback in
+   staging before routing production traffic.
 
-No Atlas configuration was overwritten: the root `.env` was empty and retained;
-`backend/.env` was absent before setup. A fresh random local JWT secret was
-generated privately to satisfy the existing app configuration loader. The example
-file contains only placeholders for secrets/database URIs. Preserve any existing
-nonlocal configuration instead of copying over it. MongoDB creates databases
-lazily: `hostelfix` may not appear in database listings until the application
-first writes to it; the setup only pings that database.
+Current rate limiting is in memory. Deploy a single API process unless shared rate
+state is provided. Multiple API instances also require shared durable upload storage.
+The cleanup worker removes old unreferenced UUID photo files with a safety grace
+period; referenced files, recent writes, unrelated names and symbolic links are kept.
+Database unavailability prevents cleanup rather than risking evidence deletion.
 
-Verify and stop:
+Next.js is pinned to the patched 16.4.5 release with matching ESLint configuration.
+Recheck advisories before release; passing local tests does not verify production
+credentials, real domains/cookies, load capacity or backup recovery.
+
+## Demo data
+
+`npm.cmd run seed` creates 3 demo hostels, 12 wings (`Block` records), 48 rooms,
+84 students (7 per wing), 2 admins scoped to all demo hostels, and 15 staff
+(3 each for ELECTRICAL, PLUMBING, FURNITURE, CIVIL and CLEANING). All accounts use
+the application's password hashing and authorization conventions. The 84 initial
+complaints have distinct owners/titles and dated model/audit history over roughly
+the preceding 84 days: 45 CLOSED, 22 RESOLVED, 8 ASSIGNED, 7 IN_PROGRESS,
+1 TRIAGED and 1 SUBMITTED. This is 67 finished and 17 open (79.8%/20.2%).
+Every staff member has one open job and resolved history. Dashboards query these
+records through the real scoped APIs.
+
+Generated credentials and all account emails are in local-only [DEMO.md](DEMO.md)
+and `.local/demo/credentials.json`, both ignored by Git. Sign in at
+`http://localhost:3000/login`. Passwords persist across resets unless overridden
+with `HOSTELFIX_DEMO_STUDENT_PASSWORD`, `HOSTELFIX_DEMO_STAFF_PASSWORD`,
+`HOSTELFIX_DEMO_ADMIN_PASSWORD` or `HOSTELFIX_DEMO_ENROLLMENT_PASSWORD` before
+`reset:demo`; use at least 12 characters. Never deploy these accounts or files.
+
+Plain seed is repeatable and preserves ready demo records, including workflow
+changes. `reset:demo` removes only explicitly registered demo records and regenerates
+their relative dates. Cleanup requires a verified local `hostelfix` database,
+the checkout-bound `.local/demo/owner.json`, matching MongoDB ownership manifest
+and matching per-record `demoSeedOwner`. It deletes exact IDs inside a transaction.
+Missing/mismatched ownership or external references aborts cleanup. Production,
+remote databases, unmarked legacy seeds and arbitrary user data are never reset.
+If ownership files are lost, restore them from your local backup; do not delete or
+rewrite the manifest to claim existing records. Legacy seed exports remain only
+for isolated, marked backend test fixtures.
+
+## Root commands
+
+`npm.cmd` works in PowerShell without changing execution policy. `npm` is
+equivalent where the shell permits it. The orchestrator uses Node process handles,
+PID metadata and an authenticated loopback control endpoint under
+`.local/project-runtime/`. A second start reuses its supervisor and children.
+Startup failures stop owned children; unrelated listeners are never adopted.
+Ctrl+C stops children and a database started by that supervisor. Explicit `stop`
+also stops the verified project database, retaining its files. Standalone package
+servers started outside this interface are not claimed or stopped.
+
+`dev` starts MongoDB, then backend with watch, then Next development server.
+`start` uses backend's configured mode: in development it starts backend without
+watch and Next dev; in production it starts the built frontend and leaves the
+database external. `frontend:start` always requires an existing production build.
+The supervisor retains its initial mode/configuration; stop before changing modes
+or ports. Default URLs are API `http://localhost:5000/api/v1` and frontend
+`http://localhost:3000`. Set `PORT`, `HOSTELFIX_FRONTEND_PORT` and the matching
+`CORS_ORIGIN` for alternate ports. Production uses the deployed HTTPS API URL
+embedded at build time.
+
+| Command                                                  | Purpose                                                                                              |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `dev`, `start`, `stop`                                   | Complete application lifecycle                                                                       |
+| `status`, `health`                                       | Ownership/PIDs/URLs and real DB/API/frontend health                                                  |
+| `build`                                                  | Backend syntax validation and frontend production build                                              |
+| `test`, `test:coverage`                                  | Full sequential suites; backend coverage for the latter                                              |
+| `seed`, `reset:demo`                                     | Add/preserve demo, or safely clean and regenerate it                                                 |
+| `backend:start`, `backend:dev`, `backend:stop`           | Managed backend lifecycle                                                                            |
+| `backend:build`, `backend:test`, `backend:coverage`      | Syntax validation, tests, V8 coverage                                                                |
+| `backend:format`                                         | Backend format check; no separate backend linter is configured                                       |
+| `frontend:dev`, `frontend:start`, `frontend:stop`        | Managed frontend lifecycle                                                                           |
+| `frontend:build`, `frontend:test`                        | Production build, frontend tests                                                                     |
+| `frontend:lint`, `frontend:typecheck`, `frontend:format` | ESLint, types, formatting                                                                            |
+| `db:install`, `db:start`, `db:stop`                      | Existing portable Windows MongoDB manager                                                            |
+| `db:status`, `db:health`, `db:init`                      | Ownership/status, ping, idempotent rs0 setup                                                         |
+| `db:ensure-indexes`                                      | Existing deployment index migration; verify target configuration first                               |
+| `db:seed`                                                | Alias of `seed`                                                                                      |
+| `db:reset`, `seed:reset`                                 | Aliases of `reset:demo`; never a general database reset                                              |
+| `demo:clean`, `demo:verify`, `demo:logins`               | Scoped cleanup, seed integrity checks, local login document                                          |
+| `demo:verify:api`                                        | Real demo logins/workflow/dashboard and preservation checks; cleans demo on success, then run `seed` |
+| `verify:lifecycle`                                       | Alternate-port lifecycle regression; requires application stopped, restores initial DB running state |
+| `verify:production`                                      | Fresh backend production-only install/startup smoke test                                             |
+| `format`, `format:check`                                 | Repository formatting write/check                                                                    |
+
+No existing MongoDB backup/restore infrastructure or `mongodump`/`mongorestore`
+installation was found, so backup/restore commands are not advertised. Provision
+and validate real database tools/backups separately before production deployment.
+The portable database manager is Windows-only; package tools and Node orchestration
+use portable invocation, but other operating systems need their own owned database
+adapter. Tests currently enforce the existing project ownership mechanism.
+
+## MongoDB structure and read-only exploration
+
+Connect to the verified port shown by `db:status`:
 
 ```powershell
-node .\scripts\mongodb\test-safety.js
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\mongodb\verify.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\mongodb\stop.ps1
+mongosh "mongodb://127.0.0.1:27018/hostelfix?replicaSet=rs0"
 ```
 
-Verification uses `replSetGetStatus` (the command behind `rs.status()`), checks the
-actual PID/config/data directory/bind address and PRIMARY, pings both configured
-databases, and performs insert/read/delete and real transaction isolation,
-commit and rollback in **`hostelfix_test` only**. It also checks the existing
-application configuration loader without printing credentials. It removes only
-its random UUID test record; an empty, uniquely named `hostelfix_setup_*` test
-collection remains intentionally. No collection/database reset is implemented.
-
-The URI guards accept only the two exact documented targets and reject alternate
-hosts, databases, ports, credentials and extra options before connecting through
-those URIs. Process-level URI overrides take precedence and are validated as
-strictly as the local env file. Management uses a fixed loopback direct connection
-so an uninitialized replica set can be inspected safely.
-
-Start/stop/init/status/verify operations share an exclusive management lock. Stop
-checks executable, PID, creation time, command line, checkout, runtime config and
-actual MongoDB settings before requesting graceful shutdown. It neither kills
-unrelated processes nor deletes data. Repeated stop is safe. An unowned listener
-on 27017 causes startup to fail; it is never terminated automatically.
-
-For a failure, inspect only these local logs:
-
-```powershell
-Get-Content .\.local\mongodb-logs\mongod.log -Tail 40
-Get-Content .\.local\mongodb-logs\stderr.log -Tail 40
+```javascript
+show dbs
+use hostelfix
+show collections
+db.hostelfix_demo_ownership.find({}, { ids: 0 })
+const demoOwner = db.hostelfix_demo_ownership.findOne({kind: 'demo-v2'})._id
+db.hostels.find({demoSeedOwner: demoOwner}, {name: 1, code: 1})
+db.blocks.find({demoSeedOwner: demoOwner}, {name: 1, hostelId: 1})
+db.users.find({demoSeedOwner: demoOwner, role: 'STUDENT'}, {name: 1, email: 1, hostelId: 1, blockId: 1}).limit(10)
+db.complaints.find({demoSeedOwner: demoOwner}, {title: 1, status: 1, priority: 1, ownerId: 1}).sort({createdAt: -1}).limit(10)
+db.complaints.aggregate([{$match: {demoSeedOwner: demoOwner}}, {$group: {_id: '$status', count: {$sum: 1}}}])
+const complaint = db.complaints.findOne({demoSeedOwner: demoOwner})
+db.activities.find({complaintId: complaint._id}).sort({occurredAt: 1})
+db.comments.find({complaintId: complaint._id}).sort({createdAt: 1})
+db.feedbacks.find({complaintId: complaint._id})
+exit
 ```
 
-Do not delete data to fix startup/election failures or rewrite ownership records
-to claim another process. Checksum/download failures stop installation. A missing
-DLL must be resolved separately. This loopback-only, unauthenticated server is
-for local development/testing, not production. Session 2 integrates this existing
-replica set with application startup, readiness and guarded backend tests.
-
-Start the API and check both probes from a second PowerShell terminal:
-
-```powershell
-npm.cmd start
-# In a second terminal (default API port):
-Invoke-RestMethod http://127.0.0.1:5000/api/v1/health
-Invoke-RestMethod http://127.0.0.1:5000/api/v1/health/ready
-```
+Collections are `users`, `sessions`, `hostels`, `blocks` (wings), `rooms`,
+`categories`, `hostelpolicies`, `complaints`, `activities`, `comments`,
+`attachments`, `feedbacks`, plus the demo ownership manifest. Students reference
+hostel/block/room; staff reference hostel/categories; admins hold `adminHostelIds`.
+Complaints reference owner, hostel, category, location, assignee/resolver and
+attachments. Activities/comments/feedback reference complaint and actor/author.
+`hostelfix_test` is separate and contains isolated test fixtures, never demo cleanup.

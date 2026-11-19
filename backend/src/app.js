@@ -28,6 +28,7 @@ function createApp({
   isShuttingDown,
 } = {}) {
   const app = express();
+  app.set('trust proxy', config.TRUST_PROXY ?? false);
   app.disable('x-powered-by');
   app.disable('etag');
   app.enable('case sensitive routing');
@@ -61,8 +62,8 @@ function createApp({
         auth: createAuthService({ ...context, sessions }),
         users: createUserService({ ...context, sessions }),
         catalog: createCatalogService(context),
-        uploads: createUploadService(context),
-        complaints: createComplaintService(context),
+        uploads: createUploadService({ ...context, sessions }),
+        complaints: createComplaintService({ ...context, sessions }),
         dashboard: createDashboardService(context),
       };
     }

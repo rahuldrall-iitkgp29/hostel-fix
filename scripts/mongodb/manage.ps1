@@ -9,13 +9,18 @@ $archiveName = "mongodb-windows-x86_64-$version.zip"
 $expectedHash = '6b021a0864494e4decf278b36477a29eb36072432773e4e62c2f42c302630db0'
 $toolsDirectory = Join-Path $projectRoot 'tools/mongodb'
 $executable = Join-Path $toolsDirectory "mongodb-win32-x86_64-windows-$version/bin/mongod.exe"
-$dataDirectory = Join-Path $projectRoot '.local/mongodb-data'
-$logDirectory = Join-Path $projectRoot '.local/mongodb-logs'
-$runtimeDirectory = Join-Path $projectRoot '.local/mongodb-runtime'
+$port = 27017
+if ($env:HOSTELFIX_TEST_PORT) {
+    if ($env:HOSTELFIX_TEST_PORT -notmatch '^\d+$' -or [int]$env:HOSTELFIX_TEST_PORT -lt 1024 -or [int]$env:HOSTELFIX_TEST_PORT -gt 65535) { throw 'Invalid HOSTELFIX_TEST_PORT.' }
+    $port = [int]$env:HOSTELFIX_TEST_PORT
+}
+$localDirectory = if ($port -eq 27017) { '.local' } else { ".local/mongodb-test-$port" }
+$dataDirectory = Join-Path $projectRoot "$localDirectory/mongodb-data"
+$logDirectory = Join-Path $projectRoot "$localDirectory/mongodb-logs"
+$runtimeDirectory = Join-Path $projectRoot "$localDirectory/mongodb-runtime"
 $configPath = Join-Path $runtimeDirectory 'mongod.cfg'
 $statePath = Join-Path $runtimeDirectory 'instance.json'
 $helper = Join-Path $PSScriptRoot 'admin.js'
-$port = 27017
 
 function Invoke-Admin([string]$Operation) {
     & node $helper $Operation
@@ -100,7 +105,7 @@ try {
             return
         }
         $listeners = @(Get-NetTCPConnection -State Listen -ErrorAction Stop | Where-Object LocalPort -eq $port)
-        if ($listeners.Count) { throw 'Port 27017 is occupied. Refusing to launch or stop an unowned instance. Inspect the listener first.' }
+        if ($listeners.Count) { throw "Port $port is occupied. Refusing to launch or stop an unowned instance. Inspect the listener first." }
         if (!(Test-Path -LiteralPath $executable)) { throw 'Run scripts/mongodb/install.ps1 first; project-local mongod.exe is missing.' }
         New-Item -ItemType Directory -Path $dataDirectory, $logDirectory -Force | Out-Null
         $config = @{

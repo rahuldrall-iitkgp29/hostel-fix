@@ -11,11 +11,13 @@
   "scripts": {
     "dev": "nodemon --watch src --ext js src/server.js",
     "start": "node src/server.js",
+    "build": "node scripts/check-syntax.js",
+    "format:check": "prettier --check src tests scripts seeds package.json vitest.config.js",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "db:ensure-indexes": "node scripts/ensure-indexes.js",
-    "seed": "node seeds/index.js",
-    "seed:reset": "node seeds/reset.js"
+    "seed": "node seeds/demo-cli.js seed",
+    "seed:reset": "node seeds/demo-cli.js reset"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -23,6 +25,7 @@
     "dotenv": "^18.0.8",
     "express": "^5.3.0",
     "express-rate-limit": "^8.7.1",
+    "formidable": "3.5.4",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.11.2",
@@ -30,9 +33,9 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^4.1.11",
-    "nodemon": "^3.1.14",
+    "@vitest/coverage-v8": "^4.1.12",
+    "nodemon": "3.1.11",
     "supertest": "^7.3.1",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.12"
   }
 }

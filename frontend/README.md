@@ -1,8 +1,5 @@
 # HostelFix frontend
 
-The user requested frontend Markdown in root `docs-frontend/`.
-See the [frontend README](../docs-frontend/README.md) for setup, commands,
-architecture, implementation status and integration dependencies.
-
-Continue development by reading [task.md](task.md) and [history.md](history.md),
-including their linked canonical documents.
+See [the current frontend guide](docs-frontend/README.md) for setup, authentication,
+API configuration, browser tests and deployment. The repository-wide guide is
+[README.md](../README.md); implementation results are in [analysis.md](../analysis.md).

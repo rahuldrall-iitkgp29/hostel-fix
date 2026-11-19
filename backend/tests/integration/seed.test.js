@@ -1,4 +1,5 @@
 const { seedDatabase } = require('../../seeds/index');
+const { randomUUID } = require('node:crypto');
 const { resetDatabase } = require('../../seeds/reset');
 const { createDatabase } = require('../../src/config/database');
 const { parseEnv } = require('../../src/config/env');
@@ -20,16 +21,31 @@ describe('seed and reset integration tests', () => {
     config = parseEnv(testEnv({ TEST_MONGODB_URI: uri }));
     database = createDatabase(config);
     await database.connect();
-    models = createModels(database.connection);
+    models = createModels(database.connection, {
+      collectionPrefix: `seed_${randomUUID().replaceAll('-', '')}_`,
+    });
   });
 
   afterAll(async () => {
     if (database) {
+      await verifyLocalTestServer();
+      if (database.connection.$legacySeedOwner) {
+        await require('../../seeds/ownership').cleanupOwned({
+          config,
+          database,
+          models,
+          owner: database.connection.$legacySeedOwner,
+          fixture: true,
+        });
+        await database.connection.db
+          .collection(require('../../src/models/demoOwnership').REGISTRY)
+          .deleteOne({ _id: database.connection.$legacySeedOwner });
+      }
       await database.disconnect();
     }
   });
 
-  test('seedDatabase creates all PRD §18 reference data, accounts and sample complaints', async () => {
+  test('seedDatabase creates all PRD Â§18 reference data, accounts and sample complaints', async () => {
     const result = await seedDatabase({ config, database, models });
 
     expect(result.hostel.code).toBe('HOSTEL-A');
@@ -145,7 +161,7 @@ describe('seed and reset integration tests', () => {
     expect(userCount).toBe(1);
   });
 
-  test('resetDatabase drops collections and re-seeds cleanly', async () => {
+  test('resetDatabase removes only manifest-owned fixture records and re-seeds cleanly', async () => {
     const result = await resetDatabase({ config, database });
     expect(result.hostel.code).toBe('HOSTEL-A');
     expect(result.complaints).toHaveLength(3);

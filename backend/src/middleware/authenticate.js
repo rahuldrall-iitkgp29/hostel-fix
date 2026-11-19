@@ -9,6 +9,7 @@ function authenticate(getServices, { allowPasswordChange = false } = {}) {
       allowPasswordChange,
     });
     req.user = user;
+    user.$locals.authClaims = claims;
     req.auth = { claims, sessionId: record._id };
     next();
   };

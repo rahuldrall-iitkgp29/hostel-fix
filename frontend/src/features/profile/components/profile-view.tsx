@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
@@ -29,6 +29,17 @@ export function ProfileView() {
   const { user, updateUser, apiClient } = useAuth();
   const [profileError, setProfileError] = useState<string | null>(null);
   const [showPasswordSection, setShowPasswordSection] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void getMe(apiClient)
+      .then((latest) => {
+        if (active) updateUser(latest.user);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [apiClient, updateUser]);
 
   const {
     register,

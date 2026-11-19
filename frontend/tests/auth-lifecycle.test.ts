@@ -280,21 +280,19 @@ describe('Auth and User API Client', () => {
     expect(onUnauthorized).toHaveBeenCalledTimes(1);
   });
 
-  it('does not retry mutations when a 401 occurs', async () => {
-    const fetcher = vi
-      .fn<typeof fetch>()
-      .mockResolvedValue(
-        Response.json(
-          {
-            error: {
-              code: 'UNAUTHORIZED',
-              message: 'Session expired',
-              requestId,
-            },
+  it('refreshes session state without retrying a mutation when a 401 occurs', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json(
+        {
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Session expired',
+            requestId,
           },
-          { status: 401 }
-        )
-      );
+        },
+        { status: 401 }
+      )
+    );
 
     const onUnauthorized = vi.fn().mockResolvedValue('new-token');
     const client = createApiClient({
@@ -312,6 +310,6 @@ describe('Auth and User API Client', () => {
     ).rejects.toMatchObject({ code: 'UNAUTHORIZED', status: 401 });
 
     expect(fetcher).toHaveBeenCalledTimes(1);
-    expect(onUnauthorized).not.toHaveBeenCalled();
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
   });
 });

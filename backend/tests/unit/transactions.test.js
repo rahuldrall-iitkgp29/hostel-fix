@@ -66,6 +66,21 @@ test('persistent transient failures are bounded and become safe unavailability',
   expect(session.endSession).toHaveBeenCalledTimes(1);
 });
 
+test('transient retries back off without increasing the retry limit or replaying unknown commits', async () => {
+  const { connection } = fixture();
+  const pause = vi.fn().mockResolvedValue();
+  const work = vi
+    .fn()
+    .mockRejectedValueOnce(labelledError('TransientTransactionError'))
+    .mockRejectedValueOnce(labelledError('TransientTransactionError'))
+    .mockResolvedValue('committed');
+  await expect(runTransaction(connection, work, { pause })).resolves.toBe(
+    'committed'
+  );
+  expect(pause.mock.calls).toEqual([[50], [100]]);
+  expect(work).toHaveBeenCalledTimes(MAX_ATTEMPTS);
+});
+
 test('unknown commit results retry only the same commit, never the callback', async () => {
   const { session, connection } = fixture();
   session.commitTransaction.mockRejectedValueOnce(

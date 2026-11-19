@@ -1,5 +1,6 @@
 const { AppError, unavailable } = require('./AppError');
 const { activeTransaction, isId } = require('../models/common');
+const { setTimeout: delay } = require('node:timers/promises');
 
 const MAX_ATTEMPTS = 3;
 const TRANSACTION_OPTIONS = Object.freeze({
@@ -18,7 +19,7 @@ const versionConflict = () =>
 
 // work must reload and reauthorize on every attempt; never send HTTP responses,
 // write files, or run parallel operations on this session inside the callback.
-async function runTransaction(connection, work) {
+async function runTransaction(connection, work, { pause = delay } = {}) {
   const session = await connection.startSession();
   try {
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
@@ -46,7 +47,12 @@ async function runTransaction(connection, work) {
         if (!commitUnknown && session.inTransaction())
           await session.abortTransaction().catch(() => {});
         if (!commitUnknown && labelled(error, 'TransientTransactionError')) {
-          if (attempt < MAX_ATTEMPTS) continue;
+          if (attempt < MAX_ATTEMPTS) {
+            // Immediate retries can all collide before the winning transaction
+            // commits. Bounded backoff gives contention time to clear.
+            await pause(50 * 2 ** (attempt - 1));
+            continue;
+          }
           throw unavailable();
         }
         throw error;

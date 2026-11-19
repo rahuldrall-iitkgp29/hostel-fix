@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
 const { AppError } = require('../utils/AppError');
-const { runTransaction, updateWithVersion } = require('../utils/transactions');
+const { updateWithVersion } = require('../utils/transactions');
+const { authorizedTransaction } = require('../utils/authorizedTransaction');
 const { generateReference } = require('../utils/referenceGenerator');
 const { computePriority } = require('./priority.service');
 const {
@@ -396,9 +397,60 @@ function createComplaintService(context) {
       const reference = generateReference(now.getFullYear());
 
       // 6. Execute in transaction
-      const createdComplaint = await runTransaction(
+      let idempotentReplay = false;
+      const createdComplaint = await authorizedTransaction(
         connection,
+        context.sessions,
+        user,
         async (session) => {
+          idempotentReplay = false;
+          const replay = await models.Complaint.findOne({
+            ownerId: user._id,
+            clientRequestId: data.clientRequestId,
+          })
+            .select('+clientRequestHash')
+            .session(session);
+          if (replay) {
+            if (replay.clientRequestHash !== clientRequestHash)
+              throw new AppError(
+                409,
+                'IDEMPOTENCY_CONFLICT',
+                'This request ID already belongs to different complaint details.'
+              );
+            idempotentReplay = true;
+            return replay;
+          }
+          const references = [
+            [models.Hostel, { _id: data.location.hostelId }],
+            [
+              models.Category,
+              { _id: data.categoryId, hostelId: user.hostelId },
+            ],
+          ];
+          if (data.location.blockId)
+            references.push([
+              models.Block,
+              { _id: data.location.blockId, hostelId: user.hostelId },
+            ]);
+          if (data.location.roomId)
+            references.push([
+              models.Room,
+              {
+                _id: data.location.roomId,
+                blockId: data.location.blockId,
+                hostelId: user.hostelId,
+              },
+            ]);
+          for (const [Model, filter] of references) {
+            const reference = await Model.findOne(filter).session(session);
+            if (!reference?.isActive)
+              throw new AppError(
+                409,
+                'REFERENCE_INACTIVE',
+                'A complaint reference became inactive.'
+              );
+            await reference.save({ session });
+          }
           const [complaint] = await models.Complaint.create(
             [
               {
@@ -436,6 +488,16 @@ function createComplaintService(context) {
               expectedVersion: staged.version,
               session,
               mutate: (doc) => {
+                if (
+                  doc.complaintId ||
+                  String(doc.ownerId) !== String(user._id) ||
+                  (doc.expiresAt && doc.expiresAt <= new Date())
+                )
+                  throw new AppError(
+                    409,
+                    'ATTACHMENT_INVALID',
+                    'Attachment is no longer available for this complaint.'
+                  );
                 doc.complaintId = complaint._id;
                 doc.expiresAt = null;
               },
@@ -483,7 +545,7 @@ function createComplaintService(context) {
           currentFeedback: null,
           allowedActions: ['EDIT', 'COMMENT'],
         }),
-        idempotentReplay: false,
+        idempotentReplay,
       };
     },
 
@@ -783,8 +845,10 @@ function createComplaintService(context) {
 
       const now = new Date();
 
-      const { updated, activityDoc } = await runTransaction(
+      const { updated, activityDoc } = await authorizedTransaction(
         connection,
+        context.sessions,
+        user,
         async (session) => {
           const updatedDoc = await updateWithVersion(models.Complaint, {
             filter: { _id: complaint._id },
@@ -931,8 +995,10 @@ function createComplaintService(context) {
 
       const now = new Date();
 
-      const { updated, commentDoc, activityDoc } = await runTransaction(
+      const { updated, commentDoc, activityDoc } = await authorizedTransaction(
         connection,
+        context.sessions,
+        user,
         async (session) => {
           const updatedDoc = await updateWithVersion(models.Complaint, {
             filter: { _id: complaint._id },
@@ -1068,8 +1134,10 @@ function createComplaintService(context) {
           );
         }
 
-        const { updated, activityDoc } = await runTransaction(
+        const { updated, activityDoc } = await authorizedTransaction(
           connection,
+          context.sessions,
+          user,
           async (session) => {
             const updatedDoc = await updateWithVersion(models.Complaint, {
               filter: { _id: complaint._id },
@@ -1126,8 +1194,10 @@ function createComplaintService(context) {
         }
 
         const previousStatus = complaint.status;
-        const { updated, activityDoc } = await runTransaction(
+        const { updated, activityDoc } = await authorizedTransaction(
           connection,
+          context.sessions,
+          user,
           async (session) => {
             const updatedDoc = await updateWithVersion(models.Complaint, {
               filter: { _id: complaint._id },
@@ -1187,8 +1257,10 @@ function createComplaintService(context) {
           );
         }
 
-        const { updated, activityDoc } = await runTransaction(
+        const { updated, activityDoc } = await authorizedTransaction(
           connection,
+          context.sessions,
+          user,
           async (session) => {
             const updatedDoc = await updateWithVersion(models.Complaint, {
               filter: { _id: complaint._id },
@@ -1248,8 +1320,10 @@ function createComplaintService(context) {
         }
 
         const reopenUntil = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-        const { updated, activityDoc } = await runTransaction(
+        const { updated, activityDoc } = await authorizedTransaction(
           connection,
+          context.sessions,
+          user,
           async (session) => {
             const updatedDoc = await updateWithVersion(models.Complaint, {
               filter: { _id: complaint._id },
@@ -1331,8 +1405,10 @@ function createComplaintService(context) {
           );
         }
 
-        const { updated, activityDoc } = await runTransaction(
+        const { updated, activityDoc } = await authorizedTransaction(
           connection,
+          context.sessions,
+          user,
           async (session) => {
             const updatedDoc = await updateWithVersion(models.Complaint, {
               filter: { _id: complaint._id },
@@ -1460,8 +1536,10 @@ function createComplaintService(context) {
       const activityType = isReassignment ? 'REASSIGNED' : 'ASSIGNED';
       const now = new Date();
 
-      const { updated, activityDoc } = await runTransaction(
+      const { updated, activityDoc } = await authorizedTransaction(
         connection,
+        context.sessions,
+        user,
         async (session) => {
           // Version guard on staff User to prevent race with staff deactivation
           await updateWithVersion(models.User, {
@@ -1571,8 +1649,10 @@ function createComplaintService(context) {
       const previousResolutionDueAt = complaint.resolutionDueAt;
       const now = new Date();
 
-      const { updated, activityDoc } = await runTransaction(
+      const { updated, activityDoc } = await authorizedTransaction(
         connection,
+        context.sessions,
+        user,
         async (session) => {
           const updatedDoc = await updateWithVersion(models.Complaint, {
             filter: { _id: complaint._id },
@@ -1706,8 +1786,10 @@ function createComplaintService(context) {
         slaTargets,
       });
 
-      const { updated, activityDoc } = await runTransaction(
+      const { updated, activityDoc } = await authorizedTransaction(
         connection,
+        context.sessions,
+        user,
         async (session) => {
           const existingFeedback = await models.Feedback.findOne({
             complaintId: complaint._id,
@@ -1811,8 +1893,10 @@ function createComplaintService(context) {
       }
 
       const now = new Date();
-      const { updated, feedbackDoc, activityDoc } = await runTransaction(
+      const { updated, feedbackDoc, activityDoc } = await authorizedTransaction(
         connection,
+        context.sessions,
+        user,
         async (session) => {
           const existingFeedback = await models.Feedback.findOne({
             complaintId: complaint._id,

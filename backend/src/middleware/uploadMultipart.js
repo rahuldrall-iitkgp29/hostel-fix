@@ -1,4 +1,5 @@
 const { formidable } = require('formidable');
+const { removeTemporaryUpload } = require('../utils/temporaryUploads');
 const { AppError } = require('../utils/AppError');
 const { POLICY } = require('../config/policy');
 
@@ -15,10 +16,27 @@ function uploadMultipart(req, res, next) {
     maxFileSize: POLICY.upload.bytes,
     maxTotalFileSize: POLICY.upload.bytes,
     multiples: false,
+    maxFields: 0,
   });
-
-  form.parse(req, (err, fields, files) => {
+  const temporaryFiles = new Set();
+  form.on('fileBegin', (_name, file) => temporaryFiles.add(file.filepath));
+  form.parse(req, async (err, fields, files) => {
+    const cleanup = async () => {
+      for (const filepath of temporaryFiles)
+        await removeTemporaryUpload(filepath);
+    };
     if (err) {
+      try {
+        await cleanup();
+      } catch {
+        return next(
+          new AppError(
+            503,
+            'SERVICE_UNAVAILABLE',
+            'Unable to clean up the temporary upload.'
+          )
+        );
+      }
       if (
         err.code === 1016 ||
         err.code === 1009 ||
@@ -42,7 +60,22 @@ function uploadMultipart(req, res, next) {
         ? files.file
         : [files.file]
       : [];
-    if (fileList.length !== 1) {
+    if (
+      fileList.length !== 1 ||
+      Object.keys(files).length !== 1 ||
+      Object.keys(fields).length
+    ) {
+      try {
+        await cleanup();
+      } catch {
+        return next(
+          new AppError(
+            503,
+            'SERVICE_UNAVAILABLE',
+            'Unable to clean up the temporary upload.'
+          )
+        );
+      }
       return next(
         new AppError(
           422,
@@ -53,6 +86,17 @@ function uploadMultipart(req, res, next) {
     }
 
     req.uploadedFile = fileList[0];
+    // Also covers a later controller failure or client disconnect.
+    const finishCleanup = () => {
+      void cleanup().catch(() =>
+        req.app.locals.logger?.warn(
+          { event: 'temporary_upload_cleanup_failed' },
+          'Temporary upload cleanup failed.'
+        )
+      );
+    };
+    res.once('finish', finishCleanup);
+    res.once('close', finishCleanup);
     next();
   });
 }

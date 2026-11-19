@@ -3,6 +3,9 @@ const { LOCAL_TEST_URI } = require('../../src/config/testDatabase');
 
 function testEnv(overrides = {}) {
   return {
+    ...(process.env.HOSTELFIX_TEST_PORT
+      ? { HOSTELFIX_TEST_PORT: process.env.HOSTELFIX_TEST_PORT }
+      : {}),
     NODE_ENV: 'test',
     MONGODB_URI:
       overrides.NODE_ENV === 'production'

@@ -1,4 +1,5 @@
 const { MongoClient } = require('mongodb');
+const { member } = require('../../../scripts/mongodb/safety');
 const { verifyServer } = require('../../../scripts/mongodb/safety');
 const {
   isTestDatabaseUri,
@@ -13,10 +14,10 @@ async function verifyLocalTestServer() {
   // Check ownership and membership via the fixed direct socket before discovery
   // or any test writes. Never read a real .env file in the backend test runner.
   const client = new MongoClient(
-    'mongodb://127.0.0.1:27017/admin?directConnection=true',
+    `mongodb://${member}/admin?directConnection=true`,
     {
       serverSelectionTimeoutMS: 2000,
-      timeoutMS: 2000,
+      socketTimeoutMS: 2000,
     }
   );
   try {

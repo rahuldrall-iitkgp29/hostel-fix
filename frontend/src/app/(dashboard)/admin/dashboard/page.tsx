@@ -20,6 +20,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/features/complaints/components/status-badge';
 import { PriorityBadge } from '@/features/complaints/components/priority-badge';
 import { getAdminDashboard } from '@/lib/api/complaints';
+import { AdminDashboardHistory } from '@/features/complaints/components/dashboard-history';
 import type {
   AdminDashboardData,
   ComplaintSummary,
@@ -142,6 +143,7 @@ function AdminDashboardContent() {
           </StatePanel>
         ) : data ? (
           <>
+            <AdminDashboardHistory data={data} />
             {/* Operational Overview Cards */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Card className="p-5 flex items-center justify-between">

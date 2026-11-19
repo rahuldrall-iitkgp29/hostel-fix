@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
@@ -29,11 +29,12 @@ import { TextField } from '@/components/ui/text-field';
 import { TextareaField } from '@/components/ui/textarea-field';
 import { SelectField } from '@/components/ui/select-field';
 import { Button } from '@/components/ui/button';
+import { createComplaintSubmission } from '../submission';
 import { ApiError } from '@/lib/api/errors';
 
 export function CreateComplaintForm() {
   const router = useRouter();
-  const { user, apiClient, accessToken } = useAuth();
+  const { user, apiClient } = useAuth();
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -41,6 +42,13 @@ export function CreateComplaintForm() {
   // Staged attachments
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [deletingPhoto, setDeletingPhoto] = useState(false);
+  const photoBusy = useRef(false);
+  const submitting = useRef(false);
+  const submitDraft = useMemo(
+    () => createComplaintSubmission((data) => createComplaint(apiClient, data)),
+    [apiClient]
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -113,6 +121,7 @@ export function CreateComplaintForm() {
   }, [locationType, user, setValue]);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (photoBusy.current || submitting.current) return;
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
@@ -130,9 +139,10 @@ export function CreateComplaintForm() {
       return;
     }
 
+    photoBusy.current = true;
     setUploadingPhoto(true);
     try {
-      const uploaded = await uploadAttachment(apiClient, file, accessToken);
+      const uploaded = await uploadAttachment(apiClient, file);
       const newAttachments = [...attachments, uploaded];
       setAttachments(newAttachments);
       setValue(
@@ -145,33 +155,50 @@ export function CreateComplaintForm() {
         err instanceof Error ? err.message : 'Failed to upload photo'
       );
     } finally {
+      photoBusy.current = false;
       setUploadingPhoto(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
   const removePhoto = async (attachmentId: string) => {
+    if (photoBusy.current || submitting.current) return;
+    photoBusy.current = true;
+    setDeletingPhoto(true);
     try {
       await deleteAttachment(apiClient, attachmentId);
-    } catch {
-      // Ignore network error on delete
+      const filtered = attachments.filter((a) => a.id !== attachmentId);
+      setAttachments(filtered);
+      setValue(
+        'attachmentIds',
+        filtered.map((a) => a.id)
+      );
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Unable to remove photo. Please retry.'
+      );
+    } finally {
+      photoBusy.current = false;
+      setDeletingPhoto(false);
     }
-    const filtered = attachments.filter((a) => a.id !== attachmentId);
-    setAttachments(filtered);
-    setValue(
-      'attachmentIds',
-      filtered.map((a) => a.id)
-    );
   };
 
   const onSubmit = async (data: CreateComplaintFormData) => {
+    if (photoBusy.current) {
+      setServerError(
+        'Wait for the photo operation to finish before submitting.'
+      );
+      return;
+    }
+    if (submitting.current) return;
+    submitting.current = true;
     setServerError(null);
     try {
-      const clientRequestId = crypto.randomUUID();
-      const created = await createComplaint(apiClient, {
+      const created = await submitDraft({
         ...data,
         attachmentIds: attachments.map((a) => a.id),
-        clientRequestId,
       });
 
       toast.success('Complaint submitted successfully!', {
@@ -192,11 +219,19 @@ export function CreateComplaintForm() {
           'Failed to submit complaint. Please check your connection.'
         );
       }
+    } finally {
+      submitting.current = false;
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
+    <form
+      onSubmit={(event) => {
+        void handleSubmit(onSubmit)(event);
+      }}
+      className="space-y-6"
+      noValidate
+    >
       {serverError && (
         <div
           role="alert"
@@ -419,6 +454,7 @@ export function CreateComplaintForm() {
                 </div>
                 <button
                   type="button"
+                  disabled={isSubmitting || uploadingPhoto || deletingPhoto}
                   onClick={() => removePhoto(photo.id)}
                   className="rounded-md p-1 text-muted hover:text-danger"
                   aria-label={`Remove photo ${photo.originalName}`}
@@ -439,7 +475,7 @@ export function CreateComplaintForm() {
               onChange={handlePhotoUpload}
               className="sr-only"
               id="photo-upload"
-              disabled={isSubmitting || uploadingPhoto}
+              disabled={isSubmitting || uploadingPhoto || deletingPhoto}
             />
             <label
               htmlFor="photo-upload"
@@ -465,6 +501,7 @@ export function CreateComplaintForm() {
         type="submit"
         variant="primary"
         loading={isSubmitting}
+        disabled={uploadingPhoto || deletingPhoto}
         className="w-full justify-center text-base"
       >
         Submit maintenance report{' '}

@@ -136,7 +136,7 @@ export type CategoryItem = {
   hostelId: string;
   code: string;
   name: string;
-  description: string;
+  description: string | null;
   isActive: boolean;
   version: number;
 };
@@ -184,6 +184,8 @@ export type StaffDashboardData = {
   overdueResolution: number;
   overdueAny: number;
   queue: ComplaintSummary[];
+  resolutionHistory?: ComplaintSummary[];
+  latestActivity?: ActivityItem[];
 };
 
 export type AdminDashboardData = {
@@ -200,4 +202,17 @@ export type AdminDashboardData = {
   overdueAny: number;
   staffWorkload: StaffWorkloadItem[];
   recentComplaints: ComplaintSummary[];
+  priorityCounts?: Record<Priority, number>;
+  hostelBreakdown?: {
+    hostelId: string;
+    name: string;
+    total: number;
+    open: number;
+    assigned: number;
+    inProgress: number;
+    resolved: number;
+    closed: number;
+    unassigned: number;
+  }[];
+  recentActivity?: ActivityItem[];
 };

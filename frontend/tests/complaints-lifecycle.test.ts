@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  complaint,
+  staffDashboard,
+  adminDashboard,
+  feedback,
+} from './fixtures/complaints';
+import {
   createComplaintSchema,
   editComplaintSchema,
   commentSchema,
@@ -216,14 +222,7 @@ describe('Complaints API Client', () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
       Response.json(
         {
-          data: {
-            id: '67140e4cf8d7455d3e0906ee',
-            reference: 'CVR-2026-0001',
-            title: 'Ceiling fan bearing failure',
-            status: 'SUBMITTED',
-            priority: 'MEDIUM',
-            version: 1,
-          },
+          data: { complaint },
           meta: { requestId },
         },
         { status: 201 }
@@ -265,11 +264,17 @@ describe('Complaints API Client', () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
       Response.json({
         data: {
-          id: '67140e4cf8d7455d3e0906f1',
-          complaintId: '67140e4cf8d7455d3e0906ee',
-          author: { id: 'user-1', name: 'Alex', role: 'STUDENT' },
-          body: 'Technician can visit between 4pm and 6pm.',
-          createdAt: '2026-10-20T11:00:00.000Z',
+          comment: {
+            id: '67140e4cf8d7455d3e0906f1',
+            complaintId: '67140e4cf8d7455d3e0906ee',
+            author: {
+              id: '67140e4cf8d7455d3e0906e5',
+              name: 'Alex',
+              role: 'STUDENT',
+            },
+            body: 'Technician can visit between 4pm and 6pm.',
+            createdAt: '2026-10-20T11:00:00.000Z',
+          },
         },
         meta: { requestId },
       })
@@ -316,27 +321,22 @@ describe('Complaints API Client', () => {
   it('handles staff/admin dashboards, transitions and assignments via API client', async () => {
     const fetcher = vi.fn<typeof fetch>().mockImplementation((input) => {
       const url = String(input);
-      if (
-        url.includes('/categories') ||
-        url.includes('/admin/staff') ||
-        url.endsWith('/complaints') ||
-        url.includes('/complaints?')
-      ) {
-        return Promise.resolve(
-          Response.json({
-            data: [],
-            meta: { requestId, total: 0, totalPages: 1 },
-          })
-        );
-      }
+      const data = url.includes('/dashboard/staff')
+        ? staffDashboard
+        : url.includes('/dashboard/admin')
+          ? adminDashboard
+          : url.endsWith('/feedback')
+            ? { feedback }
+            : url.includes('/categories') ||
+                url.includes('/admin/staff') ||
+                url.endsWith('/complaints') ||
+                url.includes('/complaints?')
+              ? []
+              : { complaint };
       return Promise.resolve(
         Response.json({
-          data: {
-            id: '67140e4cf8d7455d3e0906ee',
-            status: 'IN_PROGRESS',
-            title: 'Leaking Pipe',
-          },
-          meta: { requestId },
+          data,
+          meta: { requestId, page: 1, limit: 20, total: 0, totalPages: 0 },
         })
       );
     });

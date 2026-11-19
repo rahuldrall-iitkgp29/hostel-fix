@@ -1,9 +1,11 @@
-const { createHash } = require('node:crypto');
+const { createHash, randomUUID } = require('node:crypto');
 const { hashPassword, hashEnrollmentCode } = require('../src/utils/hashUtils');
 const { runTransaction } = require('../src/utils/transactions');
 const { createModels, ensureIndexes } = require('../src/models');
 const { createDatabase, databaseUri } = require('../src/config/database');
 const { loadEnv } = require('../src/config/env');
+const { createRegistry, verifyConnection } = require('./ownership');
+const { REGISTRY } = require('../src/models/demoOwnership');
 
 const DEFAULT_POLICY = Object.freeze({
   slaTargets: {
@@ -30,7 +32,7 @@ const DEFAULT_POLICY = Object.freeze({
   },
 });
 
-async function seedDatabase({ config, database, models: providedModels }) {
+async function seedLegacyRecords({ config, database, models: providedModels }) {
   const connection = database.connection;
   const models = providedModels ?? createModels(connection);
   await ensureIndexes(models);
@@ -44,7 +46,7 @@ async function seedDatabase({ config, database, models: providedModels }) {
       enrollmentCodeHash: await hashEnrollmentCode('ENROLL-HOSTEL-A-2026'),
       isActive: true,
     });
-    await hostelA.save();
+    await runTransaction(connection, (session) => hostelA.save({ session }));
   }
 
   // 2. Blocks
@@ -59,7 +61,7 @@ async function seedDatabase({ config, database, models: providedModels }) {
       code: 'ALPHA',
       isActive: true,
     });
-    await blockAlpha.save();
+    await runTransaction(connection, (session) => blockAlpha.save({ session }));
   }
 
   let blockBeta = await models.Block.findOne({
@@ -73,7 +75,7 @@ async function seedDatabase({ config, database, models: providedModels }) {
       code: 'BETA',
       isActive: true,
     });
-    await blockBeta.save();
+    await runTransaction(connection, (session) => blockBeta.save({ session }));
   }
 
   // 3. Rooms
@@ -98,7 +100,7 @@ async function seedDatabase({ config, database, models: providedModels }) {
         label,
         isActive: true,
       });
-      await room.save();
+      await runTransaction(connection, (session) => room.save({ session }));
     }
     roomMap[label] = room;
   }
@@ -145,7 +147,7 @@ async function seedDatabase({ config, database, models: providedModels }) {
         description: item.description,
         isActive: true,
       });
-      await cat.save();
+      await runTransaction(connection, (session) => cat.save({ session }));
     }
     categoryMap[item.code] = cat;
   }
@@ -161,7 +163,7 @@ async function seedDatabase({ config, database, models: providedModels }) {
       escalationConfig: DEFAULT_POLICY.escalationConfig,
       policyVersion: 1,
     });
-    await policy.save();
+    await runTransaction(connection, (session) => policy.save({ session }));
   }
 
   // 6. Users (Student, Staff, Admin)
@@ -178,7 +180,7 @@ async function seedDatabase({ config, database, models: providedModels }) {
       blockId: blockAlpha._id,
       roomId: roomMap['A-101']._id,
     });
-    await asha.save();
+    await runTransaction(connection, (session) => asha.save({ session }));
   }
 
   let ravi = await models.User.findOne({ email: 'staff.r@hostelfix.demo' });
@@ -193,7 +195,7 @@ async function seedDatabase({ config, database, models: providedModels }) {
       hostelId: hostelA._id,
       categoryIds: [categoryMap.ELECTRICAL._id, categoryMap.PLUMBING._id],
     });
-    await ravi.save();
+    await runTransaction(connection, (session) => ravi.save({ session }));
   }
 
   let priya = await models.User.findOne({ email: 'admin.p@hostelfix.demo' });
@@ -207,7 +209,7 @@ async function seedDatabase({ config, database, models: providedModels }) {
       mustChangePassword: false,
       adminHostelIds: [hostelA._id],
     });
-    await priya.save();
+    await runTransaction(connection, (session) => priya.save({ session }));
   }
 
   // 7. Seed Sample Complaints & Activities (using transactions)
@@ -497,20 +499,33 @@ async function seedDatabase({ config, database, models: providedModels }) {
   };
 }
 
-async function main() {
-  const config = loadEnv();
-  const database = createDatabase(config);
+async function seedDatabase({ config, database, models: supplied }) {
+  const models = supplied ?? createModels(database.connection);
+  if (
+    config.NODE_ENV !== 'test' ||
+    !Object.values(models).every((Model) =>
+      /^seed_[a-f\d]{32}_/.test(Model.collection.name)
+    )
+  )
+    throw new Error(
+      'Legacy fixture seed requires isolated owned test collections. Use npm run seed for the demo.'
+    );
+  await verifyConnection(config, database, { fixture: true });
+  const owner = (database.connection.$legacySeedOwner ??= randomUUID());
+  await createRegistry(database.connection, models, owner, 'legacy-fixture');
+  await database.connection.db
+    .collection(REGISTRY)
+    .updateOne({ _id: owner }, { $set: { status: 'seeding' } });
+  database.connection.$demoSeedOwner = owner;
   try {
-    await database.connect();
-    await seedDatabase({ config, database });
-    process.stdout.write('Database seeded successfully.\n');
-  } catch (error) {
-    process.stderr.write(`Seeding failed: ${error.message}\n`);
-    process.exitCode = 1;
+    const result = await seedLegacyRecords({ config, database, models });
+    await database.connection.db
+      .collection(REGISTRY)
+      .updateOne({ _id: owner }, { $set: { status: 'ready' } });
+    return result;
   } finally {
-    await database.disconnect();
+    delete database.connection.$demoSeedOwner;
   }
 }
-
-if (require.main === module) void main();
+if (require.main === module) require('./demo-cli').main('seed');
 module.exports = { seedDatabase, DEFAULT_POLICY };

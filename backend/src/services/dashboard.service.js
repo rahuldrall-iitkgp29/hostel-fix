@@ -3,6 +3,27 @@ const { AppError } = require('../utils/AppError');
 const { complaintSummary, activity } = require('../models/projections');
 const { OPEN_STATUSES } = require('../models/enums');
 
+async function recentScopedActivity(models, predicate) {
+  const docs = await models.Activity.aggregate([
+    {
+      $lookup: {
+        from: models.Complaint.collection.name,
+        let: { id: '$complaintId' },
+        pipeline: [
+          { $match: { $expr: { $eq: ['$_id', '$$id'] } } },
+          { $match: predicate },
+        ],
+        as: 'scopedComplaint',
+      },
+    },
+    { $match: { 'scopedComplaint.0': { $exists: true } } },
+    { $sort: { occurredAt: -1, _id: -1 } },
+    { $limit: 10 },
+    { $project: { scopedComplaint: 0 } },
+  ]);
+  return docs.map(activity);
+}
+
 function createDashboardService(context) {
   const { models } = context;
 
@@ -217,6 +238,21 @@ function createDashboardService(context) {
       const queue = queueDocs
         .slice(0, 10)
         .map((doc) => complaintSummary(doc, { now }));
+      const resolutionDocs = await models.Complaint.find({
+        ...predicate,
+        status: { $in: ['RESOLVED', 'CLOSED'] },
+      })
+        .sort({ resolvedAt: -1, _id: -1 })
+        .limit(5)
+        .populate('categoryId', 'name')
+        .populate('assigneeId', 'name')
+        .populate('location.hostelId', 'name')
+        .populate('location.blockId', 'name')
+        .populate('location.roomId', 'label');
+      const resolutionHistory = resolutionDocs.map((doc) =>
+        complaintSummary(doc, { now })
+      );
+      const latestActivity = await recentScopedActivity(models, predicate);
 
       return {
         asOf: now.toISOString(),
@@ -228,6 +264,8 @@ function createDashboardService(context) {
         overdueResolution,
         overdueAny,
         queue,
+        resolutionHistory,
+        latestActivity,
       };
     },
 
@@ -398,6 +436,49 @@ function createDashboardService(context) {
         complaintSummary(doc, { now })
       );
 
+      const priorityCounts = { LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0 };
+      for (const row of await models.Complaint.aggregate([
+        { $match: predicate },
+        { $group: { _id: '$priority', count: { $sum: 1 } } },
+      ])) {
+        if (Object.hasOwn(priorityCounts, row._id))
+          priorityCounts[row._id] = row.count;
+      }
+      const grouped = await models.Complaint.aggregate([
+        { $match: predicate },
+        {
+          $group: {
+            _id: { hostelId: '$hostelId', status: '$status' },
+            count: { $sum: 1 },
+          },
+        },
+      ]);
+      const hostelBreakdown = [];
+      for (const hostel of await models.Hostel.find({
+        _id: { $in: targetObjectIds },
+      })
+        .sort({ name: 1 })
+        .lean()) {
+        const counts = Object.fromEntries(
+          Object.keys(statusCounts).map((status) => [status, 0])
+        );
+        for (const row of grouped)
+          if (String(row._id.hostelId) === String(hostel._id))
+            counts[row._id.status] = row.count;
+        hostelBreakdown.push({
+          hostelId: String(hostel._id),
+          name: hostel.name,
+          total: Object.values(counts).reduce((sum, count) => sum + count, 0),
+          open: OPEN_STATUSES.reduce((sum, status) => sum + counts[status], 0),
+          assigned: counts.ASSIGNED,
+          inProgress: counts.IN_PROGRESS,
+          resolved: counts.RESOLVED,
+          closed: counts.CLOSED,
+          unassigned: counts.SUBMITTED + counts.TRIAGED + counts.REOPENED,
+        });
+      }
+      const recentActivity = await recentScopedActivity(models, predicate);
+
       return {
         asOf: now.toISOString(),
         statusCounts,
@@ -412,6 +493,9 @@ function createDashboardService(context) {
         overdueAny,
         staffWorkload,
         recentComplaints,
+        priorityCounts,
+        hostelBreakdown,
+        recentActivity,
       };
     },
   };

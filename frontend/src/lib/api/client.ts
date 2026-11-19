@@ -7,9 +7,18 @@ const metaSchema = z
   .catchall(z.unknown());
 export type ApiMeta = z.infer<typeof metaSchema>;
 export type ApiResponse<T> = { data: T; meta: ApiMeta };
-type RequestOptions = {
+export const paginationSchema = z.object({
+  page: z.number().int().positive(),
+  limit: z.number().int().positive(),
+  total: z.number().int().nonnegative(),
+  totalPages: z.number().int().nonnegative(),
+});
+export type Pagination = z.infer<typeof paginationSchema>;
+export type ApiPage<T> = { data: T[]; meta: Pagination };
+export type RequestOptions = {
   query?: Query;
   signal?: AbortSignal;
+  formData?: FormData;
 } & (
   | { method?: 'GET'; body?: never }
   | { method: 'POST' | 'PATCH' | 'DELETE'; body?: unknown }
@@ -21,6 +30,7 @@ type ClientOptions = {
   // Session 4 supplies a callback to in-memory state; this client stores no token.
   getAccessToken?: () => string | null;
   onUnauthorized?: () => Promise<string | null>;
+  ensureAccessToken?: () => Promise<string | null>;
   timeoutMs?: number;
 };
 
@@ -29,6 +39,7 @@ export function createApiClient({
   fetcher = fetch,
   getAccessToken,
   onUnauthorized,
+  ensureAccessToken,
   timeoutMs = 15_000,
 }: ClientOptions) {
   const base = validateApiBaseUrl(baseUrl);
@@ -41,10 +52,12 @@ export function createApiClient({
     const url = buildApiUrl(base, path, options.query);
     const method = options.method ?? 'GET';
     const headers = new Headers({ Accept: 'application/json' });
-    const token = getAccessToken?.();
+    const token = ensureAccessToken
+      ? await ensureAccessToken()
+      : getAccessToken?.();
     if (token) headers.set('Authorization', `Bearer ${token}`);
     if (method !== 'GET') headers.set('X-CSRF-Protection', '1');
-    if (options.body !== undefined)
+    if (options.body !== undefined && !options.formData)
       headers.set('Content-Type', 'application/json');
     const deadline = AbortSignal.timeout(timeoutMs);
     const signal = options.signal
@@ -59,9 +72,11 @@ export function createApiClient({
         cache: 'no-store',
         redirect: 'error',
         signal,
-        ...(options.body !== undefined
-          ? { body: JSON.stringify(options.body) }
-          : {}),
+        ...(options.formData
+          ? { body: options.formData }
+          : options.body !== undefined
+            ? { body: JSON.stringify(options.body) }
+            : {}),
       });
     } catch {
       if (options.signal?.aborted)
@@ -77,14 +92,9 @@ export function createApiClient({
       );
     }
 
-    if (
-      response.status === 401 &&
-      !isRetry &&
-      method === 'GET' &&
-      onUnauthorized
-    ) {
+    if (response.status === 401 && !isRetry && onUnauthorized) {
       const newToken = await onUnauthorized().catch(() => null);
-      if (newToken) {
+      if (newToken && method === 'GET') {
         return execute(path, options, true);
       }
     }
@@ -97,6 +107,47 @@ export function createApiClient({
   }
 
   return {
+    async requestPage<T>(
+      path: string,
+      schema: z.ZodType<T>,
+      options: RequestOptions = {}
+    ): Promise<ApiPage<T>> {
+      const response = await execute(path, options);
+      const parsed = z
+        .object({
+          data: z.array(schema),
+          meta: metaSchema.and(paginationSchema),
+        })
+        .safeParse(await response.json().catch(() => null));
+      if (!parsed.success)
+        throw new ApiError(
+          'HostelFix returned an unexpected page.',
+          'INVALID_RESPONSE',
+          response.status
+        );
+      return parsed.data;
+    },
+    async requestBlob(
+      path: string,
+      options: RequestOptions = {}
+    ): Promise<Blob> {
+      const response = await execute(path, options);
+      const mimeType = response.headers.get('Content-Type')?.split(';')[0];
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(mimeType ?? ''))
+        throw new ApiError(
+          'Unexpected photo response.',
+          'INVALID_RESPONSE',
+          response.status
+        );
+      const blob = await response.blob();
+      if (blob.size > 5 * 1024 * 1024)
+        throw new ApiError(
+          'Photo exceeds the size limit.',
+          'INVALID_RESPONSE',
+          response.status
+        );
+      return blob;
+    },
     async request<T>(
       path: string,
       schema: z.ZodType<T>,
